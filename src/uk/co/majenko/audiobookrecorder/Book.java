@@ -1,0 +1,102 @@
+package uk.co.majenko.audiobookrecorder;
+
+import javax.swing.*;
+import javax.swing.event.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.io.*;
+import java.nio.file.*;
+import javax.swing.tree.*;
+
+public class Book extends DefaultMutableTreeNode {
+    
+    String name;
+    String author;
+    String genre;
+    String comment;
+
+    public Book(String bookname) {
+        super(bookname);
+        name = bookname;
+    }
+
+    public void setAuthor(String a) {
+        author = a;
+    }
+
+    public void setGenre(String g) {
+        genre = g;
+    }
+
+    public void setComment(String c) {
+        comment = c;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public String getGenre() {
+        return genre;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public Chapter getClosingCredits() {
+        return getChapterById("close");
+    }
+    
+    public Chapter getOpeningCredits() {
+        return getChapterById("open");
+    }
+
+    @SuppressWarnings("unchecked")
+    public Chapter getChapterById(String id) {
+        for (Enumeration<Object>o = children(); o.hasMoreElements();) {
+            Object ob = o.nextElement();
+            if (ob instanceof Chapter) {
+                Chapter c = (Chapter)ob;
+                if (c.getId().equals(id)) {
+                    return c;
+                }
+            }
+        }
+        return null;
+    }
+
+    public Chapter getLastChapter() {
+        Chapter cc = getClosingCredits();
+        if (cc == null) return null;
+        Chapter c = (Chapter)getChildBefore(cc);
+        if (c == null) return null;
+        if (c.getId().equals("open")) return null;
+        return c;
+    }
+
+    public Chapter getChapter(int n) {
+        if (n == 0) return null;
+        return (Chapter)getChildAt(n);
+    }
+
+    public Chapter addChapter() {
+        Chapter lc = getLastChapter();
+        if (lc == null) return new Chapter("1", "Chapter 1");
+        try {
+            int lcid = Integer.parseInt(lc.getId());
+            lcid++;
+
+            Chapter nc = new Chapter(String.format("%04d", lcid), "Chapter " + lcid);
+            return nc;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public String getName() {
+        return name;
+    }
+}
