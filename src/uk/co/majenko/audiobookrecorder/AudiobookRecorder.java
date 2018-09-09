@@ -11,6 +11,8 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.prefs.*;
 import java.io.*;
+import it.sauronsoftware.jave.*;
+import com.mpatric.mp3agic.*;
 
 public class AudiobookRecorder extends JFrame {
 
@@ -34,7 +36,7 @@ public class AudiobookRecorder extends JFrame {
 
     JPanel statusBar;
 
-    JLabel statusFormat;
+    JLabel statusLabel;
 
     JScrollPane mainScroll;
 
@@ -57,6 +59,8 @@ public class AudiobookRecorder extends JFrame {
 
     Thread playingThread = null;
 
+    Random rng = new Random();
+
     public static AudiobookRecorder window;
 
     void buildToolbar(Container ob) {
@@ -78,7 +82,18 @@ public class AudiobookRecorder extends JFrame {
             }
         });
         fileOpenBook = new JMenuItem("Open Book...");
+        fileOpenBook.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                openBook();
+            }
+        });
         fileExit = new JMenuItem("Exit");
+        fileExit.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                saveBookStructure();
+                System.exit(0);
+            }
+        });
 
         fileMenu.add(fileNewBook);
         fileMenu.add(fileOpenBook);
@@ -91,7 +106,18 @@ public class AudiobookRecorder extends JFrame {
         bookMenu = new JMenu("Book");
         
         bookNewChapter = new JMenuItem("New Chapter");
-        bookExportAudio = new JMenuItem("Export Audio...");
+        bookNewChapter.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                addChapter();
+            }
+        });
+
+        bookExportAudio = new JMenuItem("Export Audio");
+        bookExportAudio.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                exportAudio();
+            }
+        });
 
         bookMenu.add(bookNewChapter);
         bookMenu.add(bookExportAudio);
@@ -158,6 +184,7 @@ public class AudiobookRecorder extends JFrame {
 
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
+                saveBookStructure();
                 System.exit(0);
             }
         });
@@ -336,8 +363,8 @@ public class AudiobookRecorder extends JFrame {
         statusBar = new JPanel();
         add(statusBar, BorderLayout.SOUTH);
 
-        statusFormat = new JLabel(Options.getAudioFormat().toString());
-        statusBar.add(statusFormat);
+        statusLabel = new JLabel("Noise floor: " + getNoiseFloor());
+        statusBar.add(statusLabel);
 
         buildToolbar(centralPanel);
 
@@ -474,6 +501,19 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
 
+                process.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Sentence s = (Sentence)o.getObject();
+                        s.autoTrimSample();
+                        sampleWaveform.setData(s.getAudioData());
+                        sampleWaveform.setMarkers(s.getStartOffset(), s.getEndOffset());
+                        startOffset.setValue(s.getStartOffset());
+                        endOffset.setValue(s.getEndOffset());
+                        postSentenceGap.setValue(s.getPostGap());
+                    }
+                });
+
                 menu.add(del);
                 menu.add(edit);
                 menu.add(process);
@@ -554,6 +594,7 @@ public class AudiobookRecorder extends JFrame {
 
         toolBar.enableBook();
         toolBar.enableSentence();
+        toolBar.disableStop();
 
         centralPanel.setFlash(false);
         recording = null;
@@ -594,7 +635,11 @@ public class AudiobookRecorder extends JFrame {
         if (s != null) {
             bookTree.setSelectionPath(new TreePath(s.getPath()));
             bookTree.scrollPathToVisible(new TreePath(s.getPath()));
+        }  else {
+            sampleWaveform.clearData();
         }
+        selectedSentence = s;
+        saveBookStructure();
     }
 
     public void addChapter() {
@@ -607,6 +652,8 @@ public class AudiobookRecorder extends JFrame {
 
     @SuppressWarnings("unchecked")
     public void saveBookStructure() {
+        if (book == null) return;
+
         File bookRoot = new File(Options.get("path.storage"), book.getName());
         if (!bookRoot.exists()) {
             bookRoot.mkdirs();
@@ -694,12 +741,14 @@ public class AudiobookRecorder extends JFrame {
                     ((SteppedNumericSpinnerModel)endOffset.getModel()).setMaximum(samples);
 
                     toolBar.enableSentence();
+                    toolBar.disableStop();
                 } else {
                     selectedSentence = null;
                     toolBar.disableSentence();
                     sampleWaveform.clearData();
                     startOffset.setValue(0);
                     endOffset.setValue(0);
+                    toolBar.disableStop();
                     postSentenceGap.setValue(0);
                 }
             }
@@ -783,10 +832,10 @@ public class AudiobookRecorder extends JFrame {
         bookTree.expandPath(new TreePath(book.getPath()));
 
         toolBar.enableBook();
+        statusLabel.setText("Noise floor: " + getNoiseFloor());
     }
 
     public void openBook() {
-
 
         OpenBookPanel info = new OpenBookPanel();
         int r = JOptionPane.showConfirmDialog(this, info, "Open Book", JOptionPane.OK_CANCEL_OPTION);
@@ -831,6 +880,7 @@ public class AudiobookRecorder extends JFrame {
     }
 
     public int getNoiseFloor() { 
+        if (roomNoise == null) return 0;
         int[] samples = roomNoise.getAudioData();
         if (samples == null) {
             return 0;
@@ -855,10 +905,10 @@ public class AudiobookRecorder extends JFrame {
             ticker.schedule(new TimerTask() {
                 public void run() {
                     roomNoise.stopRecording();
-                centralPanel.setFlash(false);
+                    centralPanel.setFlash(false);
+                    statusLabel.setText("Noise floor: " + getNoiseFloor());
                 }
             }, 5000); // 5 seconds of recording
-
         }
     }
 
@@ -869,16 +919,219 @@ public class AudiobookRecorder extends JFrame {
 
         playing = selectedSentence;
 
+        toolBar.disableSentence();
+        toolBar.enableStop();
+
 
         playingThread = new Thread(new Runnable() {
             public void run() {
                 playing.play();
                 playing = null;
+                toolBar.enableSentence();
+                toolBar.disableStop();
             }
         });
 
         playingThread.setDaemon(true);
         playingThread.start();
 
+    }
+
+    @SuppressWarnings("unchecked")
+    public void exportAudio() {
+
+        try {
+            File bookRoot = new File(Options.get("path.storage"), book.getName());
+            if (!bookRoot.exists()) {
+                bookRoot.mkdirs();
+            }
+
+            File export = new File(bookRoot, "export");
+            if (!export.exists()) {
+                export.mkdirs();
+            }
+
+            Encoder encoder = new Encoder();
+            EncodingAttributes attributes = new EncodingAttributes();
+
+            AudioAttributes audioAttributes = new AudioAttributes();
+            audioAttributes.setCodec("libmp3lame");
+            audioAttributes.setBitRate(new Integer(256000));
+            audioAttributes.setSamplingRate(new Integer(44100));
+            audioAttributes.setChannels(new Integer(2));
+            
+            attributes.setFormat("mp3");
+            attributes.setAudioAttributes(audioAttributes);
+
+
+            AudioFormat format = roomNoise.getAudioFormat();
+            byte[] data;
+
+            for (Enumeration<Chapter> o = book.children(); o.hasMoreElements();) {
+
+                int fullLength = 0;
+
+                Chapter c = o.nextElement();
+
+                String name = c.getName();
+
+                File exportFile = new File(export, name + ".wax");
+                File wavFile = new File(export, name + ".wav");
+                File mp3File = new File(export, name + "-untagged.mp3");
+                File taggedFile = new File(export, name + ".mp3");
+
+                FileOutputStream fos = new FileOutputStream(exportFile);
+
+                data = getRoomNoise(s2i(Options.get("catenation.pre-chapter")));
+                fullLength += data.length;
+                fos.write(data);
+
+                for (Enumeration<Sentence> s = c.children(); s.hasMoreElements();) {
+                    Sentence snt = s.nextElement();
+                    data = snt.getRawAudioData();
+
+                    fullLength += data.length;
+                    fos.write(data);
+
+                    if (s.hasMoreElements()) {
+                        data = getRoomNoise(snt.getPostGap());
+                    } else {
+                        data = getRoomNoise(s2i(Options.get("catenation.post-chapter")));
+                    }
+                    fullLength += data.length;
+                    fos.write(data);
+                }
+                fos.close();
+
+                FileInputStream fis = new FileInputStream(exportFile);
+                AudioInputStream ais = new AudioInputStream(fis, format, fullLength);
+                AudioSystem.write(ais, AudioFileFormat.Type.WAVE, wavFile);
+                fis.close();
+                exportFile.delete();
+
+                encoder.encode(wavFile, mp3File, attributes);
+                Mp3File id3 = new Mp3File(mp3File);
+
+                ID3v2 tags = new ID3v24Tag();
+                id3.setId3v2Tag(tags);
+
+                tags.setTrack(Integer.toString(s2i(c.getId()) - 0));
+                tags.setTitle(c.getName());
+                tags.setArtist(book.getAuthor());
+
+//                ID3v2TextFrameData g = new ID3v2TextFrameData(false, new EncodedText(book.getGenre()));
+//                tags.addFrame(tags.createFrame("TCON", g.toBytes(), true));
+
+                tags.setComment(book.getComment());
+
+                id3.save(taggedFile.getAbsolutePath());
+
+                mp3File.delete();
+                wavFile.delete();
+                
+            }
+
+            JOptionPane.showMessageDialog(this, "Book exported.", "Done", JOptionPane.INFORMATION_MESSAGE);
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public void playFromSelectedSentence() {
+        if (selectedSentence == null) return;
+        if (playing != null) return;
+        playing = selectedSentence;
+        toolBar.disableSentence();
+        toolBar.enableStop();
+
+        playingThread = new Thread(new Runnable() {
+            public void run() {
+                Sentence s = playing;
+                byte[] data;
+
+                try {
+
+                    AudioFormat format = s.getAudioFormat();
+                    SourceDataLine play = AudioSystem.getSourceDataLine(format, Options.getPlaybackMixer());
+                    play.open(format);
+                    play.start();
+
+                    while (playing != null) {
+                        DefaultMutableTreeNode prev = s.getPreviousSibling();
+                        boolean first = false;
+                        if (prev == null) {
+                            first = true;
+                        } else if (!(prev instanceof Sentence)) {
+                            first = true;
+                        }
+                        if (first) {
+                            data = getRoomNoise(s2i(Options.get("catenation.pre-chapter")));
+                            play.write(data, 0, data.length);
+                        }
+                        data = s.getRawAudioData();
+                        play.write(data, 0, data.length);
+
+                        DefaultMutableTreeNode next = s.getNextSibling();
+                        boolean last = false;
+                        if (next == null) {
+                            last = true;
+                        } else if (!(next instanceof Sentence)) {
+                            last = true;
+                        }
+
+                        if (last) {
+                            data = getRoomNoise(s2i(Options.get("catenation.post-chapter")));
+                            play.write(data, 0, data.length);
+                            playing = null;
+                        } else {
+                            data = getRoomNoise(s.getPostGap());
+                            play.write(data, 0, data.length);
+                        }
+                        s = (Sentence)next;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    playing = null;
+                }
+                toolBar.enableSentence();
+                toolBar.disableStop();
+            }
+        });
+
+        playingThread.setDaemon(true);
+        playingThread.start();
+    }
+
+
+    public byte[] getRoomNoise(int ms) {
+
+        if (roomNoise == null) return null;
+
+        int len = roomNoise.getSampleSize();
+        if (len == 0) return null;
+
+        AudioFormat f = roomNoise.getAudioFormat();
+        int frameSize = f.getFrameSize();
+        
+        float sr = f.getSampleRate();
+
+        int samples = (int)(ms * (sr / 1000f));
+
+        int start = rng.nextInt(len - samples);
+        int end = start + samples;
+
+        roomNoise.setStartOffset(start);
+        roomNoise.setEndOffset(end);
+
+        byte[] data = roomNoise.getRawAudioData();
+
+        return data;
+    }
+
+    public void stopPlaying() {
+        playing = null;
     }
 }

@@ -15,6 +15,7 @@ public class MainToolBar extends JToolBar {
     JButton playSentence;
     JButton playonSentence;
     JButton recordSentence;
+    JButton stopPlaying;
 
     AudiobookRecorder root;
 
@@ -83,11 +84,25 @@ public class MainToolBar extends JToolBar {
 
         playonSentence = new JButton(Icons.playon);
         playonSentence.setToolTipText("Play from sentence");
+        playonSentence.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                root.playFromSelectedSentence();
+            }
+        });
         add(playonSentence);
 
         recordSentence = new JButton(Icons.record);
         recordSentence.setToolTipText("Re-record sentence");
         add(recordSentence);
+
+        stopPlaying = new JButton(Icons.stop);
+        stopPlaying.setToolTipText("Stop playing / recording");
+        stopPlaying.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                root.stopPlaying();
+            }
+        });
+        add(stopPlaying);
 
         setFloatable(false);
     }
@@ -112,5 +127,13 @@ public class MainToolBar extends JToolBar {
         playSentence.setEnabled(false);
         playonSentence.setEnabled(false);
         recordSentence.setEnabled(false);
+    }
+
+    public void enableStop() {
+        stopPlaying.setEnabled(true);
+    }
+
+    public void disableStop() {
+        stopPlaying.setEnabled(false);
     }
 }

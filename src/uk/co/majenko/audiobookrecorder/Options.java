@@ -308,8 +308,8 @@ public class Options extends JDialog {
         set("audio.playback.device", ((KVPair)playbackList.getSelectedItem()).key);
         set("path.storage", storageFolder.getText());
         set("catenation.pre-chapter", "" + preChapterGap.getValue());
-        set("catenation.post-chapter", "" + preChapterGap.getValue());
-        set("catenation.post-sentence", "" + preChapterGap.getValue());
+        set("catenation.post-chapter", "" + postChapterGap.getValue());
+        set("catenation.post-sentence", "" + postSentenceGap.getValue());
 
         savePreferences();
     }

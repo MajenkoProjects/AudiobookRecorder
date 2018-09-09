@@ -86,7 +86,7 @@ public class Sentence extends DefaultMutableTreeNode {
 
         line.start();
 
-        File audioFile = new File(AudiobookRecorder.window.getBookFolder(), id + ".wav");
+        File audioFile = getFile();
 
         recordingThread = new Thread(new Runnable() {
             public void run() {
@@ -169,7 +169,11 @@ public class Sentence extends DefaultMutableTreeNode {
     }
 
     public File getFile() {
-        return new File(AudiobookRecorder.window.getBookFolder(), id + ".wav");
+        File b = new File(AudiobookRecorder.window.getBookFolder(), "files");
+        if (!b.exists()) {
+            b.mkdirs();
+        }
+        return new File(b, id + ".wav");
     }
 
     public void editText() {
@@ -205,7 +209,7 @@ public class Sentence extends DefaultMutableTreeNode {
     }
 
     public void deleteFiles() {
-        File audioFile = new File(AudiobookRecorder.window.getBookFolder(), id + ".wav");
+        File audioFile = getFile();
         if (audioFile.exists()) {
             audioFile.delete();
         }
@@ -243,7 +247,6 @@ public class Sentence extends DefaultMutableTreeNode {
             sampleSize = samples.length;
             return samples;
         } catch (Exception e) {
-            e.printStackTrace();
         }
         return null;
     }
@@ -332,4 +335,25 @@ public class Sentence extends DefaultMutableTreeNode {
             e.printStackTrace();
         }
     }
+
+    public byte[] getRawAudioData() {
+        File f = getFile();
+        try {
+            AudioInputStream s = AudioSystem.getAudioInputStream(f);
+            AudioFormat format = s.getFormat();
+            int frameSize = format.getFrameSize();
+            int length = endOffset - startOffset;
+            byte[] data = new byte[length * frameSize];
+
+            s.skip(startOffset * frameSize);
+
+            s.read(data);
+
+            return data;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 }
