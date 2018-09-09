@@ -157,7 +157,8 @@ public class AudiobookRecorder extends JFrame {
 
 
         try {
-            String clsname = "com.jtattoo.plaf.aluminium.AluminiumLookAndFeel";
+//            String clsname = "com.jtattoo.plaf.aluminium.AluminiumLookAndFeel";
+            String clsname = "com.jtattoo.plaf.hifi.HiFiLookAndFeel";
             UIManager.setLookAndFeel(clsname);
 
             Properties p = new Properties();
@@ -740,8 +741,13 @@ public class AudiobookRecorder extends JFrame {
                     ((SteppedNumericSpinnerModel)startOffset.getModel()).setMaximum(samples);
                     ((SteppedNumericSpinnerModel)endOffset.getModel()).setMaximum(samples);
 
-                    toolBar.enableSentence();
-                    toolBar.disableStop();
+                    if (playing == null) {
+                        toolBar.enableSentence();
+                        toolBar.disableStop();
+                    } else {
+                        toolBar.disableSentence();
+                        toolBar.enableStop();
+                    }
                 } else {
                     selectedSentence = null;
                     toolBar.disableSentence();
