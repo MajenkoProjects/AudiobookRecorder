@@ -9,6 +9,9 @@ import java.io.*;
 import java.nio.file.*;
 import javax.swing.tree.*;
 import javax.sound.sampled.*;
+import edu.cmu.sphinx.api.*;
+import edu.cmu.sphinx.decoder.adaptation.*;
+import edu.cmu.sphinx.result.*;
 
 public class Sentence extends DefaultMutableTreeNode {
     
@@ -29,7 +32,6 @@ public class Sentence extends DefaultMutableTreeNode {
 
     Thread recordingThread = null;
     
-
     public Sentence() {
         super("");
         id = UUID.randomUUID().toString();
@@ -118,12 +120,89 @@ public class Sentence extends DefaultMutableTreeNode {
 
         if (!id.equals("room-noise")) {
             autoTrimSample();
+            recognise();
         }
     }
 
     public void autoTrimSample() {
         int[] samples = getAudioData();
+        if (samples == null) return;
+
         int noiseFloor = AudiobookRecorder.window.getNoiseFloor();
+
+        int blocks = samples.length / 4096 + 1;
+
+        int[] intens = new int[blocks];
+        int block = 0;
+
+        for (int i = 0; i < samples.length; i+= 4096) {
+            double[] real = new double[4096];
+            double[] imag = new double[4096];
+
+            for (int j = 0; j < 4096; j++) {
+                if (i + j < samples.length) {
+                    real[j] = samples[i+j] / 32768d;
+                    imag[j] = 0;
+                } else {
+                    real[j] = 0;
+                    imag[j] = 0;
+                }
+            }
+
+            double[] buckets = FFT.fft(real, imag, true);
+            double av = 0;
+            for (int j = 1; j < 2048; j++) {
+                av += Math.abs(buckets[j]);
+            }
+            av /= 2047d;
+
+            intens[block] = 0;
+
+            for (int j = 1; j < 2048; j++) {
+                double d = Math.abs(av - buckets[j]);
+                if (d > 0.05) {
+                    intens[block]++;
+                }
+            }
+            block++;
+            
+        }
+
+        // Find first block with > 0 intensity and subtract one.
+
+        int start = 0;
+        for (int i = 0; i < blocks; i++) {
+            if (intens[i] > 0) break;
+            start = i;
+        }
+
+        if (start >= blocks) {
+            start = 0;
+        }
+
+        startOffset = start * 4096;
+        if (startOffset < 0) startOffset = 0;
+        if (startOffset >= samples.length) startOffset = samples.length;
+
+        int end = blocks - 1;
+        // And last block with > 0 intensity and add one.
+        for (int i = blocks-1; i >= 0; i--) {
+            if (intens[i] > 0) break;
+            end = i;
+        }
+
+        if (end <= 0) {
+            end = blocks - 1;
+        }
+
+        endOffset = end * 4096;
+        if (endOffset < 0) endOffset = 0;
+        if (endOffset >= samples.length) endOffset = samples.length;
+
+/*            
+
+        
+
 
         isSilence = false;
         // Find start
@@ -153,6 +232,7 @@ public class Sentence extends DefaultMutableTreeNode {
             isSilence = true;
             endOffset = samples.length-1;
         }
+*/
         
     }
 
@@ -330,6 +410,7 @@ public class Sentence extends DefaultMutableTreeNode {
 
                 play.write(buffer, 0, nr);
             };
+            play.drain();
             play.close(); 
         } catch (Exception e) {
             e.printStackTrace();
@@ -356,4 +437,74 @@ public class Sentence extends DefaultMutableTreeNode {
         return null;
     }
 
+    public void recognise() {
+
+        return;
+/*
+
+        Thread t = new Thread(new Runnable() {
+
+            public void run() {
+                try {
+
+                    Configuration sphinxConfig = new Configuration();
+
+                    sphinxConfig.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
+                    sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
+                    sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
+
+
+                    StreamSpeechRecognizer recognizer;
+
+                    recognizer = new StreamSpeechRecognizer(sphinxConfig);
+
+                    AudioInputStream s = AudioSystem.getAudioInputStream(getFile());
+                    AudioFormat format = s.getFormat();
+                    int frameSize = format.getFrameSize();
+                    int length = (int)s.getFrameLength();
+                    byte[] data = new byte[length * frameSize];
+
+                    s.read(data);
+
+                    int channels = format.getChannels();
+                    int newLen = (length / 3);
+                    byte[] decimated = new byte[newLen * 2];
+
+                    for (int i = 0; i < newLen; i++) {
+                        if (channels == 1) {
+                            decimated[i * 2] = data[i * 6];
+                            decimated[i * 2 + 1] = data[i * 6 + 1];
+                        } else {
+                            decimated[i * 2] = data[i * 12];
+                            decimated[i * 2 + 1] = data[i * 12 + 1];
+                        }
+                    }
+
+
+                    System.err.println("Decimated from " + length + " to " + newLen);
+
+                    ByteArrayInputStream bas = new ByteArrayInputStream(decimated);
+                    recognizer.startRecognition(bas);
+                    SpeechResult result;
+                    String res = "";
+                    while ((result = recognizer.getResult()) != null) {
+                        res += result.getHypothesis();
+                        res += " ";
+                    }
+                    recognizer.stopRecognition(); 
+
+                    text = res;
+
+                    AudiobookRecorder.window.bookTreeModel.reload(Sentence.this);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+        });
+
+        t.start();
+*/
+    }
 }

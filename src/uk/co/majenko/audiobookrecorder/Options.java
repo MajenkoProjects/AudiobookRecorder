@@ -21,6 +21,9 @@ public class Options extends JDialog {
     JSpinner preChapterGap;
     JSpinner postChapterGap;
     JSpinner postSentenceGap;
+    JTextField ffmpegLocation;
+    JComboBox<KVPair> bitRate;
+    JComboBox<KVPair> exportRate;
 
 
     static HashMap<String, String> defaultPrefs;
@@ -179,6 +182,12 @@ public class Options extends JDialog {
 
         addSeparator();
 
+        ffmpegLocation = addFilePath("FFMPEG location:", get("path.ffmpeg"));
+        bitRate = addDropdown("Export bitrate:", getBitrates(), get("audio.export.bitrate"));
+        exportRate = addDropdown("Export sample rate:", getSampleRateList(), get("audio.export.samplerate"));
+        
+
+        addSeparator();
 
 
 
@@ -259,11 +268,16 @@ public class Options extends JDialog {
         defaultPrefs.put("audio.recording.channels", "2");
         defaultPrefs.put("audio.recording.samplerate", "48000");
         defaultPrefs.put("audio.playback.device", mixers[0].key);
-        defaultPrefs.put("path.storage", (new File(System.getProperty("user.home"), "Recordings")).toString());
 
         defaultPrefs.put("catenation.pre-chapter", "2000");
         defaultPrefs.put("catenation.post-chapter", "2000");
         defaultPrefs.put("catenation.post-sentence", "1000");
+    
+        defaultPrefs.put("path.storage", (new File(System.getProperty("user.home"), "Recordings")).toString());
+        defaultPrefs.put("path.ffmpeg", "");
+
+        defaultPrefs.put("audio.export.bitrate", "256000");
+        defaultPrefs.put("audio.export.samplerate", "44100");
 
         if (prefs == null) {
             prefs = Preferences.userNodeForPackage(AudiobookRecorder.class);
@@ -307,9 +321,12 @@ public class Options extends JDialog {
         set("audio.recording.samplerate", ((KVPair)rateList.getSelectedItem()).key);
         set("audio.playback.device", ((KVPair)playbackList.getSelectedItem()).key);
         set("path.storage", storageFolder.getText());
+        set("path.ffmpeg", ffmpegLocation.getText());
         set("catenation.pre-chapter", "" + preChapterGap.getValue());
         set("catenation.post-chapter", "" + postChapterGap.getValue());
         set("catenation.post-sentence", "" + postSentenceGap.getValue());
+        set("audio.export.bitrate", ((KVPair)bitRate.getSelectedItem()).key);
+        set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
 
         savePreferences();
     }
@@ -355,5 +372,14 @@ public class Options extends JDialog {
 
     public static Mixer.Info getPlaybackMixer() {
         return getMixerByName(get("audio.playback.device"));
+    }
+
+    public static KVPair[] getBitrates() {
+        KVPair[] pairs = new KVPair[4];
+        pairs[0] = new KVPair("128000", "128kbps");
+        pairs[1] = new KVPair("192000", "192kbps");
+        pairs[2] = new KVPair("256000", "256kbps");
+        pairs[3] = new KVPair("320000", "320kbps");
+        return pairs;
     }
 }

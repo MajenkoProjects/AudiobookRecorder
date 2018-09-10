@@ -13,6 +13,9 @@ import java.util.prefs.*;
 import java.io.*;
 import it.sauronsoftware.jave.*;
 import com.mpatric.mp3agic.*;
+import edu.cmu.sphinx.api.*;
+import edu.cmu.sphinx.decoder.adaptation.*;
+import edu.cmu.sphinx.result.*;
 
 public class AudiobookRecorder extends JFrame {
 
@@ -43,7 +46,7 @@ public class AudiobookRecorder extends JFrame {
     Book book = null;
 
     JTree bookTree;
-    DefaultTreeModel bookTreeModel;
+    public DefaultTreeModel bookTreeModel;
 
     Sentence recording = null;
     Sentence playing = null;
@@ -61,7 +64,27 @@ public class AudiobookRecorder extends JFrame {
 
     Random rng = new Random();
 
+    SourceDataLine play;
+
+    public Configuration sphinxConfig;
+    public StreamSpeechRecognizer recognizer;
+
+
     public static AudiobookRecorder window;
+
+    void initSphinx() {
+        sphinxConfig = new Configuration();
+
+        sphinxConfig.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
+        sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
+        sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
+
+        try {
+            recognizer = new StreamSpeechRecognizer(sphinxConfig);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     void buildToolbar(Container ob) {
         toolBar = new MainToolBar(this);
@@ -154,6 +177,8 @@ public class AudiobookRecorder extends JFrame {
 
 
         Icons.loadIcons();
+
+//        initSphinx();
 
 
         try {
@@ -374,10 +399,21 @@ public class AudiobookRecorder extends JFrame {
 
         centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released D"), "deleteLast");
 
+        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("SPACE"), "startPlayback");
+
+        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("E"), "startRerecord");
+        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released E"), "stopRecord");
+
         centralPanel.getActionMap().put("startRecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (bookTree.isEditing()) return;
                 startRecording();
+            }
+        });
+        centralPanel.getActionMap().put("startRerecord", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                if (bookTree.isEditing()) return;
+                startReRecording();
             }
         });
         centralPanel.getActionMap().put("stopRecord", new AbstractAction() {
@@ -390,6 +426,13 @@ public class AudiobookRecorder extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 if (bookTree.isEditing()) return;
                 deleteLastRecording();
+            }
+        });
+
+        centralPanel.getActionMap().put("startPlayback", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                if (bookTree.isEditing()) return;
+                playSelectedSentence();
             }
         });
 
@@ -408,11 +451,6 @@ public class AudiobookRecorder extends JFrame {
         int r = JOptionPane.showConfirmDialog(this, info, "New Book", JOptionPane.OK_CANCEL_OPTION);
         if (r != JOptionPane.OK_OPTION) return;
 
-        System.err.println("Name: " + info.getTitle());
-        System.err.println("Author: " + info.getAuthor());
-        System.err.println("Genre: " + info.getGenre());
-        System.err.println("Comment: " + info.getComment());
-        
         String name = info.getTitle();
 
         File bookdir = new File(Options.get("path.storage"), name);
@@ -507,6 +545,7 @@ public class AudiobookRecorder extends JFrame {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence s = (Sentence)o.getObject();
                         s.autoTrimSample();
+                        s.recognise();
                         sampleWaveform.setData(s.getAudioData());
                         sampleWaveform.setMarkers(s.getStartOffset(), s.getEndOffset());
                         startOffset.setValue(s.getStartOffset());
@@ -540,6 +579,30 @@ public class AudiobookRecorder extends JFrame {
                 menu.show(bookTree, e.getX(), e.getY());
             }
 
+        }
+    }
+
+    public void startReRecording() {
+
+        if (recording != null) return;
+        if (book == null) return;
+
+        toolBar.disableBook();
+        toolBar.disableSentence();
+
+        DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
+
+        if (selectedNode == null) {
+            return;
+        }
+
+        if (!(selectedNode instanceof Sentence)) {
+            return;
+        }
+
+        if (((Sentence)selectedNode).startRecording()) {
+            recording = (Sentence)selectedNode;
+            centralPanel.setFlash(true);
         }
     }
 
@@ -721,6 +784,10 @@ public class AudiobookRecorder extends JFrame {
         bookTree = new JTree(bookTreeModel);
         bookTree.setEditable(true);
         bookTree.setUI(new CustomTreeUI(mainScroll));
+
+
+        InputMap im = bookTree.getInputMap(JComponent.WHEN_FOCUSED);
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "startPlayback");
 
         roomNoise = new Sentence("room-noise", "Room Noise");
 
@@ -957,13 +1024,24 @@ public class AudiobookRecorder extends JFrame {
                 export.mkdirs();
             }
 
-            Encoder encoder = new Encoder();
+            Encoder encoder;
+
+            String ffloc = Options.get("path.ffmpeg");
+            if (ffloc != null && !ffloc.equals("")) {
+                encoder = new Encoder(new FFMPEGLocator() {
+                    public String getFFMPEGExecutablePath() {
+                        return Options.get("path.ffmpeg");
+                    }
+                });
+            } else {
+                encoder = new Encoder();
+            }
             EncodingAttributes attributes = new EncodingAttributes();
 
             AudioAttributes audioAttributes = new AudioAttributes();
             audioAttributes.setCodec("libmp3lame");
-            audioAttributes.setBitRate(new Integer(256000));
-            audioAttributes.setSamplingRate(new Integer(44100));
+            audioAttributes.setBitRate(Options.getInteger("audio.export.bitrate"));
+            audioAttributes.setSamplingRate(Options.getInteger("audio.export.samplerate"));
             audioAttributes.setChannels(new Integer(2));
             
             attributes.setFormat("mp3");
@@ -1061,7 +1139,7 @@ public class AudiobookRecorder extends JFrame {
                 try {
 
                     AudioFormat format = s.getAudioFormat();
-                    SourceDataLine play = AudioSystem.getSourceDataLine(format, Options.getPlaybackMixer());
+                    play = AudioSystem.getSourceDataLine(format, Options.getPlaybackMixer());
                     play.open(format);
                     play.start();
 
@@ -1097,6 +1175,7 @@ public class AudiobookRecorder extends JFrame {
                             play.write(data, 0, data.length);
                         }
                         s = (Sentence)next;
+                        bookTree.setSelectionPath(new TreePath(s.getPath()));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -1138,6 +1217,10 @@ public class AudiobookRecorder extends JFrame {
     }
 
     public void stopPlaying() {
+        if (play != null) {
+            play.close();
+            play = null;
+        }
         playing = null;
     }
 }
