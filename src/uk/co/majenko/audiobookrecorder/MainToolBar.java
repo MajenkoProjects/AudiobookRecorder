@@ -14,7 +14,6 @@ public class MainToolBar extends JToolBar {
     JButton recordRoomNoise;
     JButton playSentence;
     JButton playonSentence;
-    JButton recordSentence;
     JButton stopPlaying;
 
     AudiobookRecorder root;
@@ -91,10 +90,6 @@ public class MainToolBar extends JToolBar {
         });
         add(playonSentence);
 
-        recordSentence = new JButton(Icons.record);
-        recordSentence.setToolTipText("Re-record sentence");
-        add(recordSentence);
-
         stopPlaying = new JButton(Icons.stop);
         stopPlaying.setToolTipText("Stop playing / recording");
         stopPlaying.addActionListener(new ActionListener() {
@@ -120,13 +115,11 @@ public class MainToolBar extends JToolBar {
     public void enableSentence() {
         playSentence.setEnabled(true);
         playonSentence.setEnabled(true);
-        recordSentence.setEnabled(true);
     }
 
     public void disableSentence() {
         playSentence.setEnabled(false);
         playonSentence.setEnabled(false);
-        recordSentence.setEnabled(false);
     }
 
     public void enableStop() {

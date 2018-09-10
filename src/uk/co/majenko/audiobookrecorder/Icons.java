@@ -19,6 +19,11 @@ public class Icons {
 
     static public ImageIcon redo;
 
+    static public ImageIcon fft;
+    static public ImageIcon peak;
+
+    static public ImageIcon locked;
+
     static void loadIcons() {
         book = new ImageIcon(Icons.class.getResource("icons/book.png"));
         chapter = new ImageIcon(Icons.class.getResource("icons/chapter.png"));
@@ -35,6 +40,12 @@ public class Icons {
         save = new ImageIcon(Icons.class.getResource("icons/save.png"));
 
         redo = new ImageIcon(Icons.class.getResource("icons/redo.png"));
+
+        fft = new ImageIcon(Icons.class.getResource("icons/fft.png"));
+        peak = new ImageIcon(Icons.class.getResource("icons/peak.png"));
+
+        locked = new ImageIcon(Icons.class.getResource("icons/locked.png"));
+
 
     }
 }

@@ -23,7 +23,7 @@ public class Sentence extends DefaultMutableTreeNode {
 
     int sampleSize = -1;
 
-    boolean isSilence = false;
+    boolean locked;
 
     boolean recording;
 
@@ -119,16 +119,14 @@ public class Sentence extends DefaultMutableTreeNode {
         recording = false;
 
         if (!id.equals("room-noise")) {
-            autoTrimSample();
+            autoTrimSampleFFT();
             recognise();
         }
     }
 
-    public void autoTrimSample() {
+    public void autoTrimSampleFFT() {
         int[] samples = getAudioData();
         if (samples == null) return;
-
-        int noiseFloor = AudiobookRecorder.window.getNoiseFloor();
 
         int blocks = samples.length / 4096 + 1;
 
@@ -196,15 +194,18 @@ public class Sentence extends DefaultMutableTreeNode {
         }
 
         endOffset = end * 4096;
+
+        if (endOffset <= startOffset) endOffset = startOffset + 4096;
         if (endOffset < 0) endOffset = 0;
         if (endOffset >= samples.length) endOffset = samples.length;
 
-/*            
+    }
 
-        
+    public void autoTrimSamplePeak() {
+        int[] samples = getAudioData();
+        if (samples == null) return;
+        int noiseFloor = AudiobookRecorder.window.getNoiseFloor();
 
-
-        isSilence = false;
         // Find start
         for (int i = 0; i < samples.length; i++) {
             startOffset = i;
@@ -216,7 +217,6 @@ public class Sentence extends DefaultMutableTreeNode {
         }
 
         if (startOffset >= samples.length-1) { // Failed! Silence?
-            isSilence = true;
             startOffset = 0;
         }
 
@@ -228,12 +228,10 @@ public class Sentence extends DefaultMutableTreeNode {
                 break;
             }
         }
+        if (endOffset <= startOffset) endOffset = startOffset + 4096;
         if (endOffset <= 0) {
-            isSilence = true;
             endOffset = samples.length-1;
         }
-*/
-        
     }
 
     public String getId() {
@@ -506,5 +504,13 @@ public class Sentence extends DefaultMutableTreeNode {
 
         t.start();
 */
+    }
+
+    public void setLocked(boolean l) {
+        locked = l;
+    }
+
+    public boolean isLocked() {
+        return locked;
     }
 }

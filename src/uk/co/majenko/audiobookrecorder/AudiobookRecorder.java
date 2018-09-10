@@ -59,8 +59,20 @@ public class AudiobookRecorder extends JFrame {
     JSpinner startOffset;
     JSpinner endOffset;
     JSpinner postSentenceGap;
+    JCheckBox locked;
 
-    JButton reprocessAudio;
+    JButton reprocessAudioFFT;
+    JButton reprocessAudioPeak;
+
+    JButton startSlowDown;
+    JButton startSlowUp;
+    JButton startFastDown;
+    JButton startFastUp;
+
+    JButton endSlowDown;
+    JButton endSlowUp;
+    JButton endFastDown;
+    JButton endFastUp;
 
     Thread playingThread = null;
 
@@ -230,13 +242,27 @@ public class AudiobookRecorder extends JFrame {
     
         sampleControl.add(sampleWaveform, BorderLayout.CENTER);
 
-        reprocessAudio = new JButton(Icons.redo);
-        reprocessAudio.setToolTipText("Reprocess Audio");
-        reprocessAudio.addActionListener(new ActionListener() {
+        reprocessAudioFFT = new JButton(Icons.fft);
+        reprocessAudioFFT.setToolTipText("Autotrim Audio (FFT)");
+        reprocessAudioFFT.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedSentence != null) {
-                    selectedSentence.autoTrimSample();
-                    selectedSentence.recognise();
+                    selectedSentence.autoTrimSampleFFT();
+                    sampleWaveform.setData(selectedSentence.getAudioData());
+                    sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
+                    startOffset.setValue(selectedSentence.getStartOffset());
+                    endOffset.setValue(selectedSentence.getEndOffset());
+                    postSentenceGap.setValue(selectedSentence.getPostGap());
+                }
+            }
+        });
+
+        reprocessAudioPeak = new JButton(Icons.peak);
+        reprocessAudioPeak.setToolTipText("Autotrim Audio (Peak)");
+        reprocessAudioPeak.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (selectedSentence != null) {
+                    selectedSentence.autoTrimSamplePeak();
                     sampleWaveform.setData(selectedSentence.getAudioData());
                     sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
                     startOffset.setValue(selectedSentence.getStartOffset());
@@ -282,12 +308,22 @@ public class AudiobookRecorder extends JFrame {
             }
         });
 
-        JPanel controls = new JPanel();
-        controls.add(reprocessAudio);
 
-        controls.add(new JLabel("Start Offset:"));
 
-        JButton startFastDown = new JButton("<<");
+        JPanel controlsTop = new JPanel();
+        JPanel controlsBottom = new JPanel();
+        JToolBar controlsLeft = new JToolBar(JToolBar.VERTICAL);
+        JToolBar controlsRight = new JToolBar(JToolBar.VERTICAL);
+
+        controlsLeft.setFloatable(false);
+        controlsRight.setFloatable(false);
+
+        controlsLeft.add(reprocessAudioFFT);
+        controlsLeft.add(reprocessAudioPeak);
+
+        controlsBottom.add(new JLabel("Start Offset:"));
+
+        startFastDown = new JButton("<<");
         startFastDown.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 SteppedNumericSpinnerModel m = (SteppedNumericSpinnerModel)startOffset.getModel();
@@ -298,9 +334,9 @@ public class AudiobookRecorder extends JFrame {
                 startOffset.setValue(f);
             }
         });
-        controls.add(startFastDown);
+        controlsBottom.add(startFastDown);
 
-        JButton startSlowDown = new JButton("<");
+        startSlowDown = new JButton("<");
         startSlowDown.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 SteppedNumericSpinnerModel m = (SteppedNumericSpinnerModel)startOffset.getModel();
@@ -311,11 +347,11 @@ public class AudiobookRecorder extends JFrame {
                 startOffset.setValue(f);
             }
         });
-        controls.add(startSlowDown);
+        controlsBottom.add(startSlowDown);
 
-        controls.add(startOffset);
+        controlsBottom.add(startOffset);
 
-        JButton startSlowUp = new JButton(">");
+        startSlowUp = new JButton(">");
         startSlowUp.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 SteppedNumericSpinnerModel m = (SteppedNumericSpinnerModel)startOffset.getModel();
@@ -326,9 +362,9 @@ public class AudiobookRecorder extends JFrame {
                 startOffset.setValue(f);
             }
         });
-        controls.add(startSlowUp);
+        controlsBottom.add(startSlowUp);
 
-        JButton startFastUp = new JButton(">>");
+        startFastUp = new JButton(">>");
         startFastUp.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 SteppedNumericSpinnerModel m = (SteppedNumericSpinnerModel)startOffset.getModel();
@@ -339,12 +375,12 @@ public class AudiobookRecorder extends JFrame {
                 startOffset.setValue(f);
             }
         });
-        controls.add(startFastUp);
+        controlsBottom.add(startFastUp);
 
 
-        controls.add(new JLabel("End Offset:"));
+        controlsBottom.add(new JLabel("End Offset:"));
 
-        JButton endFastDown = new JButton("<<");
+        endFastDown = new JButton("<<");
         endFastDown.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 SteppedNumericSpinnerModel m = (SteppedNumericSpinnerModel)endOffset.getModel();
@@ -355,9 +391,9 @@ public class AudiobookRecorder extends JFrame {
                 endOffset.setValue(f);
             }
         });
-        controls.add(endFastDown);
+        controlsBottom.add(endFastDown);
 
-        JButton endSlowDown = new JButton("<");
+        endSlowDown = new JButton("<");
         endSlowDown.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 SteppedNumericSpinnerModel m = (SteppedNumericSpinnerModel)endOffset.getModel();
@@ -368,11 +404,11 @@ public class AudiobookRecorder extends JFrame {
                 endOffset.setValue(f);
             }
         });
-        controls.add(endSlowDown);
+        controlsBottom.add(endSlowDown);
 
-        controls.add(endOffset);
+        controlsBottom.add(endOffset);
 
-        JButton endSlowUp = new JButton(">");
+        endSlowUp = new JButton(">");
         endSlowUp.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 SteppedNumericSpinnerModel m = (SteppedNumericSpinnerModel)endOffset.getModel();
@@ -383,9 +419,9 @@ public class AudiobookRecorder extends JFrame {
                 endOffset.setValue(f);
             }
         });
-        controls.add(endSlowUp);
+        controlsBottom.add(endSlowUp);
 
-        JButton endFastUp = new JButton(">>");
+        endFastUp = new JButton(">>");
         endFastUp.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 SteppedNumericSpinnerModel m = (SteppedNumericSpinnerModel)endOffset.getModel();
@@ -396,13 +432,36 @@ public class AudiobookRecorder extends JFrame {
                 endOffset.setValue(f);
             }
         });
-        controls.add(endFastUp);
+        controlsBottom.add(endFastUp);
 
-        controls.add(new JLabel("Post gap:"));
-        controls.add(postSentenceGap);
-        controls.add(new JLabel("ms"));
+        locked = new JCheckBox("Sentence locked");
 
-        sampleControl.add(controls, BorderLayout.SOUTH);
+        locked.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JCheckBox c = (JCheckBox)e.getSource();
+                if (c.isSelected()) {
+                    if (selectedSentence != null) {
+                        selectedSentence.setLocked(true);
+                    }
+                } else {
+                    if (selectedSentence != null) {
+                        selectedSentence.setLocked(false);
+                    }
+                }
+                bookTreeModel.reload(selectedSentence);
+            }
+        });
+
+        controlsTop.add(locked);
+
+        controlsTop.add(new JLabel("Post gap:"));
+        controlsTop.add(postSentenceGap);
+        controlsTop.add(new JLabel("ms"));
+
+        sampleControl.add(controlsTop, BorderLayout.NORTH);
+        sampleControl.add(controlsBottom, BorderLayout.SOUTH);
+        sampleControl.add(controlsLeft, BorderLayout.WEST);
+        sampleControl.add(controlsRight, BorderLayout.EAST);
 
         centralPanel.add(sampleControl, BorderLayout.SOUTH);
 
@@ -537,46 +596,20 @@ public class AudiobookRecorder extends JFrame {
                 JPopupMenu menu = new JPopupMenu();
                 JMenuObject ins = new JMenuObject("Insert sentence above", s);
                 JMenuObject del = new JMenuObject("Delete sentence", s);
-                JMenuObject edit = new JMenuObject("Edit text", s);
-                JMenuObject process = new JMenuObject("Reprocess audio", s);
 
                 del.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence s = (Sentence)o.getObject();
-                        s.deleteFiles();
-                        Chapter c = (Chapter)s.getParent();
-                        bookTreeModel.removeNodeFromParent(s);
-                    }
-                });
-
-                edit.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        JMenuObject o = (JMenuObject)e.getSource();
-                        Sentence s = (Sentence)o.getObject();
-                        s.editText();
-                        Chapter c = (Chapter)s.getParent();
-                        bookTreeModel.reload(s);
-                    }
-                });
-
-                process.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        JMenuObject o = (JMenuObject)e.getSource();
-                        Sentence s = (Sentence)o.getObject();
-                        s.autoTrimSample();
-                        s.recognise();
-                        sampleWaveform.setData(s.getAudioData());
-                        sampleWaveform.setMarkers(s.getStartOffset(), s.getEndOffset());
-                        startOffset.setValue(s.getStartOffset());
-                        endOffset.setValue(s.getEndOffset());
-                        postSentenceGap.setValue(s.getPostGap());
+                        if (!s.isLocked()) {
+                            s.deleteFiles();
+                            Chapter c = (Chapter)s.getParent();
+                            bookTreeModel.removeNodeFromParent(s);
+                        }
                     }
                 });
 
                 menu.add(del);
-                menu.add(edit);
-                menu.add(process);
                 menu.show(bookTree, e.getX(), e.getY());
             } else if (node instanceof Chapter) {
                 Chapter c = (Chapter)node;
@@ -620,7 +653,11 @@ public class AudiobookRecorder extends JFrame {
             return;
         }
 
-        if (((Sentence)selectedNode).startRecording()) {
+        Sentence s = (Sentence)selectedNode;
+
+        if (s.isLocked()) return;
+
+        if (s.startRecording()) {
             recording = (Sentence)selectedNode;
             centralPanel.setFlash(true);
         }
@@ -711,6 +748,8 @@ public class AudiobookRecorder extends JFrame {
         Sentence s = c.getLastSentence();
         if (s == null) return;
 
+        if (s.isLocked()) return;
+
         s.deleteFiles();
         bookTreeModel.removeNodeFromParent(s);
         s = c.getLastSentence();
@@ -768,6 +807,7 @@ public class AudiobookRecorder extends JFrame {
                 prefs.setProperty(String.format("%s.sentence.%08d.post-gap", keybase, i), Integer.toString(snt.getPostGap()));
                 prefs.setProperty(String.format("%s.sentence.%08d.start-offset", keybase, i), Integer.toString(snt.getStartOffset()));
                 prefs.setProperty(String.format("%s.sentence.%08d.end-offset", keybase, i), Integer.toString(snt.getEndOffset()));
+                prefs.setProperty(String.format("%s.sentence.%08d.locked", keybase, i), snt.isLocked() ? "true" : "false");
                 i++;
             }
         }
@@ -805,6 +845,8 @@ public class AudiobookRecorder extends JFrame {
         bookTree.setEditable(true);
         bookTree.setUI(new CustomTreeUI(mainScroll));
 
+        bookTree.setCellRenderer(new BookTreeRenderer());
+
 
         InputMap im = bookTree.getInputMap(JComponent.WHEN_FOCUSED);
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "startPlayback");
@@ -822,6 +864,23 @@ public class AudiobookRecorder extends JFrame {
                     startOffset.setValue(s.getStartOffset());
                     endOffset.setValue(s.getEndOffset());
                     postSentenceGap.setValue(s.getPostGap());
+                    locked.setSelected(s.isLocked());
+
+                    postSentenceGap.setEnabled(!s.isLocked());
+                    startOffset.setEnabled(!s.isLocked());
+                    endOffset.setEnabled(!s.isLocked());
+                    reprocessAudioFFT.setEnabled(!s.isLocked());
+                    reprocessAudioPeak.setEnabled(!s.isLocked());
+
+                    startSlowDown.setEnabled(!s.isLocked());
+                    startSlowUp.setEnabled(!s.isLocked());
+                    startFastDown.setEnabled(!s.isLocked());
+                    startFastUp.setEnabled(!s.isLocked());
+
+                    endSlowDown.setEnabled(!s.isLocked());
+                    endSlowUp.setEnabled(!s.isLocked());
+                    endFastDown.setEnabled(!s.isLocked());
+                    endFastUp.setEnabled(!s.isLocked());
 
                     int samples = s.getSampleSize();
 
@@ -843,6 +902,7 @@ public class AudiobookRecorder extends JFrame {
                     endOffset.setValue(0);
                     toolBar.disableStop();
                     postSentenceGap.setValue(0);
+                    locked.setSelected(false);
                 }
             }
         });
@@ -880,6 +940,7 @@ public class AudiobookRecorder extends JFrame {
             s.setPostGap(gap);
             s.setStartOffset(s2i(prefs.getProperty(String.format("chapter.open.sentence.%08d.start-offset", i))));
             s.setEndOffset(s2i(prefs.getProperty(String.format("chapter.open.sentence.%08d.end-offset", i))));
+            s.setLocked(s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.locked", i))));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
@@ -901,6 +962,7 @@ public class AudiobookRecorder extends JFrame {
                 s.setPostGap(gap);
                 s.setStartOffset(s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.start-offset", cno, i))));
                 s.setEndOffset(s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.end-offset", cno, i))));
+                s.setLocked(s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.locked", cno, i))));
                 bookTreeModel.insertNodeInto(s, c, c.getChildCount());
             }
         }
@@ -919,6 +981,7 @@ public class AudiobookRecorder extends JFrame {
             s.setPostGap(gap);
             s.setStartOffset(s2i(prefs.getProperty(String.format("chapter.close.sentence.%08d.start-offset", i))));
             s.setEndOffset(s2i(prefs.getProperty(String.format("chapter.close.sentence.%08d.end-offset", i))));
+            s.setLocked(s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.locked", i))));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
@@ -954,6 +1017,15 @@ public class AudiobookRecorder extends JFrame {
         }
 
         
+    }
+
+    boolean s2b(String s) {
+        if (s == null) return false;
+        if (s.equals("true")) return true;
+        if (s.equals("t")) return true;
+        if (s.equals("yes")) return true;
+        if (s.equals("y")) return true;
+        return false;
     }
 
     int s2i(String s) {
