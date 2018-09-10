@@ -189,14 +189,7 @@ public class AudiobookRecorder extends JFrame {
 
         window = this;
 
-
-        Icons.loadIcons();
-
-//        initSphinx();
-
-
         try {
-//            String clsname = "com.jtattoo.plaf.aluminium.AluminiumLookAndFeel";
             String clsname = "com.jtattoo.plaf.hifi.HiFiLookAndFeel";
             UIManager.setLookAndFeel(clsname);
 
