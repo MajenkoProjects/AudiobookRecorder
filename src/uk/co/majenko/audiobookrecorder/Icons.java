@@ -17,6 +17,8 @@ public class Icons {
     static public ImageIcon recordRoom;
     static public ImageIcon save;
 
+    static public ImageIcon redo;
+
     static void loadIcons() {
         book = new ImageIcon(Icons.class.getResource("icons/book.png"));
         chapter = new ImageIcon(Icons.class.getResource("icons/chapter.png"));
@@ -31,6 +33,8 @@ public class Icons {
         newChapter = new ImageIcon(Icons.class.getResource("icons/new-chapter.png"));
         recordRoom = new ImageIcon(Icons.class.getResource("icons/record-room.png"));
         save = new ImageIcon(Icons.class.getResource("icons/save.png"));
+
+        redo = new ImageIcon(Icons.class.getResource("icons/redo.png"));
 
     }
 }

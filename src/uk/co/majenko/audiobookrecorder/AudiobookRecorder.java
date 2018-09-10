@@ -60,6 +60,8 @@ public class AudiobookRecorder extends JFrame {
     JSpinner endOffset;
     JSpinner postSentenceGap;
 
+    JButton reprocessAudio;
+
     Thread playingThread = null;
 
     Random rng = new Random();
@@ -228,6 +230,22 @@ public class AudiobookRecorder extends JFrame {
     
         sampleControl.add(sampleWaveform, BorderLayout.CENTER);
 
+        reprocessAudio = new JButton(Icons.redo);
+        reprocessAudio.setToolTipText("Reprocess Audio");
+        reprocessAudio.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (selectedSentence != null) {
+                    selectedSentence.autoTrimSample();
+                    selectedSentence.recognise();
+                    sampleWaveform.setData(selectedSentence.getAudioData());
+                    sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
+                    startOffset.setValue(selectedSentence.getStartOffset());
+                    endOffset.setValue(selectedSentence.getEndOffset());
+                    postSentenceGap.setValue(selectedSentence.getPostGap());
+                }
+            }
+        });
+
         startOffset = new JSpinner(new SteppedNumericSpinnerModel(0, 0, 1, 0));
         startOffset.setPreferredSize(new Dimension(100, 20));
         endOffset = new JSpinner(new SteppedNumericSpinnerModel(0, 0, 1, 0));
@@ -265,6 +283,8 @@ public class AudiobookRecorder extends JFrame {
         });
 
         JPanel controls = new JPanel();
+        controls.add(reprocessAudio);
+
         controls.add(new JLabel("Start Offset:"));
 
         JButton startFastDown = new JButton("<<");
