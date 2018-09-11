@@ -40,6 +40,25 @@ to start playing from the currently selected phrase on to the end of the chapter
 
 Exporting the project creates MP3 files for each chapter using the settings selected in Options.
 
+Extra functions
+---------------
+
+The recordings are initially given a unique ID. You can
+edit the text of this ID to identify the recordings. You
+may, for instance, change it to have the same text as the
+audio contains.  
+
+To help with this CMU Sphinx (US EN dictionary) is bundled
+with the system and can be used to try and convert the 
+audio into text.  Right clicking on a recording brings
+up a menu which includes the option to try and convert
+the audio into text.  The detected text is then used to
+replace the current recording ID / text.
+
+It's far from perfect (especially for a British English
+speaker), but it can help you to navigate your way around
+a chapter.
+
 File layout
 -----------
 
