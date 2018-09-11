@@ -100,11 +100,6 @@ class FFMPEGExecutor {
 			cmd[i + 1] = (String) args.get(i);
 		}
 
-for (int i = 0; i < argsSize+1; i++) {
-    System.err.print(cmd[i] + " ");
-}
-System.err.println();
-
 		Runtime runtime = Runtime.getRuntime();
 		ffmpeg = runtime.exec(cmd);
 		ffmpegKiller = new ProcessKiller(ffmpeg);

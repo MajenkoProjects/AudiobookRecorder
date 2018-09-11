@@ -1172,13 +1172,11 @@ public class AudiobookRecorder extends JFrame {
                 int fullLength = 0;
 
                 Chapter c = o.nextElement();
-
+                if (c.getChildCount() == 0) continue;
                 String name = c.getName();
 
                 File exportFile = new File(export, name + ".wax");
                 File wavFile = new File(export, name + ".wav");
-                File mp3File = new File(export, name + "-untagged.mp3");
-                File taggedFile = new File(export, name + ".mp3");
 
                 FileOutputStream fos = new FileOutputStream(exportFile);
 
@@ -1205,11 +1203,29 @@ public class AudiobookRecorder extends JFrame {
 
                 FileInputStream fis = new FileInputStream(exportFile);
                 AudioInputStream ais = new AudioInputStream(fis, format, fullLength);
-                AudioSystem.write(ais, AudioFileFormat.Type.WAVE, wavFile);
+                fos = new FileOutputStream(wavFile);
+                AudioSystem.write(ais, AudioFileFormat.Type.WAVE, fos);
+                fos.flush();
+                fos.close();
                 fis.close();
                 exportFile.delete();
+            }
 
+
+
+            for (Enumeration<Chapter> o = book.children(); o.hasMoreElements();) {
+
+                Chapter c = o.nextElement();
+                if (c.getChildCount() == 0) continue;
+                String name = c.getName();
+
+                File wavFile = new File(export, name + ".wav");
+                File mp3File = new File(export, name + "-untagged.mp3");
+                File taggedFile = new File(export, name + ".mp3");
+
+                System.err.println(attributes);
                 encoder.encode(wavFile, mp3File, attributes);
+
                 Mp3File id3 = new Mp3File(mp3File);
 
                 ID3v2 tags = new ID3v24Tag();
