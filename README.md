@@ -14,7 +14,7 @@ Step one is to open Tools -> Options and set the system up in the way you need. 
 want to set the audio settings - select the device or sound system you want to record from and
 play back to.  For Linux you probably want to select "the ear-candy mixer" for PulseAudio.
 
-Create yourself a new book either using File -> New Book or by pressing the New Book icon in  the toolbar.
+Create yourself a new book either using File -> New Book or by pressing the New Book icon in  the toolbar (![toolbar icon](https://raw.githubusercontent.com/MajenkoProjects/AudiobookRecorder/master/resources/uk/co/majenko/audiobookrecorder/icons/new.png)).
 
 Your first action with a new book should be to record the "room noise" (![toolbar icon](https://github.com/MajenkoProjects/AudiobookRecorder/raw/master/resources/uk/co/majenko/audiobookrecorder/icons/record-room.png)).  This is 5 seconds of silence recorded
 from your microphone.  It is used to both calculate the "noise floor" for audio detection (see below) and also
@@ -35,8 +35,8 @@ where the audio amplitude rises above the backround noise).
 The phrases also have a "post gap" associated with them.  This is the amount of room noise (in milliseconds) to place between
 the current phrase and the next phrase when playing or exporting.
 
-Speaking of playing - you have the option (in the toolbar) to either play the currently selected phrase in isolation or
-to start playing from the currently selected phrase on to the end of the chapter.  This is good for testing your post gaps.
+Speaking of playing - you have the option (in the toolbar) to either play the currently selected phrase in isolation (![toolbar icon](https://github.com/MajenkoProjects/AudiobookRecorder/raw/master/resources/uk/co/majenko/audiobookrecorder/icons/play.png)) or
+to start playing from the currently selected phrase on to the end of the chapter(![toolbar icon](https://github.com/MajenkoProjects/AudiobookRecorder/raw/master/resources/uk/co/majenko/audiobookrecorder/icons/playon.png)).  This is good for testing your post gaps.
 
 Exporting the project creates MP3 files for each chapter using the settings selected in Options.
 
