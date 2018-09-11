@@ -178,11 +178,6 @@ public class AudiobookRecorder extends JFrame {
 
         setPreferredSize(new Dimension(700, 500));
         setLocationRelativeTo(null);
-
-        pack();
-
-        setVisible(true);
-
     }
 
     public AudiobookRecorder() {
@@ -512,6 +507,9 @@ public class AudiobookRecorder extends JFrame {
         centralPanel.add(mainScroll, BorderLayout.CENTER);
 
         setTitle("AudioBook Recorder");
+
+        pack();
+        setVisible(true);
     }
 
     public static void main(String args[]) {

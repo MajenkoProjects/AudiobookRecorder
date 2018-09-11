@@ -344,10 +344,18 @@ public class Options extends JDialog {
         KVPair[] recordingMixers = getRecordingMixerList();
         KVPair[] playbackMixers = getPlaybackMixerList();
 
-        defaultPrefs.put("audio.recording.device", recordingMixers[0].key);
+        if (recordingMixers.length > 0) {
+            defaultPrefs.put("audio.recording.device", recordingMixers[0].key);
+        } else {
+            defaultPrefs.put("audio.recording.device", "");
+        }
         defaultPrefs.put("audio.recording.channels", "2");
         defaultPrefs.put("audio.recording.samplerate", "48000");
-        defaultPrefs.put("audio.playback.device", playbackMixers[0].key);
+        if (playbackMixers.length > 0) {
+            defaultPrefs.put("audio.playback.device", playbackMixers[0].key);
+        } else {
+            defaultPrefs.put("audio.playback.device", "");
+        }
 
         defaultPrefs.put("catenation.pre-chapter", "2000");
         defaultPrefs.put("catenation.post-chapter", "2000");
