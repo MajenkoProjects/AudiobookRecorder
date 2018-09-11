@@ -277,7 +277,7 @@ public class Options extends JDialog {
             }
 
             if (supported) {
-                KVPair p = new KVPair(i.getName(), i.getDescription());
+                KVPair p = new KVPair(i.getName(), i.getName()); //i.getDescription());
                 list.add(p);
             }
         }
@@ -316,7 +316,7 @@ public class Options extends JDialog {
 
 
             if (supported) {
-                KVPair p = new KVPair(i.getName(), i.getDescription());
+                KVPair p = new KVPair(i.getName(), i.getName()); //i.getDescription());
                 list.add(p);
             }
         }

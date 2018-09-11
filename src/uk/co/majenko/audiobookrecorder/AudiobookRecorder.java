@@ -512,6 +512,18 @@ public class AudiobookRecorder extends JFrame {
 
         pack();
         setVisible(true);
+
+        String lastBook = Options.get("path.last-book");
+
+        if (lastBook != null && !lastBook.equals("")) {
+            File f = new File(Options.get("path.storage"), lastBook);
+            if (f.exists() && f.isDirectory()) {
+                File x = new File(f, "audiobook.abk");
+                if (x.exists()) {
+                    loadBookStructure(x);
+                }
+            }
+        }
     }
 
     public static void main(String args[]) {
@@ -1037,6 +1049,9 @@ public class AudiobookRecorder extends JFrame {
             }
                 
             loadBookStructure(f);
+
+            Options.set("path.last-book", book.getName());
+            Options.savePreferences();
             
         }
 
