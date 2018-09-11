@@ -437,8 +437,7 @@ public class Sentence extends DefaultMutableTreeNode {
 
     public void recognise() {
 
-        return;
-/*
+        if (!Options.getBoolean("process.sphinx")) return;
 
         Thread t = new Thread(new Runnable() {
 
@@ -503,7 +502,6 @@ public class Sentence extends DefaultMutableTreeNode {
         });
 
         t.start();
-*/
     }
 
     public void setLocked(boolean l) {

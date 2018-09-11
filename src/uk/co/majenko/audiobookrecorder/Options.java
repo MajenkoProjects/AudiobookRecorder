@@ -24,6 +24,7 @@ public class Options extends JDialog {
     JTextField ffmpegLocation;
     JComboBox<KVPair> bitRate;
     JComboBox<KVPair> exportRate;
+    JCheckBox enableParsing;
 
 
     static HashMap<String, String> defaultPrefs;
@@ -148,6 +149,16 @@ public class Options extends JDialog {
 
     }
 
+    JCheckBox addCheckBox(String label, boolean state) {
+        constraint.gridx = 1;
+        JCheckBox cb = new JCheckBox(label);
+        cb.setSelected(state);
+        add(cb, constraint);
+        constraint.gridy++;
+        return cb;
+    }
+        
+
     public Options(JFrame parent) {
         loadPreferences(); // Just in case. It should do nothing.
 
@@ -164,13 +175,13 @@ public class Options extends JDialog {
 
         addSeparator();
 
-        mixerList = addDropdown("Recording device:", getMixerList(), get("audio.recording.device"));
+        mixerList = addDropdown("Recording device:", getRecordingMixerList(), get("audio.recording.device"));
         channelList = addDropdown("Channels:", getChannelCountList(), get("audio.recording.channels"));
         rateList = addDropdown("Sample rate:", getSampleRateList(), get("audio.recording.samplerate"));
 
         addSeparator();
 
-        playbackList = addDropdown("Playback device:", getMixerList(), get("audio.playback.device"));
+        playbackList = addDropdown("Playback device:", getPlaybackMixerList(), get("audio.playback.device"));
         addSeparator();
         storageFolder = addFilePath("Storage folder:", get("path.storage"));
 
@@ -189,6 +200,9 @@ public class Options extends JDialog {
 
         addSeparator();
 
+        enableParsing = addCheckBox("Enable sphinx speech-to-text (**SLOW**)", getBoolean("process.sphinx"));
+
+        addSeparator();
 
 
         setTitle("Options");
@@ -232,13 +246,78 @@ public class Options extends JDialog {
         setVisible(true);
     }
 
-    static KVPair[] getMixerList() {
+    static KVPair[] getRecordingMixerList() {
         TreeSet<KVPair> list = new TreeSet<KVPair>();
+
+        AudioFormat stereoFormat = new AudioFormat(44100f, 16, 2, true, false);
+        AudioFormat monoFormat = new AudioFormat(44100f, 16, 2, true, false);
+
+        DataLine.Info stereoDIF = new DataLine.Info(TargetDataLine.class, stereoFormat);
+        DataLine.Info monoDIF = new DataLine.Info(TargetDataLine.class, monoFormat);
 
         Mixer.Info[] info = AudioSystem.getMixerInfo();
         for (Mixer.Info i : info) {
-            KVPair p = new KVPair(i.getName(), i.getDescription());
-            list.add(p);
+            Mixer m = AudioSystem.getMixer(i);
+
+            boolean supported = false;
+
+            Line l;
+
+            try {
+                l = m.getLine(stereoDIF);
+                supported = true;
+            } catch (Exception e) {
+            }
+
+            try {
+                l = m.getLine(monoDIF);
+                supported = true;
+            } catch (Exception e) {
+            }
+
+            if (supported) {
+                KVPair p = new KVPair(i.getName(), i.getDescription());
+                list.add(p);
+            }
+        }
+
+        return list.toArray(new KVPair[0]);
+    }
+
+    static KVPair[] getPlaybackMixerList() {
+        TreeSet<KVPair> list = new TreeSet<KVPair>();
+
+        AudioFormat stereoFormat = new AudioFormat(44100f, 16, 2, true, false);
+        AudioFormat monoFormat = new AudioFormat(44100f, 16, 2, true, false);
+
+        DataLine.Info stereoDIF = new DataLine.Info(SourceDataLine.class, stereoFormat);
+        DataLine.Info monoDIF = new DataLine.Info(SourceDataLine.class, monoFormat);
+
+        Mixer.Info[] info = AudioSystem.getMixerInfo();
+        for (Mixer.Info i : info) {
+            Mixer m = AudioSystem.getMixer(i);
+
+            boolean supported = false;
+
+            Line l;
+
+            try { 
+                l = m.getLine(stereoDIF);
+                supported = true; 
+            } catch (Exception e) {
+            }
+
+            try { 
+                l = m.getLine(monoDIF);
+                supported = true; 
+            } catch (Exception e) {
+            }
+
+
+            if (supported) {
+                KVPair p = new KVPair(i.getName(), i.getDescription());
+                list.add(p);
+            }
         }
 
         return list.toArray(new KVPair[0]);
@@ -262,12 +341,13 @@ public class Options extends JDialog {
 
         defaultPrefs = new HashMap<String, String>();
 
-        KVPair[] mixers = getMixerList();
+        KVPair[] recordingMixers = getRecordingMixerList();
+        KVPair[] playbackMixers = getPlaybackMixerList();
 
-        defaultPrefs.put("audio.recording.device", mixers[0].key);
+        defaultPrefs.put("audio.recording.device", recordingMixers[0].key);
         defaultPrefs.put("audio.recording.channels", "2");
         defaultPrefs.put("audio.recording.samplerate", "48000");
-        defaultPrefs.put("audio.playback.device", mixers[0].key);
+        defaultPrefs.put("audio.playback.device", playbackMixers[0].key);
 
         defaultPrefs.put("catenation.pre-chapter", "2000");
         defaultPrefs.put("catenation.post-chapter", "2000");
@@ -278,6 +358,8 @@ public class Options extends JDialog {
 
         defaultPrefs.put("audio.export.bitrate", "256000");
         defaultPrefs.put("audio.export.samplerate", "44100");
+
+        defaultPrefs.put("process.sphinx", "false");
 
         if (prefs == null) {
             prefs = Preferences.userNodeForPackage(AudiobookRecorder.class);
@@ -310,6 +392,16 @@ public class Options extends JDialog {
         return 0;
     }
 
+    public static boolean getBoolean(String key) {
+        String v = get(key);
+        if (v == null) return false;
+        if (v.equals("true")) return true;
+        if (v.equals("t")) return true;
+        if (v.equals("yes")) return true;
+        if (v.equals("y")) return true;
+        return false;
+    }
+
     public static void set(String key, String value) {
         if (prefs == null) return;
         prefs.put(key, value);
@@ -327,6 +419,7 @@ public class Options extends JDialog {
         set("catenation.post-sentence", "" + postSentenceGap.getValue());
         set("audio.export.bitrate", ((KVPair)bitRate.getSelectedItem()).key);
         set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
+        set("process.sphinx", enableParsing.isSelected() ? "true" : "false");
 
         savePreferences();
     }
