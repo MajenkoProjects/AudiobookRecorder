@@ -508,6 +508,8 @@ public class AudiobookRecorder extends JFrame {
 
         setTitle("AudioBook Recorder");
 
+        setIconImage(Icons.appIcon.getImage());
+
         pack();
         setVisible(true);
     }
@@ -585,8 +587,22 @@ public class AudiobookRecorder extends JFrame {
                 bookTree.setSelectionPath(new TreePath(s.getPath()));
 
                 JPopupMenu menu = new JPopupMenu();
+                JMenuObject rec = new JMenuObject("Recognise text from audio", s);
                 JMenuObject ins = new JMenuObject("Insert sentence above", s);
                 JMenuObject del = new JMenuObject("Delete sentence", s);
+
+
+                ins.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Sentence s = (Sentence)o.getObject();
+                        Chapter c = (Chapter)s.getParent();
+                        Sentence newSentence = new Sentence();
+                        int where = bookTreeModel.getIndexOfChild(c, s);
+                        bookTreeModel.insertNodeInto(newSentence, c, where);
+                    }
+                        
+                });
 
                 del.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
@@ -600,6 +616,23 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
 
+                rec.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Sentence s = (Sentence)o.getObject();
+                        if (!s.isLocked()) {
+                            s.setText("[recognising...]");
+                            bookTreeModel.reload(s);
+                            s.recognise();
+                        }
+                    }
+                });
+
+
+
+                menu.add(rec);
+                menu.addSeparator();
+                menu.add(ins);
                 menu.add(del);
                 menu.show(bookTree, e.getX(), e.getY());
             } else if (node instanceof Chapter) {

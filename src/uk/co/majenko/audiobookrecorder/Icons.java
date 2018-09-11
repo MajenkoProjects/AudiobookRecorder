@@ -19,4 +19,6 @@ public class Icons {
     static public ImageIcon fft         = new ImageIcon(Icons.class.getResource("icons/fft.png"));
     static public ImageIcon peak        = new ImageIcon(Icons.class.getResource("icons/peak.png"));
     static public ImageIcon locked      = new ImageIcon(Icons.class.getResource("icons/locked.png"));
+    static public ImageIcon appIcon     = new ImageIcon(Icons.class.getResource("icons/appIcon.png"));
+
 }

@@ -200,7 +200,7 @@ public class Options extends JDialog {
 
         addSeparator();
 
-        enableParsing = addCheckBox("Enable sphinx speech-to-text (**SLOW**)", getBoolean("process.sphinx"));
+        enableParsing = addCheckBox("Enable automatic sphinx speech-to-text (**SLOW**)", getBoolean("process.sphinx"));
 
         addSeparator();
 
@@ -243,6 +243,7 @@ public class Options extends JDialog {
 
         setLocationRelativeTo(parent);
 
+        setIconImage(Icons.appIcon.getImage());
         setVisible(true);
     }
 

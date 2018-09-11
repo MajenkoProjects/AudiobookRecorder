@@ -120,7 +120,9 @@ public class Sentence extends DefaultMutableTreeNode {
 
         if (!id.equals("room-noise")) {
             autoTrimSampleFFT();
-            recognise();
+            if (Options.getBoolean("process.sphinx")) {
+                recognise();
+            }
         }
     }
 
@@ -437,7 +439,6 @@ public class Sentence extends DefaultMutableTreeNode {
 
     public void recognise() {
 
-        if (!Options.getBoolean("process.sphinx")) return;
 
         Thread t = new Thread(new Runnable() {
 
