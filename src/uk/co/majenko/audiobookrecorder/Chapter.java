@@ -37,13 +37,6 @@ public class Chapter extends DefaultMutableTreeNode {
         return null;
     }
 
-    public void renameChapter() {
-        String n = JOptionPane.showInputDialog(null, "Rename Chapter", name);
-        if (n != null) {
-            name = n;
-        }
-    }
-
     public String toString() {
         return name;
     }

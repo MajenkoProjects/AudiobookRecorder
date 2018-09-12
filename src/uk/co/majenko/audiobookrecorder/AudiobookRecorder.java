@@ -559,6 +559,9 @@ public class AudiobookRecorder extends JFrame {
         prefs.setProperty("book.author", info.getAuthor());
         prefs.setProperty("book.genre", info.getGenre());
         prefs.setProperty("book.comment", info.getComment());
+        prefs.setProperty("chapter.audition.name", "Audition");
+        prefs.setProperty("chapter.audition.pre-gap", Options.get("catenation.pre-chapter"));
+        prefs.setProperty("chapter.audition.post-gap", Options.get("catenation.post-chapter"));
         prefs.setProperty("chapter.open.name", "Opening Credits");
         prefs.setProperty("chapter.open.pre-gap", Options.get("catenation.pre-chapter"));
         prefs.setProperty("chapter.open.post-gap", Options.get("catenation.post-chapter"));
@@ -662,18 +665,22 @@ public class AudiobookRecorder extends JFrame {
                 bookTree.setSelectionPath(new TreePath(c.getPath()));
 
                 JPopupMenu menu = new JPopupMenu();
-                JMenuObject ren = new JMenuObject("Rename chapter", c);
+                JMenuObject peak = new JMenuObject("Auto-trim all (Peak)", c);
 
-                ren.addActionListener(new ActionListener() {
+                peak.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter c = (Chapter)o.getObject();
-                        c.renameChapter();
-                        bookTreeModel.reload(c);
+                        for (Enumeration<Sentence> s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = s.nextElement();
+                            if (!snt.isLocked()) {
+                                snt.autoTrimSamplePeak();
+                            }
+                        }
                     }
                 });
 
-                menu.add(ren);
+                menu.add(peak);
                 menu.show(bookTree, e.getX(), e.getY());
             }
 
@@ -1018,7 +1025,25 @@ public class AudiobookRecorder extends JFrame {
         mainScroll.setViewportView(bookTree);
 
 
-        Chapter c = new Chapter("open", prefs.getProperty("chapter.open.name"));
+        Chapter c = new Chapter("audition", prefs.getProperty("chapter.audition.name"));
+        c.setPostGap(s2i(prefs.getProperty("chapter.audition.post-gap")));
+        c.setPreGap(s2i(prefs.getProperty("chapter.audition.pre-gap")));
+        bookTreeModel.insertNodeInto(c, book, 0);
+        
+        for (int i = 0; i < 100000000; i++) {
+            String id = prefs.getProperty(String.format("chapter.audition.sentence.%08d.id", i));
+            String text = prefs.getProperty(String.format("chapter.audition.sentence.%08d.text", i));
+            int gap = s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.post-gap", i)));
+            if (id == null) break;
+            Sentence s = new Sentence(id, text);
+            s.setPostGap(gap);
+            s.setStartOffset(s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.start-offset", i))));
+            s.setEndOffset(s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.end-offset", i))));
+            s.setLocked(s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.locked", i))));
+            bookTreeModel.insertNodeInto(s, c, c.getChildCount());
+        }
+
+        c = new Chapter("open", prefs.getProperty("chapter.open.name"));
         c.setPostGap(s2i(prefs.getProperty("chapter.open.post-gap")));
         c.setPreGap(s2i(prefs.getProperty("chapter.open.pre-gap")));
         bookTreeModel.insertNodeInto(c, book, 0);
@@ -1035,6 +1060,8 @@ public class AudiobookRecorder extends JFrame {
             s.setLocked(s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.locked", i))));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
+
+
 
         for (int cno = 1; cno < 10000; cno++) {
             String cname = prefs.getProperty(String.format("chapter.%04d.name", cno));
