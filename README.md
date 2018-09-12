@@ -1,3 +1,5 @@
+![Application Icon](https://github.com/MajenkoProjects/AudiobookRecorder/raw/master/resources/uk/co/majenko/audiobookrecorder/icons/appIcon.png)
+
 Audiobook Recorder
 ==================
 
