@@ -464,6 +464,9 @@ public class AudiobookRecorder extends JFrame {
         centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("R"), "startRecord");
         centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released R"), "stopRecord");
 
+        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("T"), "startRecordNewPara");
+        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released T"), "stopRecord");
+
         centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released D"), "deleteLast");
 
         centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("SPACE"), "startPlayback");
@@ -475,6 +478,12 @@ public class AudiobookRecorder extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 if (bookTree.isEditing()) return;
                 startRecording();
+            }
+        });
+        centralPanel.getActionMap().put("startRecordNewPara", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                if (bookTree.isEditing()) return;
+                startRecordingNewParagraph();
             }
         });
         centralPanel.getActionMap().put("startRerecord", new AbstractAction() {
@@ -695,6 +704,53 @@ public class AudiobookRecorder extends JFrame {
 
         if (s.startRecording()) {
             recording = (Sentence)selectedNode;
+            centralPanel.setFlash(true);
+        }
+    }
+
+    public void startRecordingNewParagraph() {
+
+        if (recording != null) return;
+        if (book == null) return;
+
+        toolBar.disableBook();
+        toolBar.disableSentence();
+
+        DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
+
+        if (selectedNode == null) {
+            selectedNode = book.getLastChapter();
+            bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
+        }
+
+        if (selectedNode instanceof Book) {
+            selectedNode = book.getLastChapter();
+            bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
+        }
+
+        if (selectedNode instanceof Sentence) {
+            selectedNode = (DefaultMutableTreeNode)selectedNode.getParent();
+            bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
+        }
+
+        Chapter c = (Chapter)selectedNode;
+
+        DefaultMutableTreeNode lastLeaf = c.getLastLeaf();
+
+        if (lastLeaf instanceof Sentence) {
+            Sentence lastSentence = (Sentence)lastLeaf;
+            lastSentence.setPostGap(Options.getInteger("catenation.post-paragraph"));
+        }
+
+        Sentence s = new Sentence();
+        bookTreeModel.insertNodeInto(s, c, c.getChildCount());
+
+        bookTree.expandPath(new TreePath(c.getPath()));
+        bookTree.setSelectionPath(new TreePath(s.getPath()));
+        bookTree.scrollPathToVisible(new TreePath(s.getPath()));
+
+        if (s.startRecording()) {
+            recording = s;
             centralPanel.setFlash(true);
         }
     }
@@ -1248,6 +1304,7 @@ public class AudiobookRecorder extends JFrame {
 
                 tags.setTrack(Integer.toString(s2i(c.getId()) - 0));
                 tags.setTitle(c.getName());
+                tags.setAlbum(book.getName());
                 tags.setArtist(book.getAuthor());
 
 //                ID3v2TextFrameData g = new ID3v2TextFrameData(false, new EncodedText(book.getGenre()));
@@ -1325,7 +1382,6 @@ public class AudiobookRecorder extends JFrame {
                         bookTree.setSelectionPath(new TreePath(s.getPath()));
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
                     playing = null;
                 }
                 toolBar.enableSentence();

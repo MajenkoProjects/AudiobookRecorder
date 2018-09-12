@@ -222,6 +222,8 @@ public class Sentence extends DefaultMutableTreeNode {
             startOffset = 0;
         }
 
+        startOffset -= 4096;
+
         for (int i = samples.length-1; i >= 0; i--) {
             endOffset = i;
             if (Math.abs(samples[i]) > noiseFloor) {
@@ -230,10 +232,16 @@ public class Sentence extends DefaultMutableTreeNode {
                 break;
             }
         }
+
+        endOffset += 4096;
+
         if (endOffset <= startOffset) endOffset = startOffset + 4096;
         if (endOffset <= 0) {
             endOffset = samples.length-1;
         }
+
+        if (startOffset < 0) startOffset = 0;
+        if (endOffset >= samples.length) endOffset = samples.length-1;
     }
 
     public String getId() {

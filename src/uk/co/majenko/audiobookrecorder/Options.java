@@ -21,6 +21,7 @@ public class Options extends JDialog {
     JSpinner preChapterGap;
     JSpinner postChapterGap;
     JSpinner postSentenceGap;
+    JSpinner postParagraphGap;
     JTextField ffmpegLocation;
     JComboBox<KVPair> bitRate;
     JComboBox<KVPair> exportRate;
@@ -190,6 +191,7 @@ public class Options extends JDialog {
         preChapterGap = addSpinner("Default pre-chapter gap:", 0, 5000, 100, getInteger("catenation.pre-chapter"), "ms");
         postChapterGap = addSpinner("Default post-chapter gap:", 0, 5000, 100, getInteger("catenation.post-chapter"), "ms");
         postSentenceGap = addSpinner("Default post-sentence gap:", 0, 5000, 100, getInteger("catenation.post-sentence"), "ms");
+        postParagraphGap = addSpinner("Default post-paragraph gap:", 0, 5000, 100, getInteger("catenation.post-paragraph"), "ms");
 
         addSeparator();
 
@@ -361,6 +363,7 @@ public class Options extends JDialog {
         defaultPrefs.put("catenation.pre-chapter", "2000");
         defaultPrefs.put("catenation.post-chapter", "2000");
         defaultPrefs.put("catenation.post-sentence", "1000");
+        defaultPrefs.put("catenation.post-paragraph", "2000");
     
         defaultPrefs.put("path.storage", (new File(System.getProperty("user.home"), "Recordings")).toString());
         defaultPrefs.put("path.ffmpeg", "");
@@ -426,6 +429,7 @@ public class Options extends JDialog {
         set("catenation.pre-chapter", "" + preChapterGap.getValue());
         set("catenation.post-chapter", "" + postChapterGap.getValue());
         set("catenation.post-sentence", "" + postSentenceGap.getValue());
+        set("catenation.post-paragraph", "" + postParagraphGap.getValue());
         set("audio.export.bitrate", ((KVPair)bitRate.getSelectedItem()).key);
         set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
         set("process.sphinx", enableParsing.isSelected() ? "true" : "false");
