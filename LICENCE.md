@@ -34,4 +34,4 @@ Third party software
 * CMU Sphinx: https://github.com/mpatric/mp3agic
 * JAVE ffmpeg wrapper: http://www.sauronsoftware.it/projects/jave/
 * JTattoo: http://www.sauronsoftware.it/projects/jave/
-
+* Icons from, or based on, Oxygen: https://github.com/KDE/oxygen-icons
