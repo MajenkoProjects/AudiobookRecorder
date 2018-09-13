@@ -28,13 +28,28 @@ public class OpenBookPanel extends JPanel {
         }
     }
 
+    public class BookCellRenderer implements TableCellRenderer {
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            if (value == null) return null;
+            BookPanel p = (BookPanel)value;
+
+            if (isSelected) {
+                p.highlight();
+            } else {
+                p.lowlight();
+            }
+
+            return p;
+        }
+    };
+
     class BookTableModel extends AbstractTableModel {
 
-        ArrayList<BookInfo> books;
+        ArrayList<BookPanel> books;
 
         public BookTableModel() {
             super();
-            books = new ArrayList<BookInfo>();
+            books = new ArrayList<BookPanel>();
         }
 
         public int getRowCount() {
@@ -42,38 +57,27 @@ public class OpenBookPanel extends JPanel {
         }
 
         public int getColumnCount() {
-            return 4;
+            return 1;
         }
     
         public boolean isCellEditable(int row, int column) {
             return false;
         }
 
-        public void addBook(BookInfo b) {
+        public void addBook(BookPanel b) {
             books.add(b);
         }
 
         public Object getValueAt(int r, int c) {
-            if (c > 3) return null;
-            if (r > books.size()) return null;
-            BookInfo b = books.get(r);
-            switch (c) {
-                case 0: return b.name;
-                case 1: return b.author;
-                case 2: return b.genre;
-                case 4: return b.comment;
-            }
-            return null;
+            return books.get(r);
         }
 
         public String getColumnName(int i) {
-            switch(i) {
-                case 0: return "Name";
-                case 1: return "Author";
-                case 2: return "Genre";
-                case 3: return "Comment";
-            }
-            return null;
+            return "Book";
+        }
+
+        public Class getColumnClass(int i) {
+            return BookPanel.class;
         }
     }
 
@@ -85,7 +89,6 @@ public class OpenBookPanel extends JPanel {
         model = new BookTableModel();
 
         setLayout(new BorderLayout());
-
         scroll = new JScrollPane();
         add(scroll, BorderLayout.CENTER);
 
@@ -97,22 +100,16 @@ public class OpenBookPanel extends JPanel {
                 if (!b.isDirectory()) continue;
                 File xml = new File(b, "audiobook.abk");
                 if (xml.exists()) {
-                    Properties props = new Properties();
-                    props.loadFromXML(new FileInputStream(xml));
-
-                    BookInfo book = new BookInfo(
-                        props.getProperty("book.name"),
-                        props.getProperty("book.author"),
-                        props.getProperty("book.genre"),
-                        props.getProperty("book.comment")
-                    );
-
+                    BookPanel book = new BookPanel(b);
                     model.addBook(book);
                 }
             }
 
+
             table = new JTable(model);
+            table.setDefaultRenderer(BookPanel.class, new BookCellRenderer());
             table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            table.setRowHeight(80);
             scroll.setViewportView(table);
         } catch (Exception e) {
             e.printStackTrace();
@@ -126,9 +123,7 @@ public class OpenBookPanel extends JPanel {
             return null;
         }
 
-        String name = (String)table.getValueAt(sel, 0);
-        File d = new File(Options.get("path.storage"), name);
-        File f = new File(d, "audiobook.abk");
-        return f;
+        BookPanel b = (BookPanel)table.getValueAt(sel, 0);
+        return b.getConfigFile();
     }
 }
