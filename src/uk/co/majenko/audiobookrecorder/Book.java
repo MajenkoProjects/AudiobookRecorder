@@ -16,6 +16,8 @@ public class Book extends DefaultMutableTreeNode {
     String genre;
     String comment;
 
+    ImageIcon icon;
+
     public Book(String bookname) {
         super(bookname);
         name = bookname;
@@ -97,6 +99,41 @@ public class Book extends DefaultMutableTreeNode {
     }
 
     public String getName() {
+        return name;
+    }
+
+    public ImageIcon getIcon() {
+        return icon;        
+    }
+
+    public void setIcon(ImageIcon i) {
+        icon = i;
+    }
+
+    public void setUserObject(Object o) {
+        if (o instanceof String) {
+            String newName = (String)o;
+
+            File oldDir = new File(Options.get("path.storage"), name);
+            File newDir = new File(Options.get("path.storage"), newName);
+
+            if (newDir.exists()) {
+                JOptionPane.showMessageDialog(AudiobookRecorder.window, "Book already exists", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (oldDir.exists() && oldDir.isDirectory()) {
+                oldDir.renameTo(newDir);
+                name = newName;
+                AudiobookRecorder.window.saveBookStructure();
+                AudiobookRecorder.window.bookTreeModel.reload(this);
+                Options.set("path.last-book", name);
+                Options.savePreferences();
+            }
+        }
+    }
+
+    public String toString() {
         return name;
     }
 }

@@ -1060,6 +1060,15 @@ public class AudiobookRecorder extends JFrame {
             prefs.loadFromXML(fis);
 
             buildBook(prefs);
+
+            File r = f.getParentFile();
+            File cf = new File(r, "coverart.png");
+            if (cf.exists()) {
+                ImageIcon i = new ImageIcon(cf.getAbsolutePath());
+                Image ri = Utils.getScaledImage(i.getImage(), 22, 22);
+                book.setIcon(new ImageIcon(ri));
+                bookTreeModel.reload(book);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1242,6 +1251,7 @@ public class AudiobookRecorder extends JFrame {
 
         toolBar.enableBook();
         statusLabel.setText("Noise floor: " + getNoiseFloor());
+        book.setIcon(Icons.book);
     }
 
     public void openBook() {

@@ -40,7 +40,7 @@ public class BookPanel extends JPanel {
             File icon = new File(root, "coverart.png");
             if (icon.exists()) {
                 cover = new ImageIcon(icon.getAbsolutePath());
-                resizedCover = getScaledImage(cover.getImage(), 75, 75);
+                resizedCover = Utils.getScaledImage(cover.getImage(), 75, 75);
                 iconLabel = new JLabel(new ImageIcon(resizedCover));
             } else {
                 cover = null;
@@ -78,18 +78,6 @@ public class BookPanel extends JPanel {
             setOpaque(true);
         } catch (Exception e) {
         }
-    }
-
-
-    private Image getScaledImage(Image srcImg, int w, int h){
-        BufferedImage resizedImg = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = resizedImg.createGraphics();
-
-        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g2.drawImage(srcImg, 0, 0, w, h, null);
-        g2.dispose();
-
-        return resizedImg;
     }
 
     public File getConfigFile() {

@@ -19,7 +19,7 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
         } else if (value instanceof Chapter) {
             ret.setIcon(Icons.chapter);
         } else if (value instanceof Book) {
-            ret.setIcon(Icons.book);
+            ret.setIcon(((Book)value).getIcon());
         }
         return ret;
     }
