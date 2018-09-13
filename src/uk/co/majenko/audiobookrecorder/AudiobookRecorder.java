@@ -597,6 +597,39 @@ public class AudiobookRecorder extends JFrame {
         }
     }
 
+    class JMenuObject2 extends JMenuItem {
+        Object ob1;
+        Object ob2;
+        
+        public JMenuObject2(String p) {  
+            super(p);
+            ob1 = null;
+            ob2 = null;
+        }
+
+        public JMenuObject2(String p, Object o1, Object o2) {  
+            super(p);
+            ob1 = o1;
+            ob2 = o2;
+        }
+
+        public void setObject1(Object o) {
+            ob1 = o;
+        }
+
+        public void setObject2(Object o) {
+            ob2 = o;
+        }
+
+        public Object getObject1() {
+            return ob1;
+        }
+
+        public Object getObject2() {
+            return ob2;
+        }
+    }
+
     void treePopup(MouseEvent e) {
 
         int selRow = bookTree.getRowForLocation(e.getX(), e.getY());
@@ -612,6 +645,24 @@ public class AudiobookRecorder extends JFrame {
 
                 JPopupMenu menu = new JPopupMenu();
                 JMenuObject rec = new JMenuObject("Recognise text from audio", s);
+                JMenu moveMenu = new JMenu("Move sentence to...");
+
+                for (Enumeration<Chapter> c = book.children(); c.hasMoreElements();) {
+                    Chapter chp = c.nextElement();
+                    JMenuObject2 m = new JMenuObject2(chp.getName(), s, chp);
+                    m.addActionListener(new ActionListener() {
+                        public void actionPerformed(ActionEvent e) {
+                            JMenuObject2 ob = (JMenuObject2)e.getSource();
+                            Sentence sentence = (Sentence)ob.getObject1();
+                            Chapter target = (Chapter)ob.getObject2();
+
+                            bookTreeModel.removeNodeFromParent(sentence);
+                            bookTreeModel.insertNodeInto(sentence, target, target.getChildCount());
+                        }
+                    });
+                    moveMenu.add(m);
+                }
+
                 JMenuObject ins = new JMenuObject("Insert sentence above", s);
                 JMenuObject del = new JMenuObject("Delete sentence", s);
 
@@ -655,6 +706,8 @@ public class AudiobookRecorder extends JFrame {
 
 
                 menu.add(rec);
+                menu.addSeparator();
+                menu.add(moveMenu);
                 menu.addSeparator();
                 menu.add(ins);
                 menu.add(del);
