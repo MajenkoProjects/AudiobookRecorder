@@ -110,6 +110,7 @@ public class OpenBookPanel extends JPanel {
             table.setDefaultRenderer(BookPanel.class, new BookCellRenderer());
             table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             table.setRowHeight(80);
+            table.getTableHeader().setUI(null);
             scroll.setViewportView(table);
         } catch (Exception e) {
             e.printStackTrace();
