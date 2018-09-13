@@ -630,6 +630,7 @@ public class AudiobookRecorder extends JFrame {
         }
     }
 
+    @SuppressWarnings("unchecked")
     void treePopup(MouseEvent e) {
 
         int selRow = bookTree.getRowForLocation(e.getX(), e.getY());
@@ -662,6 +663,34 @@ public class AudiobookRecorder extends JFrame {
                     });
                     moveMenu.add(m);
                 }
+
+                JMenuObject moveUp = new JMenuObject("Move Up", s);
+                JMenuObject moveDown = new JMenuObject("Move Down", s);
+
+                moveUp.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Sentence sent = (Sentence)o.getObject();
+                        Chapter chap = (Chapter)sent.getParent();
+                        int pos = bookTreeModel.getIndexOfChild(chap, sent);
+                        if (pos > 0) pos--;
+                        bookTreeModel.removeNodeFromParent(sent);
+                        bookTreeModel.insertNodeInto(sent, chap, pos);
+                    }
+                });
+
+                moveDown.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Sentence sent = (Sentence)o.getObject();
+                        Chapter chap = (Chapter)sent.getParent();
+                        int pos = bookTreeModel.getIndexOfChild(chap, sent);
+                        if (pos < chap.getChildCount() - 1) pos++;
+                        bookTreeModel.removeNodeFromParent(sent);
+                        bookTreeModel.insertNodeInto(sent, chap, pos);
+                    }
+                });
+
 
                 JMenuObject ins = new JMenuObject("Insert sentence above", s);
                 JMenuObject del = new JMenuObject("Delete sentence", s);
@@ -707,6 +736,8 @@ public class AudiobookRecorder extends JFrame {
 
                 menu.add(rec);
                 menu.addSeparator();
+                menu.add(moveUp);
+                menu.add(moveDown);
                 menu.add(moveMenu);
                 menu.addSeparator();
                 menu.add(ins);
@@ -719,6 +750,51 @@ public class AudiobookRecorder extends JFrame {
 
                 JPopupMenu menu = new JPopupMenu();
                 JMenuObject peak = new JMenuObject("Auto-trim all (Peak)", c);
+                JMenuObject moveUp = new JMenuObject("Move Up", c);
+                JMenuObject moveDown = new JMenuObject("Move Down", c);
+
+                int idNumber = s2i(c.getId());
+
+                moveUp.setEnabled(idNumber > 0);
+                moveDown.setEnabled(idNumber > 0);
+
+                moveUp.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter chap = (Chapter)o.getObject();
+                        int pos = bookTreeModel.getIndexOfChild(book, chap);
+                        if (pos > 0) pos--;
+
+                        int id = s2i(chap.getId());
+                        if (id > 0) {
+                            Chapter prevChap = (Chapter)bookTreeModel.getChild(book, pos);
+                            id = s2i(prevChap.getId());
+                            if (id > 0) {
+                                bookTreeModel.removeNodeFromParent(chap);
+                                bookTreeModel.insertNodeInto(chap, book, pos);
+                            }
+                        }
+                    }
+                });
+                moveDown.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter chap = (Chapter)o.getObject();
+                        int pos = bookTreeModel.getIndexOfChild(book, chap);
+                        pos++;
+                        int id = s2i(chap.getId());
+                        if (id > 0) {
+                            Chapter nextChap = (Chapter)bookTreeModel.getChild(book, pos);
+                            if (nextChap != null) {
+                                id = s2i(nextChap.getId());
+                                if (id > 0) {
+                                    bookTreeModel.removeNodeFromParent(chap);
+                                    bookTreeModel.insertNodeInto(chap, book, pos);
+                                }
+                            }
+                        }
+                    }
+                });
 
                 peak.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
@@ -732,6 +808,11 @@ public class AudiobookRecorder extends JFrame {
                         }
                     }
                 });
+
+                menu.add(moveUp);
+                menu.add(moveDown);
+
+                menu.addSeparator();
 
                 menu.add(peak);
                 menu.show(bookTree, e.getX(), e.getY());
