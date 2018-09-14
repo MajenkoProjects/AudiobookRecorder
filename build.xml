@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <project name="Audiobook Recorder" default="build">
 
+    <taskdef name="jarbundler" classname="com.ultramixer.jarbundler.JarBundler" classpath="ant-libs/jarbundler-2.3.2.jar" />
+
     <target name="clean" description="Clean out the build directories">
         <delete dir="bin" />
         <delete file="AudiobookRecorder.jar" />
@@ -41,6 +43,57 @@
             </manifest>
         </jar>
         <chmod perm="0755" file="uecide.jar" />
+    </target>
+
+    <target name="release" depends="macapp">
+    </target>
+
+    <target name="macapp" depends="build">
+
+    <mkdir dir="tmp"/>
+
+    <jarbundler
+        name="AudiobookRecorder"
+        shortname="AudiobookRecorder"
+        icon="dist/macosx/audiobookrecorder.icns"
+        stubfile="universalJavaApplicationStub/src/universalJavaApplicationStub"
+        dir="tmp"
+        jar="AudiobookRecorder.jar"
+        mainclass="uk.co.majenko.audiobookrecorder.AudiobookRecorder"
+        jvmversion="1.7+"
+        >
+    </jarbundler>
+
+<!--
+        <mkdir dir="tmp/AudiobookRecorder.app"/>
+        <copy todir="tmp/AudiobookRecorder.app">
+            <fileset dir="dist/macosx/template.app" includes="*/**"/>
+        </copy>
+
+        <replace file="tmp/AudiobookRecorder.app/Contents/Info.plist" token="{version}" value="0.0.4" />
+
+        <copy file="AudiobookRecorder.jar" todir="tmp/AudiobookRecorder.app/Contents/Resources/Java" />
+-->
+
+        <symlink link="tmp/Applications" resource="/Applications" overwrite="true" />
+
+        <exec executable="genisoimage">
+            <arg value="-D" />
+            <arg value="-V" />
+            <arg value="AudiobookRecorder" />
+            <arg value="-no-pad" />
+            <arg value="-r" />
+            <arg value="-apple" />
+            <arg value="-o" />
+            <arg value="AudiobookRecorder.dmg" />
+            <arg value="-dir-mode" />
+            <arg value="0755" />
+            <arg value="-file-mode" />
+            <arg value="0755" />
+            <arg value="tmp" />
+        </exec>
+
+        <!--delete dir="tmp" /-->
     </target>
 
 </project>
