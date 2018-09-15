@@ -353,15 +353,15 @@ public class Options extends JDialog {
             defaultPrefs.put("audio.recording.device", "");
         }
         defaultPrefs.put("audio.recording.channels", "2");
-        defaultPrefs.put("audio.recording.samplerate", "48000");
+        defaultPrefs.put("audio.recording.samplerate", "44100");
         if (playbackMixers.length > 0) {
             defaultPrefs.put("audio.playback.device", playbackMixers[0].key);
         } else {
             defaultPrefs.put("audio.playback.device", "");
         }
 
-        defaultPrefs.put("catenation.pre-chapter", "2000");
-        defaultPrefs.put("catenation.post-chapter", "2000");
+        defaultPrefs.put("catenation.pre-chapter", "1000");
+        defaultPrefs.put("catenation.post-chapter", "1500");
         defaultPrefs.put("catenation.post-sentence", "1000");
         defaultPrefs.put("catenation.post-paragraph", "2000");
     

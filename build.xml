@@ -1,7 +1,12 @@
 <?xml version="1.0"?>
 <project name="Audiobook Recorder" default="build">
 
+    <property file="resources/uk/co/majenko/audiobookrecorder/config.txt"/>
+
     <taskdef name="jarbundler" classname="com.ultramixer.jarbundler.JarBundler" classpath="ant-libs/jarbundler-2.3.2.jar" />
+
+    <taskdef name="launch4j" classname="net.sf.launch4j.ant.Launch4jTask" classpath="launch4j/launch4j.jar:launch4g/lib/xstream.jar" />
+
 
     <target name="clean" description="Clean out the build directories">
         <delete dir="bin" />
@@ -38,14 +43,10 @@
             <manifest>
                 <attribute name="Main-Class" value="uk.co.majenko.audiobookrecorder.AudiobookRecorder" />
                 <attribute name="Class-Path" value="AudiobookRecorder.jar" />
-                <!--attribute name="Version" value="${Version}" />
-                <attribute name="Release" value="${Release}" /-->
+                <attribute name="Version" value="${version}" />
             </manifest>
         </jar>
         <chmod perm="0755" file="uecide.jar" />
-    </target>
-
-    <target name="release" depends="macapp">
     </target>
 
     <target name="macapp" depends="build">
@@ -85,6 +86,56 @@
         </exec>
 
         <delete dir="tmp" />
+    </target>
+
+    <target name="winapp" depends="build">
+        <launch4j configFile="dist/windows/windows.xml" outfile="AudiobookRecorder.exe" />
+    </target>
+
+    <target name="dist" depends="macapp,winapp" />
+
+    <target name="tag">
+        <exec executable="git">
+            <arg value="tag" />
+            <arg value="-m" />
+            <arg value="Auto generated tag" />
+            <arg value="-s" />
+            <arg value="v${version}" />
+        </exec>
+        <exec executable="git">
+            <arg value="push" />
+            <arg value="--tags" />
+        </exec>
+    </target>
+
+    <target name="release" depends="dist,tag">
+        <exec executable="github-release">
+            <arg value="release"/>
+            <arg value="-u"/> <arg value="majenkotech"/>
+            <arg value="-r"/> <arg value="MajenkoProjects/AudiobookRecorder"/>
+            <arg value="-t"/> <arg value="v${version}"/>
+        </exec>
+        <exec executable="github=release">
+            <arg value="upload"/>
+            <arg value="-u"/> <arg value="majenkotech"/>
+            <arg value="-r"/> <arg value="MajenkoProjects/AudiobookRecorder"/>
+            <arg value="-t"/> <arg value="v${version}"/>
+            <arg value="-f"/> <arg value="AudiobookRecorder.jar"/>
+        </exec>
+        <exec executable="github=release">
+            <arg value="upload"/>
+            <arg value="-u"/> <arg value="majenkotech"/>
+            <arg value="-r"/> <arg value="MajenkoProjects/AudiobookRecorder"/>
+            <arg value="-t"/> <arg value="v${version}"/>
+            <arg value="-f"/> <arg value="AudiobookRecorder.dmg"/>
+        </exec>
+        <exec executable="github=release">
+            <arg value="upload"/>
+            <arg value="-u"/> <arg value="majenkotech"/>
+            <arg value="-r"/> <arg value="MajenkoProjects/AudiobookRecorder"/>
+            <arg value="-t"/> <arg value="v${version}"/>
+            <arg value="-f"/> <arg value="AudiobookRecorder.exe"/>
+        </exec>
     </target>
 
 </project>

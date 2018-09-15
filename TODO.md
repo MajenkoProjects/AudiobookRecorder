@@ -6,3 +6,4 @@ ToDo
 * Identify and export 15 minute checkpoint
 * Archive (Zip and delete) audiobooks
 * File path browser buttons in options
+* Help menu with "About" window

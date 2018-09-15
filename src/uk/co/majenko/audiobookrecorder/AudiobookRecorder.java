@@ -19,12 +19,15 @@ import edu.cmu.sphinx.result.*;
 
 public class AudiobookRecorder extends JFrame {
 
+    static Properties config = new Properties();
+
     MainToolBar toolBar;
 
     JMenuBar menuBar;
     JMenu fileMenu;
     JMenu bookMenu;
     JMenu toolsMenu;
+    JMenu helpMenu;
 
     JMenuItem fileNewBook;
     JMenuItem fileOpenBook;
@@ -34,6 +37,8 @@ public class AudiobookRecorder extends JFrame {
     JMenuItem bookExportAudio;
 
     JMenuItem toolsOptions;
+
+    JMenuItem helpAbout;
 
     FlashPanel centralPanel;
 
@@ -173,6 +178,19 @@ public class AudiobookRecorder extends JFrame {
         toolsMenu.add(toolsOptions);
 
         menuBar.add(toolsMenu);
+
+
+        helpMenu = new JMenu("Help");
+        helpAbout = new JMenuItem("About AudiobookRecorder");
+
+        helpAbout.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JOptionPane.showMessageDialog(AudiobookRecorder.this, new AboutPanel(), "About AudiobookRecorder", JOptionPane.PLAIN_MESSAGE);
+            }
+        });
+
+        helpMenu.add(helpAbout);
+        menuBar.add(helpMenu);
 
         ob.add(menuBar, BorderLayout.NORTH);
 
@@ -536,6 +554,11 @@ public class AudiobookRecorder extends JFrame {
     }
 
     public static void main(String args[]) {
+        try {
+            config.load(AudiobookRecorder.class.getResourceAsStream("config.txt"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         AudiobookRecorder frame = new AudiobookRecorder();
     }
 
