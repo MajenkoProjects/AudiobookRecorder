@@ -1,0 +1,16 @@
+#!/bin/bash
+WANTED=$1
+TAGS=$(git tag -l --sort=-v:refname)
+CTAG=""
+echo $WANTED
+echo "======"
+echo ""
+for TAG in $TAGS; do
+    if [ "$CTAG" == "$WANTED" ]; then
+        git log $CTAG...$TAG --oneline --pretty=format:"* %s" --date=short 
+        exit 0
+    fi
+    CTAG=$TAG
+done
+
+
