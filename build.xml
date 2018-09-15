@@ -109,32 +109,39 @@
     </target>
 
     <target name="release" depends="dist,tag">
+        <echo>Creating release v${version}</echo>
         <exec executable="github-release">
             <arg value="release"/>
-            <arg value="-u"/> <arg value="majenkotech"/>
-            <arg value="-r"/> <arg value="MajenkoProjects/AudiobookRecorder"/>
+            <arg value="-u"/> <arg value="MajenkoProjects"/>
+            <arg value="-r"/> <arg value="AudiobookRecorder"/>
             <arg value="-t"/> <arg value="v${version}"/>
         </exec>
-        <exec executable="github=release">
+        <echo>Uploading AudiobookRecorder.jar</echo>
+        <exec executable="github-release">
             <arg value="upload"/>
-            <arg value="-u"/> <arg value="majenkotech"/>
-            <arg value="-r"/> <arg value="MajenkoProjects/AudiobookRecorder"/>
+            <arg value="-u"/> <arg value="MajenkoProjects"/>
+            <arg value="-r"/> <arg value="AudiobookRecorder"/>
             <arg value="-t"/> <arg value="v${version}"/>
             <arg value="-f"/> <arg value="AudiobookRecorder.jar"/>
+            <arg value="-n"/> <arg value="AudiobookRecorder.jar"/>
         </exec>
-        <exec executable="github=release">
+        <echo>Uploading AudiobookRecorder.dmg</echo>
+        <exec executable="github-release">
             <arg value="upload"/>
-            <arg value="-u"/> <arg value="majenkotech"/>
-            <arg value="-r"/> <arg value="MajenkoProjects/AudiobookRecorder"/>
+            <arg value="-u"/> <arg value="MajenkoProjects"/>
+            <arg value="-r"/> <arg value="AudiobookRecorder"/>
             <arg value="-t"/> <arg value="v${version}"/>
             <arg value="-f"/> <arg value="AudiobookRecorder.dmg"/>
+            <arg value="-n"/> <arg value="AudiobookRecorder.dmg"/>
         </exec>
-        <exec executable="github=release">
+        <echo>Uploading AudiobookRecorder.exe</echo>
+        <exec executable="github-release">
             <arg value="upload"/>
-            <arg value="-u"/> <arg value="majenkotech"/>
-            <arg value="-r"/> <arg value="MajenkoProjects/AudiobookRecorder"/>
+            <arg value="-u"/> <arg value="MajenkoProjects"/>
+            <arg value="-r"/> <arg value="AudiobookRecorder"/>
             <arg value="-t"/> <arg value="v${version}"/>
             <arg value="-f"/> <arg value="AudiobookRecorder.exe"/>
+            <arg value="-n"/> <arg value="AudiobookRecorder.exe"/>
         </exec>
     </target>
 
