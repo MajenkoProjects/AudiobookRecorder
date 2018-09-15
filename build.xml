@@ -52,30 +52,21 @@
 
     <mkdir dir="tmp"/>
 
-    <jarbundler
-        name="AudiobookRecorder"
-        shortname="AudiobookRecorder"
-        icon="dist/macosx/audiobookrecorder.icns"
-        stubfile="universalJavaApplicationStub/src/universalJavaApplicationStub"
-        dir="tmp"
-        jar="AudiobookRecorder.jar"
-        mainclass="uk.co.majenko.audiobookrecorder.AudiobookRecorder"
-        jvmversion="1.7+"
-        >
-    </jarbundler>
-
-<!--
-        <mkdir dir="tmp/AudiobookRecorder.app"/>
-        <copy todir="tmp/AudiobookRecorder.app">
-            <fileset dir="dist/macosx/template.app" includes="*/**"/>
-        </copy>
-
-        <replace file="tmp/AudiobookRecorder.app/Contents/Info.plist" token="{version}" value="0.0.4" />
-
-        <copy file="AudiobookRecorder.jar" todir="tmp/AudiobookRecorder.app/Contents/Resources/Java" />
--->
+        <jarbundler
+            name="AudiobookRecorder"
+            shortname="AudiobookRecorder"
+            icon="dist/macosx/audiobookrecorder.icns"
+            stubfile="universalJavaApplicationStub/src/universalJavaApplicationStub"
+            dir="tmp"
+            jar="AudiobookRecorder.jar"
+            mainclass="uk.co.majenko.audiobookrecorder.AudiobookRecorder"
+            jvmversion="1.7+"
+            >
+        </jarbundler>
 
         <symlink link="tmp/Applications" resource="/Applications" overwrite="true" />
+
+        <!--copy file="dist/macosx/dmg.icns" tofile="tmp/.VolumeIcon.icns" /-->
 
         <exec executable="genisoimage">
             <arg value="-D" />
@@ -93,7 +84,7 @@
             <arg value="tmp" />
         </exec>
 
-        <!--delete dir="tmp" /-->
+        <delete dir="tmp" />
     </target>
 
 </project>
