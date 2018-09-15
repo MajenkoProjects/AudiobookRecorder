@@ -53,6 +53,18 @@ public class Options extends JDialog {
         }
     }
 
+    class JButtonObject extends JButton {
+        Object object;
+        public JButtonObject(String s, Object o) {
+            super(s);
+            object = o;
+        }
+
+        public Object getObject() {
+            return object;
+        }
+    }
+
     JComboBox<KVPair> addDropdown(String label, KVPair[] options, String def) {
         JLabel l = new JLabel(label);
         constraint.gridx = 0;
@@ -76,7 +88,7 @@ public class Options extends JDialog {
         return o;
     }
 
-    JTextField addFilePath(String label, String path) {
+    JTextField addFilePath(String label, String path, boolean dironly) {
         JLabel l = new JLabel(label);
         constraint.gridx = 0;
         constraint.gridwidth = 1;
@@ -88,7 +100,49 @@ public class Options extends JDialog {
         p.setLayout(new BorderLayout());
         JTextField a = new JTextField(path);
         p.add(a, BorderLayout.CENTER);
-        JButton b = new JButton("...");
+        JButtonObject b = new JButtonObject("...", a);
+
+        if (dironly) {
+            b.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    JButtonObject o = (JButtonObject)e.getSource();
+                    JTextField f = (JTextField)o.getObject();
+                    JFileChooser fc = new JFileChooser();
+                    File d = new File(f.getText());
+                    if (d.exists() && d.isDirectory()) {
+                        fc.setCurrentDirectory(d);
+                    }
+                    fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    int r = fc.showOpenDialog(Options.this);
+
+                    if (r == JFileChooser.APPROVE_OPTION) {
+                        f.setText(fc.getSelectedFile().getAbsolutePath());
+                    }
+                }
+            });
+        } else {
+            b.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    JButtonObject o = (JButtonObject)e.getSource();
+                    JTextField f = (JTextField)o.getObject();
+                    JFileChooser fc = new JFileChooser();
+                    File d = new File(f.getText());
+                    if (d.exists() && d.isDirectory()) {
+                        fc.setCurrentDirectory(d);
+                    } else if (d.exists()) {
+                        d = d.getParentFile();
+                        if (d.exists() && d.isDirectory()) {
+                            fc.setCurrentDirectory(d);
+                        }
+                    }
+                    int r = fc.showOpenDialog(Options.this);
+
+                    if (r == JFileChooser.APPROVE_OPTION) {
+                        f.setText(fc.getSelectedFile().getAbsolutePath());
+                    }
+                }
+            });
+        }
         p.add(b, BorderLayout.EAST);
 
         constraint.gridx = 1;
@@ -184,7 +238,7 @@ public class Options extends JDialog {
 
         playbackList = addDropdown("Playback device:", getPlaybackMixerList(), get("audio.playback.device"));
         addSeparator();
-        storageFolder = addFilePath("Storage folder:", get("path.storage"));
+        storageFolder = addFilePath("Storage folder:", get("path.storage"), true);
 
         addSeparator();
 
@@ -195,7 +249,7 @@ public class Options extends JDialog {
 
         addSeparator();
 
-        ffmpegLocation = addFilePath("FFMPEG location:", get("path.ffmpeg"));
+        ffmpegLocation = addFilePath("FFMPEG location:", get("path.ffmpeg"), false);
         bitRate = addDropdown("Export bitrate:", getBitrates(), get("audio.export.bitrate"));
         exportRate = addDropdown("Export sample rate:", getSampleRateList(), get("audio.export.samplerate"));
         
