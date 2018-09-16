@@ -77,7 +77,7 @@
             <arg value="-r" />
             <arg value="-apple" />
             <arg value="-o" />
-            <arg value="AudiobookRecorder.dmg" />
+            <arg value="AudiobookRecorder-osx.dmg" />
             <arg value="-dir-mode" />
             <arg value="0755" />
             <arg value="-file-mode" />
@@ -89,15 +89,15 @@
     </target>
 
     <target name="winapp" depends="build">
-        <launch4j configFile="dist/windows/windows.xml" outfile="AudiobookRecorder.exe" />
+        <launch4j configFile="dist/windows/windows.xml" outfile="AudiobookRecorder-win.exe" />
     </target>
 
     <target name="linuxapp" depends="build">
-        <concat destfile="AudiobookRecorder.run" binary="true">
+        <concat destfile="AudiobookRecorder-linux" binary="true">
             <file file="dist/linux/stub" />
             <file file="AudiobookRecorder.jar" />
         </concat>
-        <chmod perm="0755" file="AudiobookRecorder.run" />
+        <chmod perm="0755" file="AudiobookRecorder-linux" />
     </target>
 
     <target name="dist" depends="macapp,winapp,linuxapp" />
@@ -138,32 +138,32 @@
             <arg value="-f"/> <arg value="AudiobookRecorder.jar"/>
             <arg value="-n"/> <arg value="AudiobookRecorder.jar"/>
         </exec>
-        <echo>Uploading AudiobookRecorder.dmg</echo>
+        <echo>Uploading AudiobookRecorder-osx.dmg</echo>
         <exec executable="github-release">
             <arg value="upload"/>
             <arg value="-u"/> <arg value="MajenkoProjects"/>
             <arg value="-r"/> <arg value="AudiobookRecorder"/>
             <arg value="-t"/> <arg value="v${version}"/>
-            <arg value="-f"/> <arg value="AudiobookRecorder.dmg"/>
-            <arg value="-n"/> <arg value="AudiobookRecorder.dmg"/>
+            <arg value="-f"/> <arg value="AudiobookRecorder-osx.dmg"/>
+            <arg value="-n"/> <arg value="AudiobookRecorder-osx.dmg"/>
         </exec>
-        <echo>Uploading AudiobookRecorder.exe</echo>
+        <echo>Uploading AudiobookRecorder-win.exe</echo>
         <exec executable="github-release">
             <arg value="upload"/>
             <arg value="-u"/> <arg value="MajenkoProjects"/>
             <arg value="-r"/> <arg value="AudiobookRecorder"/>
             <arg value="-t"/> <arg value="v${version}"/>
-            <arg value="-f"/> <arg value="AudiobookRecorder.exe"/>
-            <arg value="-n"/> <arg value="AudiobookRecorder.exe"/>
+            <arg value="-f"/> <arg value="AudiobookRecorder-win.exe"/>
+            <arg value="-n"/> <arg value="AudiobookRecorder-win.exe"/>
         </exec>
-        <echo>Uploading AudiobookRecorder.run</echo>
+        <echo>Uploading AudiobookRecorder-linux</echo>
         <exec executable="github-release">
             <arg value="upload"/>
             <arg value="-u"/> <arg value="MajenkoProjects"/>
             <arg value="-r"/> <arg value="AudiobookRecorder"/>
             <arg value="-t"/> <arg value="v${version}"/>
-            <arg value="-f"/> <arg value="AudiobookRecorder.run"/>
-            <arg value="-n"/> <arg value="AudiobookRecorder.run"/>
+            <arg value="-f"/> <arg value="AudiobookRecorder-linux"/>
+            <arg value="-n"/> <arg value="AudiobookRecorder-linux"/>
         </exec>
     </target>
 
