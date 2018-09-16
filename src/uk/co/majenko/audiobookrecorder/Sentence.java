@@ -63,11 +63,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             false
         );
 
-        if (format == null) {
-            JOptionPane.showMessageDialog(AudiobookRecorder.window, "Sample format not supported", "Error", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-
         Mixer.Info mixer = Options.getRecordingMixer();
 
         line = null;
@@ -418,7 +413,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         try {
             AudioInputStream s = AudioSystem.getAudioInputStream(f);
             AudioFormat format = s.getFormat();
-            long len = s.getFrameLength();
             int frameSize = format.getFrameSize();
 
             s.skip(frameSize * startOffset);
@@ -447,7 +441,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         try {
             AudioInputStream s = AudioSystem.getAudioInputStream(f);
             AudioFormat format = s.getFormat();
-            long len = s.getFrameLength();
             int frameSize = format.getFrameSize();
 
             updateCrossings();

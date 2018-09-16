@@ -14,20 +14,6 @@ public class OpenBookPanel extends JPanel {
 
     JTable table;
 
-    class BookInfo {
-        public String name;
-        public String author;
-        public String genre;
-        public String comment;
-        
-        public BookInfo(String n, String a, String g, String c) {
-            name = n;
-            author = a;
-            genre = g;
-            comment = c;
-        }
-    }
-
     public class BookCellRenderer implements TableCellRenderer {
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             if (value == null) return null;
@@ -96,12 +82,15 @@ public class OpenBookPanel extends JPanel {
         try {
             File dir = new File(Options.get("path.storage"));
 
-            for (File b : dir.listFiles()) {
-                if (!b.isDirectory()) continue;
-                File xml = new File(b, "audiobook.abk");
-                if (xml.exists()) {
-                    BookPanel book = new BookPanel(b);
-                    model.addBook(book);
+            if (dir.exists() && dir.isDirectory()) {
+                for (File b : dir.listFiles()) {
+                    if (b == null) continue;
+                    if (!b.isDirectory()) continue;
+                    File xml = new File(b, "audiobook.abk");
+                    if (xml.exists()) {
+                        BookPanel book = new BookPanel(b);
+                        model.addBook(book);
+                    }
                 }
             }
 

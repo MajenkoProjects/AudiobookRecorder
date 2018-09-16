@@ -322,16 +322,14 @@ public class Options extends JDialog {
 
             boolean supported = false;
 
-            Line l;
-
             try {
-                l = m.getLine(stereoDIF);
+                m.getLine(stereoDIF);
                 supported = true;
             } catch (Exception e) {
             }
 
             try {
-                l = m.getLine(monoDIF);
+                m.getLine(monoDIF);
                 supported = true;
             } catch (Exception e) {
             }
@@ -360,16 +358,14 @@ public class Options extends JDialog {
 
             boolean supported = false;
 
-            Line l;
-
             try { 
-                l = m.getLine(stereoDIF);
+                m.getLine(stereoDIF);
                 supported = true; 
             } catch (Exception e) {
             }
 
             try { 
-                l = m.getLine(monoDIF);
+                m.getLine(monoDIF);
                 supported = true; 
             } catch (Exception e) {
             }

@@ -171,7 +171,7 @@ public class AudiobookRecorder extends JFrame {
         toolsOptions = new JMenuItem("Options");
         toolsOptions.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                Options o = new Options(AudiobookRecorder.this);
+                new Options(AudiobookRecorder.this);
             }
         });
         
@@ -580,7 +580,7 @@ public class AudiobookRecorder extends JFrame {
         }
 
 
-        AudiobookRecorder frame = new AudiobookRecorder();
+        new AudiobookRecorder();
     }
 
     public void createNewBook() {
@@ -758,7 +758,6 @@ public class AudiobookRecorder extends JFrame {
                         Sentence s = (Sentence)o.getObject();
                         if (!s.isLocked()) {
                             s.deleteFiles();
-                            Chapter c = (Chapter)s.getParent();
                             bookTreeModel.removeNodeFromParent(s);
                         }
                     }
@@ -1628,7 +1627,9 @@ public class AudiobookRecorder extends JFrame {
                             play.write(data, 0, data.length);
                         }
                         s = (Sentence)next;
-                        bookTree.setSelectionPath(new TreePath(s.getPath()));
+                        if (s != null) {
+                            bookTree.setSelectionPath(new TreePath(s.getPath()));
+                        }
                     }
                 } catch (Exception e) {
                     playing = null;
@@ -1651,7 +1652,6 @@ public class AudiobookRecorder extends JFrame {
         if (len == 0) return null;
 
         AudioFormat f = roomNoise.getAudioFormat();
-        int frameSize = f.getFrameSize();
         
         float sr = f.getSampleRate();
 
