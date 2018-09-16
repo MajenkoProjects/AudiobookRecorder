@@ -51,7 +51,7 @@
 
     <target name="macapp" depends="build">
 
-    <mkdir dir="tmp"/>
+        <mkdir dir="tmp"/>
 
         <jarbundler
             name="AudiobookRecorder"
@@ -92,7 +92,15 @@
         <launch4j configFile="dist/windows/windows.xml" outfile="AudiobookRecorder.exe" />
     </target>
 
-    <target name="dist" depends="macapp,winapp" />
+    <target name="linuxapp" depends="build">
+        <concat destfile="AudiobookRecorder.run" binary="true">
+            <file file="dist/linux/stub" />
+            <file file="AudiobookRecorder.jar" />
+        </concat>
+        <chmod perm="0755" file="AudiobookRecorder.run" />
+    </target>
+
+    <target name="dist" depends="macapp,winapp,linuxapp" />
 
     <target name="tag">
         <exec executable="git">
@@ -147,6 +155,15 @@
             <arg value="-t"/> <arg value="v${version}"/>
             <arg value="-f"/> <arg value="AudiobookRecorder.exe"/>
             <arg value="-n"/> <arg value="AudiobookRecorder.exe"/>
+        </exec>
+        <echo>Uploading AudiobookRecorder.run</echo>
+        <exec executable="github-release">
+            <arg value="upload"/>
+            <arg value="-u"/> <arg value="MajenkoProjects"/>
+            <arg value="-r"/> <arg value="AudiobookRecorder"/>
+            <arg value="-t"/> <arg value="v${version}"/>
+            <arg value="-f"/> <arg value="AudiobookRecorder.run"/>
+            <arg value="-n"/> <arg value="AudiobookRecorder.run"/>
         </exec>
     </target>
 

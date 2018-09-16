@@ -26,6 +26,7 @@ public class Options extends JDialog {
     JComboBox<KVPair> bitRate;
     JComboBox<KVPair> exportRate;
     JCheckBox enableParsing;
+    JSpinner cacheSize;
 
 
     static HashMap<String, String> defaultPrefs;
@@ -260,6 +261,9 @@ public class Options extends JDialog {
 
         addSeparator();
 
+        cacheSize = addSpinner("Cache size:", 0, 5000, 1, getInteger("cache.size"), "");
+
+        addSeparator();
 
         setTitle("Options");
 
@@ -427,6 +431,8 @@ public class Options extends JDialog {
 
         defaultPrefs.put("process.sphinx", "false");
 
+        defaultPrefs.put("cache.size", "100");
+
         if (prefs == null) {
             prefs = Preferences.userNodeForPackage(AudiobookRecorder.class);
         }
@@ -487,6 +493,7 @@ public class Options extends JDialog {
         set("audio.export.bitrate", ((KVPair)bitRate.getSelectedItem()).key);
         set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
         set("process.sphinx", enableParsing.isSelected() ? "true" : "false");
+        set("cache.size", "" + cacheSize.getValue());
 
         savePreferences();
     }

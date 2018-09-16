@@ -225,6 +225,7 @@ public class AudiobookRecorder extends JFrame {
 
 
         Options.loadPreferences();
+        CacheManager.setCacheSize(Options.getInteger("cache.size"));
 
         setLayout(new BorderLayout());
 
@@ -495,18 +496,30 @@ public class AudiobookRecorder extends JFrame {
         centralPanel.getActionMap().put("startRecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (bookTree.isEditing()) return;
+                if (getNoiseFloor() == 0) {
+                    alertNoRoomNoise();
+                    return;
+                }
                 startRecording();
             }
         });
         centralPanel.getActionMap().put("startRecordNewPara", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (bookTree.isEditing()) return;
+                if (getNoiseFloor() == 0) {
+                    alertNoRoomNoise();
+                    return;
+                }
                 startRecordingNewParagraph();
             }
         });
         centralPanel.getActionMap().put("startRerecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (bookTree.isEditing()) return;
+                if (getNoiseFloor() == 0) {
+                    alertNoRoomNoise();
+                    return;
+                }
                 startReRecording();
             }
         });
@@ -559,6 +572,8 @@ public class AudiobookRecorder extends JFrame {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+
         AudiobookRecorder frame = new AudiobookRecorder();
     }
 
@@ -1554,6 +1569,10 @@ public class AudiobookRecorder extends JFrame {
     public void playFromSelectedSentence() {
         if (selectedSentence == null) return;
         if (playing != null) return;
+        if (getNoiseFloor() == 0) {
+            alertNoRoomNoise();
+            return;
+        }
         playing = selectedSentence;
         toolBar.disableSentence();
         toolBar.enableStop();
@@ -1648,5 +1667,9 @@ public class AudiobookRecorder extends JFrame {
             play = null;
         }
         playing = null;
+    }
+
+    public void alertNoRoomNoise() {
+        JOptionPane.showMessageDialog(this, "You must record room noise\nbefore recording or playback", "Error", JOptionPane.ERROR_MESSAGE);
     }
 }

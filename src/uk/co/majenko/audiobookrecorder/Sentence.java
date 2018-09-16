@@ -13,7 +13,7 @@ import edu.cmu.sphinx.api.*;
 import edu.cmu.sphinx.decoder.adaptation.*;
 import edu.cmu.sphinx.result.*;
 
-public class Sentence extends DefaultMutableTreeNode {
+public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     
     String text;
     String id;
@@ -33,6 +33,8 @@ public class Sentence extends DefaultMutableTreeNode {
     AudioInputStream inputStream;
 
     Thread recordingThread = null;
+
+    int[] storedAudioData = null;
     
     public Sentence() {
         super("");
@@ -119,6 +121,7 @@ public class Sentence extends DefaultMutableTreeNode {
             e.printStackTrace();
         }
         recording = false;
+        storedAudioData = null;
 
         if (!id.equals("room-noise")) {
             autoTrimSampleFFT();
@@ -306,6 +309,9 @@ public class Sentence extends DefaultMutableTreeNode {
     }
 
     public int[] getAudioData() {
+        if (storedAudioData != null) {
+            return storedAudioData;
+        }
         File f = getFile();
         try {
             AudioInputStream s = AudioSystem.getAudioInputStream(f);
@@ -335,6 +341,8 @@ public class Sentence extends DefaultMutableTreeNode {
             }
             s.close();
             sampleSize = samples.length;
+            storedAudioData = samples;
+            CacheManager.addToCache(this);
             return samples;
         } catch (Exception e) {
         }
@@ -529,5 +537,13 @@ public class Sentence extends DefaultMutableTreeNode {
 
     public boolean isInSample() { 
         return inSample;
+    }
+
+    public void clearCache() {
+        storedAudioData = null;
+    }
+
+    public boolean lockedInCache() {
+        return id.equals("room-noise"); 
     }
 }
