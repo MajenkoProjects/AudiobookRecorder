@@ -257,6 +257,7 @@ public class AudiobookRecorder extends JFrame {
                     selectedSentence.autoTrimSampleFFT();
                     sampleWaveform.setData(selectedSentence.getAudioData());
                     sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
+                    sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
                     startOffset.setValue(selectedSentence.getStartOffset());
                     endOffset.setValue(selectedSentence.getEndOffset());
                     postSentenceGap.setValue(selectedSentence.getPostGap());
@@ -272,6 +273,7 @@ public class AudiobookRecorder extends JFrame {
                     selectedSentence.autoTrimSamplePeak();
                     sampleWaveform.setData(selectedSentence.getAudioData());
                     sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
+                    sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
                     startOffset.setValue(selectedSentence.getStartOffset());
                     endOffset.setValue(selectedSentence.getEndOffset());
                     postSentenceGap.setValue(selectedSentence.getPostGap());
@@ -292,6 +294,8 @@ public class AudiobookRecorder extends JFrame {
                 if (selectedSentence != null) {
                     selectedSentence.setStartOffset((Integer)ob.getValue());
                     sampleWaveform.setLeftMarker((Integer)ob.getValue());
+                    selectedSentence.updateStartCrossing();
+                    sampleWaveform.setLeftAltMarker(selectedSentence.getStartCrossing());
                 }
             }
         });
@@ -302,6 +306,8 @@ public class AudiobookRecorder extends JFrame {
                 if (selectedSentence != null) {
                     selectedSentence.setEndOffset((Integer)ob.getValue());
                     sampleWaveform.setRightMarker((Integer)ob.getValue());
+                    selectedSentence.updateEndCrossing();
+                    sampleWaveform.setRightAltMarker(selectedSentence.getEndCrossing());
                 }
             }
         });
@@ -1170,6 +1176,8 @@ public class AudiobookRecorder extends JFrame {
                     selectedSentence = s;
                     sampleWaveform.setData(s.getAudioData());
                     sampleWaveform.setMarkers(s.getStartOffset(), s.getEndOffset());
+                    s.updateCrossings();
+                    sampleWaveform.setAltMarkers(s.getStartCrossing(), s.getEndCrossing());
                     startOffset.setValue(s.getStartOffset());
                     endOffset.setValue(s.getEndOffset());
                     postSentenceGap.setValue(s.getPostGap());
@@ -1532,7 +1540,6 @@ public class AudiobookRecorder extends JFrame {
                 File mp3File = new File(export, name + "-untagged.mp3");
                 File taggedFile = new File(export, name + ".mp3");
 
-                System.err.println(attributes);
                 encoder.encode(wavFile, mp3File, attributes);
 
                 Mp3File id3 = new Mp3File(mp3File);

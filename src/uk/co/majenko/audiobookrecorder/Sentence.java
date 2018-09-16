@@ -20,6 +20,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     int postGap;
     int startOffset = 0;
     int endOffset = 0;
+    int crossStartOffset = -1;
+    int crossEndOffset = -1;
 
     int sampleSize = -1;
 
@@ -132,6 +134,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public void autoTrimSampleFFT() {
+        crossStartOffset = -1;
+        crossEndOffset = -1;
         int[] samples = getAudioData();
         if (samples == null) return;
 
@@ -205,10 +209,13 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         if (endOffset <= startOffset) endOffset = startOffset + 4096;
         if (endOffset < 0) endOffset = 0;
         if (endOffset >= samples.length) endOffset = samples.length;
+        updateCrossings();
 
     }
 
     public void autoTrimSamplePeak() {
+        crossStartOffset = -1;
+        crossEndOffset = -1;
         int[] samples = getAudioData();
         if (samples == null) return;
         int noiseFloor = AudiobookRecorder.window.getNoiseFloor();
@@ -247,6 +254,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
         if (startOffset < 0) startOffset = 0;
         if (endOffset >= samples.length) endOffset = samples.length-1;
+        updateCrossings();
     }
 
     public String getId() {
@@ -349,12 +357,40 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         return null;
     }
 
+    public int getStartCrossing() {
+        return crossStartOffset;
+    }
+
     public int getStartOffset() {
         return startOffset;
     }
 
+    public void updateCrossings() {
+        updateStartCrossing();
+        updateEndCrossing();
+    }
+
+    public void updateStartCrossing() {
+        if (crossStartOffset == -1) {
+            crossStartOffset = findNearestZeroCrossing(startOffset, 4096);
+        }
+    }
+
+    public void updateEndCrossing() {
+        if (crossEndOffset == -1) {
+            crossEndOffset = findNearestZeroCrossing(endOffset, 4096);
+        }
+    }
+
     public void setStartOffset(int o) {
-        startOffset = o;
+        if (startOffset != o) {
+            startOffset = o;
+            crossStartOffset = -1;
+        }
+    }
+
+    public int getEndCrossing() {
+        return crossEndOffset;
     }
 
     public int getEndOffset() {
@@ -362,7 +398,10 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public void setEndOffset(int o) {
-        endOffset = o;
+        if (endOffset != o) {
+            endOffset = o;
+            crossEndOffset = -1;
+        }
     }
 
     public int getSampleSize() {
@@ -411,7 +450,9 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             long len = s.getFrameLength();
             int frameSize = format.getFrameSize();
 
-            int pos = startOffset * frameSize;
+            updateCrossings();
+
+            int pos = crossStartOffset * frameSize;
 
             SourceDataLine play = AudioSystem.getSourceDataLine(format, Options.getPlaybackMixer());
             play.open(format);
@@ -422,7 +463,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
             s.skip(pos);
             
-            while (pos < endOffset * frameSize) {
+            while (pos < crossEndOffset * frameSize) {
                 int nr = s.read(buffer);
                 pos += nr;
 
@@ -438,13 +479,14 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     public byte[] getRawAudioData() {
         File f = getFile();
         try {
+            updateCrossings();
             AudioInputStream s = AudioSystem.getAudioInputStream(f);
             AudioFormat format = s.getFormat();
             int frameSize = format.getFrameSize();
-            int length = endOffset - startOffset;
+            int length = crossEndOffset - crossStartOffset;
             byte[] data = new byte[length * frameSize];
 
-            s.skip(startOffset * frameSize);
+            s.skip(crossStartOffset * frameSize);
 
             s.read(data);
 
@@ -497,8 +539,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                     }
 
 
-                    System.err.println("Decimated from " + length + " to " + newLen);
-
                     ByteArrayInputStream bas = new ByteArrayInputStream(decimated);
                     recognizer.startRecognition(bas);
                     SpeechResult result;
@@ -545,5 +585,41 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public boolean lockedInCache() {
         return id.equals("room-noise"); 
+    }
+
+    public int findNearestZeroCrossing(int pos, int range) {
+        int[] data = getAudioData();
+
+        if (pos < 0) pos = 0;
+        if (pos >= data.length) pos = data.length-1;
+
+        int backwards = pos;
+        int forwards = pos;
+
+        int backwardsPrev = data[backwards];
+        int forwardsPrev = data[forwards];
+
+        while (backwards > 0 || forwards < data.length-2) {
+
+            if (forwards < data.length-2) forwards++;
+            if (backwards > 0) backwards--;
+
+            if (backwardsPrev >= 0 && data[backwards] < 0) { // Found one!
+                return backwards;
+            }
+
+            if (forwardsPrev < 0 && data[forwards] >= 0) {
+                return forwards;
+            }
+
+            range--;
+            if (range == 0) {
+                return pos;
+            }
+
+            backwardsPrev = data[backwards];
+            forwardsPrev = data[forwards];
+        }
+        return pos;
     }
 }

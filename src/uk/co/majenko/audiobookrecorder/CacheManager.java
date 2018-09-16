@@ -14,12 +14,10 @@ public class CacheManager {
                 cache.add(ob);
             } else {
                 ob.clearCache();
-                System.err.println("Purged " + ob);
             }
         }
 
         cache.add(c);
-        System.err.println("Cached " + c);
     }
 
     public static void setCacheSize(int c) {

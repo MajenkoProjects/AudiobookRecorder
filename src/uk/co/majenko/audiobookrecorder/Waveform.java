@@ -12,6 +12,9 @@ public class Waveform extends JPanel {
     int leftMarker = 0;
     int rightMarker = 0;
 
+    int leftAltMarker = 0;
+    int rightAltMarker = 0;
+
     public Waveform() {
         super();
     }
@@ -87,12 +90,33 @@ public class Waveform extends JPanel {
             g.setColor(new Color(255, 0, 0));
             g.drawLine(leftMarker/step, 0, leftMarker/step, h);
             g.drawLine(rightMarker/step, 0, rightMarker/step, h);
+
+            g.setColor(new Color(255, 255, 0));
+
+            g.drawLine(leftAltMarker/step, 0, leftAltMarker/step, h);
+            g.drawLine(rightAltMarker/step, 0, rightAltMarker/step, h);
         }
+    }
+
+    public void setAltMarkers(int l, int r) {
+        leftAltMarker = l;
+        rightAltMarker = r;
+        repaint();
     }
 
     public void setMarkers(int l, int r) {
         leftMarker = l;
         rightMarker = r;
+        repaint();
+    }
+
+    public void setLeftAltMarker(int l) {
+        leftAltMarker = l;
+        repaint();
+    }
+
+    public void setRightAltMarker(int r) {
+        rightAltMarker = r;
         repaint();
     }
 
