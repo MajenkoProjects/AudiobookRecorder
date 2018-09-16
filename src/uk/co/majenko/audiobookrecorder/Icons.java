@@ -20,5 +20,6 @@ public class Icons {
     static public ImageIcon peak        = new ImageIcon(Icons.class.getResource("icons/peak.png"));
     static public ImageIcon locked      = new ImageIcon(Icons.class.getResource("icons/locked.png"));
     static public ImageIcon appIcon     = new ImageIcon(Icons.class.getResource("icons/appIcon.png"));
+    static public ImageIcon star        = new ImageIcon(Icons.class.getResource("icons/star.png"));
 
 }

@@ -10,11 +10,16 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
         JLabel ret = (JLabel) super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
         if (value instanceof Sentence) {
             Sentence s = (Sentence)value;
+
             if (s.isLocked()) {
                 ret.setForeground(new Color(0x20, 0x00, 0x00));
                 ret.setIcon(Icons.locked);
             } else {
                 ret.setIcon(Icons.sentence);
+            }
+
+            if (s.isInSample()) {
+                ret.setIcon(Icons.star);
             }
         } else if (value instanceof Chapter) {
             ret.setIcon(Icons.chapter);

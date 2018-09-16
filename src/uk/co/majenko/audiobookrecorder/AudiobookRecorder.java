@@ -775,6 +775,32 @@ public class AudiobookRecorder extends JFrame {
                 JMenuObject peak = new JMenuObject("Auto-trim all (Peak)", c);
                 JMenuObject moveUp = new JMenuObject("Move Up", c);
                 JMenuObject moveDown = new JMenuObject("Move Down", c);
+                JMenu mergeWith = new JMenu("Merge chapter with");
+
+                for (Enumeration<Chapter> bc = book.children(); bc.hasMoreElements();) {
+                    Chapter chp = bc.nextElement();
+                    if (chp.getId().equals(c.getId())) {
+                        continue;
+                    }
+                    JMenuObject2 m = new JMenuObject2(chp.getName(), c, chp);
+                    m.addActionListener(new ActionListener() {
+                        public void actionPerformed(ActionEvent e) {
+                            JMenuObject2 ob = (JMenuObject2)e.getSource();
+                            Chapter source = (Chapter)ob.getObject1();
+                            Chapter target = (Chapter)ob.getObject2();
+
+                            DefaultMutableTreeNode n = source.getFirstLeaf();
+                            while (n instanceof Sentence) {
+                                bookTreeModel.removeNodeFromParent(n);
+                                bookTreeModel.insertNodeInto(n, target, target.getChildCount());
+                                n = source.getFirstLeaf();
+                            }
+                        }
+                    });
+                    mergeWith.add(m);
+                }
+
+
 
                 int idNumber = s2i(c.getId());
 
@@ -834,6 +860,9 @@ public class AudiobookRecorder extends JFrame {
 
                 menu.add(moveUp);
                 menu.add(moveDown);
+
+                menu.addSeparator();
+                menu.add(mergeWith);
 
                 menu.addSeparator();
 

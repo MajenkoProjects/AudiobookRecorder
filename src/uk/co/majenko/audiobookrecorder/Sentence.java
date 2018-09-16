@@ -27,6 +27,8 @@ public class Sentence extends DefaultMutableTreeNode {
 
     boolean recording;
 
+    boolean inSample;
+
     TargetDataLine line;
     AudioInputStream inputStream;
 
@@ -519,5 +521,13 @@ public class Sentence extends DefaultMutableTreeNode {
 
     public boolean isLocked() {
         return locked;
+    }
+
+    public void setInSample(boolean s) {
+        inSample = s;
+    }
+
+    public boolean isInSample() { 
+        return inSample;
     }
 }
