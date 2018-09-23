@@ -96,6 +96,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 try {
                     AudioSystem.write(inputStream, AudioFileFormat.Type.WAVE, audioFile);
                 } catch (Exception e) {
+                    inputStream = null;
                     e.printStackTrace();
                 }
             }
@@ -112,8 +113,10 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     public void stopRecording() {
         try {
             inputStream.close();
+            inputStream = null;
             line.stop();
             line.close();
+            line = null;
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -1145,12 +1145,19 @@ public class AudiobookRecorder extends JFrame {
                 i++;
             }
         }
+        FileOutputStream fos = null;
 
         try {
-            FileOutputStream fos = new FileOutputStream(config);
+            fos = new FileOutputStream(config);
             prefs.storeToXML(fos, "Audiobook Recorder Description");
         } catch (Exception e) {
             e.printStackTrace();
+        }
+        if (fos != null) {
+            try {
+                fos.close();
+            } catch (Exception e) {
+            }
         }
     }
 
@@ -1471,133 +1478,160 @@ public class AudiobookRecorder extends JFrame {
 
     }
 
+    class ExportThread implements Runnable {
+        ExportDialog exportDialog;
+
+        public ExportThread(ExportDialog e) {
+            super();
+            exportDialog = e;
+        }
+
+        public void run() {
+
+            try {
+                File bookRoot = new File(Options.get("path.storage"), book.getName());
+                if (!bookRoot.exists()) {
+                    bookRoot.mkdirs();
+                }
+
+                File export = new File(bookRoot, "export");
+                if (!export.exists()) {
+                    export.mkdirs();
+                }
+                Encoder encoder;
+
+                String ffloc = Options.get("path.ffmpeg");
+                if (ffloc != null && !ffloc.equals("")) {
+                    encoder = new Encoder(new FFMPEGLocator() {
+                        public String getFFMPEGExecutablePath() {
+                            return Options.get("path.ffmpeg");
+                        }
+                    });
+                } else {
+                    encoder = new Encoder();
+                }
+                EncodingAttributes attributes = new EncodingAttributes();
+
+                AudioAttributes audioAttributes = new AudioAttributes();
+                audioAttributes.setCodec("libmp3lame");
+                audioAttributes.setBitRate(Options.getInteger("audio.export.bitrate"));
+                audioAttributes.setSamplingRate(Options.getInteger("audio.export.samplerate"));
+                audioAttributes.setChannels(new Integer(2));
+                attributes.setFormat("mp3");
+                attributes.setAudioAttributes(audioAttributes);
+
+
+                AudioFormat format = roomNoise.getAudioFormat();
+                byte[] data;
+
+                for (Enumeration<Chapter> o = book.children(); o.hasMoreElements();) {
+
+                    int fullLength = 0;
+                
+
+                    Chapter c = o.nextElement();
+
+                    if (c.getChildCount() == 0) continue;
+                    int kids = c.getChildCount();
+                    if (kids == 0) continue;
+                    String name = c.getName();
+                    exportDialog.setMessage("Exporting " + name);
+                    exportDialog.setProgress(0);
+
+                    File exportFile = new File(export, name + ".wax");
+                    File wavFile = new File(export, name + ".wav");
+
+                    FileOutputStream fos = new FileOutputStream(exportFile);
+                    data = getRoomNoise(s2i(Options.get("catenation.pre-chapter")));
+                    fullLength += data.length;
+                    fos.write(data);
+
+                    int kidno = 0;
+    
+
+                    for (Enumeration<Sentence> s = c.children(); s.hasMoreElements();) {
+                        kidno++;
+                        exportDialog.setProgress(kidno * 1000 / kids);
+                        Sentence snt = s.nextElement();
+                        data = snt.getRawAudioData();
+
+                        fullLength += data.length;
+                        fos.write(data);
+
+                        if (s.hasMoreElements()) {
+                            data = getRoomNoise(snt.getPostGap());
+                        } else {
+                            data = getRoomNoise(s2i(Options.get("catenation.post-chapter")));
+                        }
+                        fullLength += data.length;
+                        fos.write(data);
+                    }
+                    fos.close();
+                    FileInputStream fis = new FileInputStream(exportFile);
+                    AudioInputStream ais = new AudioInputStream(fis, format, fullLength);
+                    fos = new FileOutputStream(wavFile);
+                    AudioSystem.write(ais, AudioFileFormat.Type.WAVE, fos);
+                    fos.flush();
+                    fos.close();
+                    fis.close();
+                    exportFile.delete();
+                }
+
+
+
+                for (Enumeration<Chapter> o = book.children(); o.hasMoreElements();) {
+
+                    Chapter c = o.nextElement();
+                    if (c.getChildCount() == 0) continue;
+                    String name = c.getName();
+
+                    exportDialog.setMessage("Converting " + name);
+
+                    File wavFile = new File(export, name + ".wav");
+                    File mp3File = new File(export, name + "-untagged.mp3");
+                    File taggedFile = new File(export, name + ".mp3");
+
+                    encoder.encode(wavFile, mp3File, attributes, exportDialog);
+
+                    Mp3File id3 = new Mp3File(mp3File);
+
+                    ID3v2 tags = new ID3v24Tag();
+                    id3.setId3v2Tag(tags);
+
+                    tags.setTrack(Integer.toString(s2i(c.getId()) - 0));
+                    tags.setTitle(c.getName());
+                    tags.setAlbum(book.getName());
+                    tags.setArtist(book.getAuthor());
+
+    //                ID3v2TextFrameData g = new ID3v2TextFrameData(false, new EncodedText(book.getGenre()));
+    //                tags.addFrame(tags.createFrame("TCON", g.toBytes(), true));
+
+                    tags.setComment(book.getComment());
+
+                    id3.save(taggedFile.getAbsolutePath());
+                    mp3File.delete();
+                    wavFile.delete();
+                    
+                }
+
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            exportDialog.closeDialog();
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public void exportAudio() {
 
-        try {
-            File bookRoot = new File(Options.get("path.storage"), book.getName());
-            if (!bookRoot.exists()) {
-                bookRoot.mkdirs();
-            }
+        ExportDialog ed = new ExportDialog("Exporting book...");
 
-            File export = new File(bookRoot, "export");
-            if (!export.exists()) {
-                export.mkdirs();
-            }
-
-            Encoder encoder;
-
-            String ffloc = Options.get("path.ffmpeg");
-            if (ffloc != null && !ffloc.equals("")) {
-                encoder = new Encoder(new FFMPEGLocator() {
-                    public String getFFMPEGExecutablePath() {
-                        return Options.get("path.ffmpeg");
-                    }
-                });
-            } else {
-                encoder = new Encoder();
-            }
-            EncodingAttributes attributes = new EncodingAttributes();
-
-            AudioAttributes audioAttributes = new AudioAttributes();
-            audioAttributes.setCodec("libmp3lame");
-            audioAttributes.setBitRate(Options.getInteger("audio.export.bitrate"));
-            audioAttributes.setSamplingRate(Options.getInteger("audio.export.samplerate"));
-            audioAttributes.setChannels(new Integer(2));
-            
-            attributes.setFormat("mp3");
-            attributes.setAudioAttributes(audioAttributes);
-
-
-            AudioFormat format = roomNoise.getAudioFormat();
-            byte[] data;
-
-            for (Enumeration<Chapter> o = book.children(); o.hasMoreElements();) {
-
-                int fullLength = 0;
-
-                Chapter c = o.nextElement();
-                if (c.getChildCount() == 0) continue;
-                String name = c.getName();
-
-                File exportFile = new File(export, name + ".wax");
-                File wavFile = new File(export, name + ".wav");
-
-                FileOutputStream fos = new FileOutputStream(exportFile);
-
-                data = getRoomNoise(s2i(Options.get("catenation.pre-chapter")));
-                fullLength += data.length;
-                fos.write(data);
-
-                for (Enumeration<Sentence> s = c.children(); s.hasMoreElements();) {
-                    Sentence snt = s.nextElement();
-                    data = snt.getRawAudioData();
-
-                    fullLength += data.length;
-                    fos.write(data);
-
-                    if (s.hasMoreElements()) {
-                        data = getRoomNoise(snt.getPostGap());
-                    } else {
-                        data = getRoomNoise(s2i(Options.get("catenation.post-chapter")));
-                    }
-                    fullLength += data.length;
-                    fos.write(data);
-                }
-                fos.close();
-
-                FileInputStream fis = new FileInputStream(exportFile);
-                AudioInputStream ais = new AudioInputStream(fis, format, fullLength);
-                fos = new FileOutputStream(wavFile);
-                AudioSystem.write(ais, AudioFileFormat.Type.WAVE, fos);
-                fos.flush();
-                fos.close();
-                fis.close();
-                exportFile.delete();
-            }
-
-
-
-            for (Enumeration<Chapter> o = book.children(); o.hasMoreElements();) {
-
-                Chapter c = o.nextElement();
-                if (c.getChildCount() == 0) continue;
-                String name = c.getName();
-
-                File wavFile = new File(export, name + ".wav");
-                File mp3File = new File(export, name + "-untagged.mp3");
-                File taggedFile = new File(export, name + ".mp3");
-
-                encoder.encode(wavFile, mp3File, attributes);
-
-                Mp3File id3 = new Mp3File(mp3File);
-
-                ID3v2 tags = new ID3v24Tag();
-                id3.setId3v2Tag(tags);
-
-                tags.setTrack(Integer.toString(s2i(c.getId()) - 0));
-                tags.setTitle(c.getName());
-                tags.setAlbum(book.getName());
-                tags.setArtist(book.getAuthor());
-
-//                ID3v2TextFrameData g = new ID3v2TextFrameData(false, new EncodedText(book.getGenre()));
-//                tags.addFrame(tags.createFrame("TCON", g.toBytes(), true));
-
-                tags.setComment(book.getComment());
-
-                id3.save(taggedFile.getAbsolutePath());
-
-                mp3File.delete();
-                wavFile.delete();
-                
-            }
-
-            JOptionPane.showMessageDialog(this, "Book exported.", "Done", JOptionPane.INFORMATION_MESSAGE);
-
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        ExportThread t = new ExportThread(ed);
+        Thread nt = new Thread(t);
+        nt.start();
+        ed.setVisible(true);
     }
 
 

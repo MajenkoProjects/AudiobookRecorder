@@ -41,6 +41,9 @@ public class Encoder {
 	private static final Pattern FORMAT_PATTERN = Pattern
 			.compile("^\\s*([D ])([E ])\\s+([\\w,]+)\\s+.+$");
 
+    private static final Pattern TIME_PATTERN = Pattern
+            .compile("^(\\d+):(\\d+):(\\d+)\\.(\\d+)$");
+
 	/**
 	 * This regexp is used to parse the ffmpeg output about the included
 	 * encoders/decoders.
@@ -895,26 +898,52 @@ public class Encoder {
 							if (listener != null) {
 								String time = (String) table.get("time");
 								if (time != null) {
-									int dot = time.indexOf('.');
-									if (dot > 0 && dot == time.length() - 2
-											&& duration > 0) {
-										String p1 = time.substring(0, dot);
-										String p2 = time.substring(dot + 1);
-										try {
-											long i1 = Long.parseLong(p1);
-											long i2 = Long.parseLong(p2);
-											progress = (i1 * 1000L)
-													+ (i2 * 100L);
-											int perm = (int) Math
-													.round((double) (progress * 1000L)
-															/ (double) duration);
-											if (perm > 1000) {
-												perm = 1000;
-											}
-											listener.progress(perm);
-										} catch (NumberFormatException e) {
-											;
-										}
+
+                                    Matcher tm = TIME_PATTERN.matcher(time);
+                                    if (tm.matches()) {
+                                        try {
+                                            long hours = Long.parseLong(tm.group(1));
+                                            long minutes = Long.parseLong(tm.group(2));
+                                            long seconds = Long.parseLong(tm.group(3));
+                                            long millis = Long.parseLong(tm.group(4));
+                                            progress = (hours * 3600L * 1000L) +
+                                                       (minutes * 60L * 1000L) +
+                                                       (seconds * 1000L) +
+                                                       (millis * 100L);
+
+                                                int perm = (int) Math
+                                                        .round((double) (progress * 1000L)
+                                                                / (double) duration);
+                                                if (perm > 1000) {
+                                                    perm = 1000;
+                                                }
+                                                listener.progress(perm);
+
+                                        } catch (NumberFormatException e) {              
+                                            ;
+                                        }
+                                    } else {
+                                        int dot = time.indexOf('.');
+                                        if (dot > 0 && dot == time.length() - 2
+                                                && duration > 0) {
+                                            String p1 = time.substring(0, dot);
+                                            String p2 = time.substring(dot + 1);
+                                            try {
+                                                long i1 = Long.parseLong(p1);
+                                                long i2 = Long.parseLong(p2);
+                                                progress = (i1 * 1000L)
+                                                        + (i2 * 100L);
+                                                int perm = (int) Math
+                                                        .round((double) (progress * 1000L)
+                                                                / (double) duration);
+                                                if (perm > 1000) {
+                                                    perm = 1000;
+                                                }
+                                                listener.progress(perm);
+                                            } catch (NumberFormatException e) {
+                                                ;
+                                            }
+                                        }
 									}
 								}
 							}
