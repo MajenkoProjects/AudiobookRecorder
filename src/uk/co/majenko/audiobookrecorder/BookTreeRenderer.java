@@ -14,6 +14,8 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
             if (s.isLocked()) {
                 ret.setForeground(new Color(0x20, 0x00, 0x00));
                 ret.setIcon(Icons.locked);
+            } else if (s.getStartOffset() == 0) {
+                ret.setIcon(Icons.important);
             } else {
                 ret.setIcon(Icons.sentence);
             }

@@ -796,6 +796,8 @@ public class AudiobookRecorder extends JFrame {
                 JMenuObject moveUp = new JMenuObject("Move Up", c);
                 JMenuObject moveDown = new JMenuObject("Move Down", c);
                 JMenu mergeWith = new JMenu("Merge chapter with");
+                JMenuObject lockAll = new JMenuObject("Lock all sentences", c);
+                JMenuObject unlockAll = new JMenuObject("Unlock all sentences", c);
 
                 for (Enumeration<Chapter> bc = book.children(); bc.hasMoreElements();) {
                     Chapter chp = bc.nextElement();
@@ -878,6 +880,30 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
 
+                lockAll.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter c = (Chapter)o.getObject();
+                        for (Enumeration<Sentence> s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = s.nextElement();
+                            snt.setLocked(true);
+                            bookTreeModel.reload(snt);
+                        }
+                    }
+                });
+                unlockAll.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter c = (Chapter)o.getObject();
+                        for (Enumeration<Sentence> s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = s.nextElement();
+                            snt.setLocked(false);
+                            bookTreeModel.reload(snt);
+                        }
+                    }
+                });
+                        
+
                 menu.add(moveUp);
                 menu.add(moveDown);
 
@@ -887,6 +913,9 @@ public class AudiobookRecorder extends JFrame {
                 menu.addSeparator();
 
                 menu.add(peak);
+                menu.addSeparator();
+                menu.add(lockAll);
+                menu.add(unlockAll);
                 menu.show(bookTree, e.getX(), e.getY());
             }
 

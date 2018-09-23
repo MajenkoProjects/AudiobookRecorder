@@ -21,5 +21,6 @@ public class Icons {
     static public final ImageIcon locked      = new ImageIcon(Icons.class.getResource("icons/locked.png"));
     static public final ImageIcon appIcon     = new ImageIcon(Icons.class.getResource("icons/appIcon.png"));
     static public final ImageIcon star        = new ImageIcon(Icons.class.getResource("icons/star.png"));
+    static public final ImageIcon important   = new ImageIcon(Icons.class.getResource("icons/important.png"));
 
 }

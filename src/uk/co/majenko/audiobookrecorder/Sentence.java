@@ -121,7 +121,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         storedAudioData = null;
 
         if (!id.equals("room-noise")) {
-            autoTrimSampleFFT();
+            autoTrimSamplePeak();
             if (Options.getBoolean("process.sphinx")) {
                 recognise();
             }
@@ -574,6 +574,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public void clearCache() {
         storedAudioData = null;
+        System.gc();
     }
 
     public boolean lockedInCache() {
@@ -582,6 +583,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public int findNearestZeroCrossing(int pos, int range) {
         int[] data = getAudioData();
+        if (data == null) return 0;
 
         if (pos < 0) pos = 0;
         if (pos >= data.length) pos = data.length-1;
