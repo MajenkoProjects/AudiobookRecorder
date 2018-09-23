@@ -1625,6 +1625,7 @@ public class AudiobookRecorder extends JFrame {
                     play.start();
 
                     while (playing != null) {
+                        bookTree.scrollPathToVisible(new TreePath(s.getPath()));
                         DefaultMutableTreeNode prev = s.getPreviousSibling();
                         boolean first = false;
                         if (prev == null) {
