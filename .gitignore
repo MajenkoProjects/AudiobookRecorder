@@ -2,6 +2,6 @@
 ._*
 bin
 AudiobookRecorder.jar
-AudiobookRecorder.dmg
-AudiobookRecorder.exe
-AudiobookRecorder
+AudiobookRecorder-linux
+AudiobookRecorder-osx.dmg
+AudiobookRecorder-win.exe

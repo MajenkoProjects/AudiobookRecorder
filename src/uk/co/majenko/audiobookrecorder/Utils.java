@@ -20,4 +20,22 @@ public class Utils {
 
         return resizedImg;
     }
+
+    public static boolean s2b(String s) {
+        if (s == null) return false;
+        if (s.equals("true")) return true;
+        if (s.equals("t")) return true;
+        if (s.equals("yes")) return true;
+        if (s.equals("y")) return true;
+        return false;
+    }
+
+    public static int s2i(String s) {
+        try {
+            return Integer.parseInt(s);
+        } catch (Exception e) {
+        }
+        return 0;
+    }
+
 }

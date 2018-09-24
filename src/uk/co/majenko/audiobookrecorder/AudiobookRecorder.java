@@ -798,6 +798,21 @@ public class AudiobookRecorder extends JFrame {
                 JMenu mergeWith = new JMenu("Merge chapter with");
                 JMenuObject lockAll = new JMenuObject("Lock all sentences", c);
                 JMenuObject unlockAll = new JMenuObject("Unlock all sentences", c);
+                JMenuObject exportChapter = new JMenuObject("Export chapter", c);
+
+                exportChapter.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter chap = (Chapter)o.getObject();
+
+                        ExportDialog ed = new ExportDialog("Exporting " + chap.getName());
+
+                        ExportThread t = new ExportThread(chap, ed);
+                        Thread nt = new Thread(t);
+                        nt.start();
+                        ed.setVisible(true);
+                    }
+                });
 
                 for (Enumeration<Chapter> bc = book.children(); bc.hasMoreElements();) {
                     Chapter chp = bc.nextElement();
@@ -824,7 +839,7 @@ public class AudiobookRecorder extends JFrame {
 
 
 
-                int idNumber = s2i(c.getId());
+                int idNumber = Utils.s2i(c.getId());
 
                 moveUp.setEnabled(idNumber > 0);
                 moveDown.setEnabled(idNumber > 0);
@@ -836,10 +851,10 @@ public class AudiobookRecorder extends JFrame {
                         int pos = bookTreeModel.getIndexOfChild(book, chap);
                         if (pos > 0) pos--;
 
-                        int id = s2i(chap.getId());
+                        int id = Utils.s2i(chap.getId());
                         if (id > 0) {
                             Chapter prevChap = (Chapter)bookTreeModel.getChild(book, pos);
-                            id = s2i(prevChap.getId());
+                            id = Utils.s2i(prevChap.getId());
                             if (id > 0) {
                                 bookTreeModel.removeNodeFromParent(chap);
                                 bookTreeModel.insertNodeInto(chap, book, pos);
@@ -853,11 +868,11 @@ public class AudiobookRecorder extends JFrame {
                         Chapter chap = (Chapter)o.getObject();
                         int pos = bookTreeModel.getIndexOfChild(book, chap);
                         pos++;
-                        int id = s2i(chap.getId());
+                        int id = Utils.s2i(chap.getId());
                         if (id > 0) {
                             Chapter nextChap = (Chapter)bookTreeModel.getChild(book, pos);
                             if (nextChap != null) {
-                                id = s2i(nextChap.getId());
+                                id = Utils.s2i(nextChap.getId());
                                 if (id > 0) {
                                     bookTreeModel.removeNodeFromParent(chap);
                                     bookTreeModel.insertNodeInto(chap, book, pos);
@@ -913,9 +928,16 @@ public class AudiobookRecorder extends JFrame {
                 menu.addSeparator();
 
                 menu.add(peak);
+
                 menu.addSeparator();
+
                 menu.add(lockAll);
                 menu.add(unlockAll);
+    
+                menu.addSeparator();
+
+                menu.add(exportChapter);
+
                 menu.show(bookTree, e.getX(), e.getY());
             }
 
@@ -1279,38 +1301,38 @@ public class AudiobookRecorder extends JFrame {
 
 
         Chapter c = new Chapter("audition", prefs.getProperty("chapter.audition.name"));
-        c.setPostGap(s2i(prefs.getProperty("chapter.audition.post-gap")));
-        c.setPreGap(s2i(prefs.getProperty("chapter.audition.pre-gap")));
+        c.setPostGap(Utils.s2i(prefs.getProperty("chapter.audition.post-gap")));
+        c.setPreGap(Utils.s2i(prefs.getProperty("chapter.audition.pre-gap")));
         bookTreeModel.insertNodeInto(c, book, 0);
         
         for (int i = 0; i < 100000000; i++) {
             String id = prefs.getProperty(String.format("chapter.audition.sentence.%08d.id", i));
             String text = prefs.getProperty(String.format("chapter.audition.sentence.%08d.text", i));
-            int gap = s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.post-gap", i)));
+            int gap = Utils.s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.post-gap", i)));
             if (id == null) break;
             Sentence s = new Sentence(id, text);
             s.setPostGap(gap);
-            s.setStartOffset(s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.start-offset", i))));
-            s.setEndOffset(s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.end-offset", i))));
-            s.setLocked(s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.locked", i))));
+            s.setStartOffset(Utils.s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.start-offset", i))));
+            s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.end-offset", i))));
+            s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.locked", i))));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
         c = new Chapter("open", prefs.getProperty("chapter.open.name"));
-        c.setPostGap(s2i(prefs.getProperty("chapter.open.post-gap")));
-        c.setPreGap(s2i(prefs.getProperty("chapter.open.pre-gap")));
+        c.setPostGap(Utils.s2i(prefs.getProperty("chapter.open.post-gap")));
+        c.setPreGap(Utils.s2i(prefs.getProperty("chapter.open.pre-gap")));
         bookTreeModel.insertNodeInto(c, book, 0);
         
         for (int i = 0; i < 100000000; i++) {
             String id = prefs.getProperty(String.format("chapter.open.sentence.%08d.id", i));
             String text = prefs.getProperty(String.format("chapter.open.sentence.%08d.text", i));
-            int gap = s2i(prefs.getProperty(String.format("chapter.open.sentence.%08d.post-gap", i)));
+            int gap = Utils.s2i(prefs.getProperty(String.format("chapter.open.sentence.%08d.post-gap", i)));
             if (id == null) break;
             Sentence s = new Sentence(id, text);
             s.setPostGap(gap);
-            s.setStartOffset(s2i(prefs.getProperty(String.format("chapter.open.sentence.%08d.start-offset", i))));
-            s.setEndOffset(s2i(prefs.getProperty(String.format("chapter.open.sentence.%08d.end-offset", i))));
-            s.setLocked(s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.locked", i))));
+            s.setStartOffset(Utils.s2i(prefs.getProperty(String.format("chapter.open.sentence.%08d.start-offset", i))));
+            s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.open.sentence.%08d.end-offset", i))));
+            s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.locked", i))));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
@@ -1321,39 +1343,39 @@ public class AudiobookRecorder extends JFrame {
             if (cname == null) break;
 
             c = new Chapter(String.format("%04d", cno), cname);
-            c.setPostGap(s2i(prefs.getProperty(String.format("chapter.%04d.post-gap", cno))));
-            c.setPreGap(s2i(prefs.getProperty(String.format("chapter.%04d.pre-gap", cno))));
+            c.setPostGap(Utils.s2i(prefs.getProperty(String.format("chapter.%04d.post-gap", cno))));
+            c.setPreGap(Utils.s2i(prefs.getProperty(String.format("chapter.%04d.pre-gap", cno))));
             bookTreeModel.insertNodeInto(c, book, book.getChildCount());
 
             for (int i = 0; i < 100000000; i++) {
                 String id = prefs.getProperty(String.format("chapter.%04d.sentence.%08d.id", cno, i));
                 String text = prefs.getProperty(String.format("chapter.%04d.sentence.%08d.text", cno, i));
-                int gap = s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.post-gap", cno, i)));
+                int gap = Utils.s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.post-gap", cno, i)));
                 if (id == null) break;
                 Sentence s = new Sentence(id, text);
                 s.setPostGap(gap);
-                s.setStartOffset(s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.start-offset", cno, i))));
-                s.setEndOffset(s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.end-offset", cno, i))));
-                s.setLocked(s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.locked", cno, i))));
+                s.setStartOffset(Utils.s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.start-offset", cno, i))));
+                s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.end-offset", cno, i))));
+                s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.locked", cno, i))));
                 bookTreeModel.insertNodeInto(s, c, c.getChildCount());
             }
         }
 
         c = new Chapter("close", prefs.getProperty("chapter.close.name"));
-        c.setPostGap(s2i(prefs.getProperty("chapter.close.post-gap")));
-        c.setPreGap(s2i(prefs.getProperty("chapter.close.pre-gap")));
+        c.setPostGap(Utils.s2i(prefs.getProperty("chapter.close.post-gap")));
+        c.setPreGap(Utils.s2i(prefs.getProperty("chapter.close.pre-gap")));
         bookTreeModel.insertNodeInto(c, book, book.getChildCount());
 
         for (int i = 0; i < 100000000; i++) {
             String id = prefs.getProperty(String.format("chapter.close.sentence.%08d.id", i));
             String text = prefs.getProperty(String.format("chapter.close.sentence.%08d.text", i));
-            int gap = s2i(prefs.getProperty(String.format("chapter.close.sentence.%08d.post-gap", i)));
+            int gap = Utils.s2i(prefs.getProperty(String.format("chapter.close.sentence.%08d.post-gap", i)));
             if (id == null) break;
             Sentence s = new Sentence(id, text);
             s.setPostGap(gap);
-            s.setStartOffset(s2i(prefs.getProperty(String.format("chapter.close.sentence.%08d.start-offset", i))));
-            s.setEndOffset(s2i(prefs.getProperty(String.format("chapter.close.sentence.%08d.end-offset", i))));
-            s.setLocked(s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.locked", i))));
+            s.setStartOffset(Utils.s2i(prefs.getProperty(String.format("chapter.close.sentence.%08d.start-offset", i))));
+            s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.close.sentence.%08d.end-offset", i))));
+            s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.locked", i))));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
@@ -1393,23 +1415,6 @@ public class AudiobookRecorder extends JFrame {
         }
 
         
-    }
-
-    boolean s2b(String s) {
-        if (s == null) return false;
-        if (s.equals("true")) return true;
-        if (s.equals("t")) return true;
-        if (s.equals("yes")) return true;
-        if (s.equals("y")) return true;
-        return false;
-    }
-
-    int s2i(String s) {
-        try {
-            return Integer.parseInt(s);
-        } catch (Exception e) {
-        }
-        return 0;
     }
 
     public File getBookFolder() {
@@ -1480,141 +1485,19 @@ public class AudiobookRecorder extends JFrame {
 
     class ExportThread implements Runnable {
         ExportDialog exportDialog;
+        Chapter chapter;
 
-        public ExportThread(ExportDialog e) {
+        public ExportThread(Chapter c, ExportDialog e) {
             super();
             exportDialog = e;
+            chapter = c;
         }
 
+        @SuppressWarnings("unchecked")
         public void run() {
 
             try {
-                File bookRoot = new File(Options.get("path.storage"), book.getName());
-                if (!bookRoot.exists()) {
-                    bookRoot.mkdirs();
-                }
-
-                File export = new File(bookRoot, "export");
-                if (!export.exists()) {
-                    export.mkdirs();
-                }
-                Encoder encoder;
-
-                String ffloc = Options.get("path.ffmpeg");
-                if (ffloc != null && !ffloc.equals("")) {
-                    encoder = new Encoder(new FFMPEGLocator() {
-                        public String getFFMPEGExecutablePath() {
-                            return Options.get("path.ffmpeg");
-                        }
-                    });
-                } else {
-                    encoder = new Encoder();
-                }
-                EncodingAttributes attributes = new EncodingAttributes();
-
-                AudioAttributes audioAttributes = new AudioAttributes();
-                audioAttributes.setCodec("libmp3lame");
-                audioAttributes.setBitRate(Options.getInteger("audio.export.bitrate"));
-                audioAttributes.setSamplingRate(Options.getInteger("audio.export.samplerate"));
-                audioAttributes.setChannels(new Integer(2));
-                attributes.setFormat("mp3");
-                attributes.setAudioAttributes(audioAttributes);
-
-
-                AudioFormat format = roomNoise.getAudioFormat();
-                byte[] data;
-
-                for (Enumeration<Chapter> o = book.children(); o.hasMoreElements();) {
-
-                    int fullLength = 0;
-                
-
-                    Chapter c = o.nextElement();
-
-                    if (c.getChildCount() == 0) continue;
-                    int kids = c.getChildCount();
-                    if (kids == 0) continue;
-                    String name = c.getName();
-                    exportDialog.setMessage("Exporting " + name);
-                    exportDialog.setProgress(0);
-
-                    File exportFile = new File(export, name + ".wax");
-                    File wavFile = new File(export, name + ".wav");
-
-                    FileOutputStream fos = new FileOutputStream(exportFile);
-                    data = getRoomNoise(s2i(Options.get("catenation.pre-chapter")));
-                    fullLength += data.length;
-                    fos.write(data);
-
-                    int kidno = 0;
-    
-
-                    for (Enumeration<Sentence> s = c.children(); s.hasMoreElements();) {
-                        kidno++;
-                        exportDialog.setProgress(kidno * 1000 / kids);
-                        Sentence snt = s.nextElement();
-                        data = snt.getRawAudioData();
-
-                        fullLength += data.length;
-                        fos.write(data);
-
-                        if (s.hasMoreElements()) {
-                            data = getRoomNoise(snt.getPostGap());
-                        } else {
-                            data = getRoomNoise(s2i(Options.get("catenation.post-chapter")));
-                        }
-                        fullLength += data.length;
-                        fos.write(data);
-                    }
-                    fos.close();
-                    FileInputStream fis = new FileInputStream(exportFile);
-                    AudioInputStream ais = new AudioInputStream(fis, format, fullLength);
-                    fos = new FileOutputStream(wavFile);
-                    AudioSystem.write(ais, AudioFileFormat.Type.WAVE, fos);
-                    fos.flush();
-                    fos.close();
-                    fis.close();
-                    exportFile.delete();
-                }
-
-
-
-                for (Enumeration<Chapter> o = book.children(); o.hasMoreElements();) {
-
-                    Chapter c = o.nextElement();
-                    if (c.getChildCount() == 0) continue;
-                    String name = c.getName();
-
-                    exportDialog.setMessage("Converting " + name);
-
-                    File wavFile = new File(export, name + ".wav");
-                    File mp3File = new File(export, name + "-untagged.mp3");
-                    File taggedFile = new File(export, name + ".mp3");
-
-                    encoder.encode(wavFile, mp3File, attributes, exportDialog);
-
-                    Mp3File id3 = new Mp3File(mp3File);
-
-                    ID3v2 tags = new ID3v24Tag();
-                    id3.setId3v2Tag(tags);
-
-                    tags.setTrack(Integer.toString(s2i(c.getId()) - 0));
-                    tags.setTitle(c.getName());
-                    tags.setAlbum(book.getName());
-                    tags.setArtist(book.getAuthor());
-
-    //                ID3v2TextFrameData g = new ID3v2TextFrameData(false, new EncodedText(book.getGenre()));
-    //                tags.addFrame(tags.createFrame("TCON", g.toBytes(), true));
-
-                    tags.setComment(book.getComment());
-
-                    id3.save(taggedFile.getAbsolutePath());
-                    mp3File.delete();
-                    wavFile.delete();
-                    
-                }
-
-
+                chapter.exportChapter(exportDialog);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -1626,12 +1509,18 @@ public class AudiobookRecorder extends JFrame {
     @SuppressWarnings("unchecked")
     public void exportAudio() {
 
-        ExportDialog ed = new ExportDialog("Exporting book...");
+        
+        for (Enumeration<Chapter> o = book.children(); o.hasMoreElements();) {
+            Chapter c = o.nextElement();
+            ExportDialog ed = new ExportDialog("Exporting " + c.getName());
 
-        ExportThread t = new ExportThread(ed);
-        Thread nt = new Thread(t);
-        nt.start();
-        ed.setVisible(true);
+            ExportThread t = new ExportThread(c, ed);
+            Thread nt = new Thread(t);
+            nt.start();
+            ed.setVisible(true);
+        }
+
+        JOptionPane.showMessageDialog(this, "Book export finished", "Export finished", JOptionPane.PLAIN_MESSAGE);
     }
 
 
@@ -1668,7 +1557,7 @@ public class AudiobookRecorder extends JFrame {
                             first = true;
                         }
                         if (first) {
-                            data = getRoomNoise(s2i(Options.get("catenation.pre-chapter")));
+                            data = getRoomNoise(Utils.s2i(Options.get("catenation.pre-chapter")));
                             play.write(data, 0, data.length);
                         }
                         data = s.getRawAudioData();
@@ -1683,7 +1572,7 @@ public class AudiobookRecorder extends JFrame {
                         }
 
                         if (last) {
-                            data = getRoomNoise(s2i(Options.get("catenation.post-chapter")));
+                            data = getRoomNoise(Utils.s2i(Options.get("catenation.post-chapter")));
                             play.write(data, 0, data.length);
                             playing = null;
                         } else {

@@ -68,11 +68,15 @@ public class ExportDialog extends JDialog implements EncoderProgressListener {
         }
     }
 
-    public void progress(int p) { setProgress(p); }
+    public void progress(int p) { 
+        progress.setValue(500 + (p / 2));
+        progress.setString((50 + p / 20) + "%");
+        spin();
+    }
 
     public void setProgress(int p) {
-        progress.setValue(p);
-        progress.setString((p / 10) + "%");
+        progress.setValue(p / 2);
+        progress.setString((p / 20) + "%");
         spin();
     }
 
