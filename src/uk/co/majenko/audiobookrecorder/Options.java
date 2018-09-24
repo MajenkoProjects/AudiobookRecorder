@@ -11,6 +11,8 @@ import java.io.*;
 
 public class Options extends JDialog {
 
+    JTabbedPane tabs;
+
     GridBagConstraints constraint;
 
     JComboBox<KVPair> mixerList;
@@ -28,9 +30,45 @@ public class Options extends JDialog {
     JCheckBox enableParsing;
     JSpinner cacheSize;
 
+    JSliderOb[] sliders;
+    JTextFieldOb[] eqvals;
+
 
     static HashMap<String, String> defaultPrefs;
     static Preferences prefs = null;
+
+    static class JSliderOb extends JSlider {
+        Object object;
+
+        public JSliderOb(int a, int b, int c) {
+            super(a, b, c);
+        }
+
+        public void setObject(Object o) {
+            object = o;
+        }
+
+        public Object getObject() {
+            return object;
+        }
+    }
+
+    public class JTextFieldOb extends JTextField {
+        Object object;
+
+        public JTextFieldOb(String s) {
+            super(s);
+        }
+
+        public void setObject(Object o) {
+            object = o;
+        }
+
+        public Object getObject() {
+            return object;
+        }
+    }
+        
 
     static class KVPair implements Comparable {
         public String key;
@@ -66,17 +104,17 @@ public class Options extends JDialog {
         }
     }
 
-    JComboBox<KVPair> addDropdown(String label, KVPair[] options, String def) {
+    JComboBox<KVPair> addDropdown(JPanel panel, String label, KVPair[] options, String def) {
         JLabel l = new JLabel(label);
         constraint.gridx = 0;
         constraint.gridwidth = 1;
         constraint.gridheight = 1;
         constraint.anchor = GridBagConstraints.LINE_START;
-        add(l, constraint);
+        panel.add(l, constraint);
 
         JComboBox<KVPair> o = new JComboBox<KVPair>(options);
         constraint.gridx = 1;
-        add(o, constraint);
+        panel.add(o, constraint);
 
         for (KVPair p : options) {
             if (p.key.equals(def)) {
@@ -89,13 +127,13 @@ public class Options extends JDialog {
         return o;
     }
 
-    JTextField addFilePath(String label, String path, boolean dironly) {
+    JTextField addFilePath(JPanel panel, String label, String path, boolean dironly) {
         JLabel l = new JLabel(label);
         constraint.gridx = 0;
         constraint.gridwidth = 1;
         constraint.gridheight = 1;
         constraint.anchor = GridBagConstraints.LINE_START;
-        add(l, constraint);
+        panel.add(l, constraint);
 
         JPanel p = new JPanel();
         p.setLayout(new BorderLayout());
@@ -149,7 +187,7 @@ public class Options extends JDialog {
         constraint.gridx = 1;
 
         constraint.fill = GridBagConstraints.HORIZONTAL;
-        add(p, constraint);
+        panel.add(p, constraint);
 
         constraint.fill = GridBagConstraints.NONE;
 
@@ -157,7 +195,7 @@ public class Options extends JDialog {
         return a;
     }
 
-    void addSeparator() {
+    void addSeparator(JPanel panel) {
         constraint.gridx = 0;
         constraint.gridwidth = 2;
 
@@ -170,20 +208,20 @@ public class Options extends JDialog {
 
         constraint.fill = GridBagConstraints.HORIZONTAL;
         constraint.insets = new Insets(10, 2, 10, 2);
-        add(p, constraint);
+        panel.add(p, constraint);
         constraint.insets = new Insets(2, 2, 2, 2);
         constraint.fill = GridBagConstraints.NONE;
         constraint.gridwidth = 1;
         constraint.gridy++;
     }
 
-    JSpinner addSpinner(String label, int min, int max, int step, int value, String suffix) {
+    JSpinner addSpinner(JPanel panel, String label, int min, int max, int step, int value, String suffix) {
         JLabel l = new JLabel(label);
         constraint.gridx = 0;
         constraint.gridwidth = 1;
         constraint.gridheight = 1;
         constraint.anchor = GridBagConstraints.LINE_START;
-        add(l, constraint);
+        panel.add(l, constraint);
 
         JPanel p = new JPanel();
         p.setLayout(new BorderLayout());
@@ -196,7 +234,7 @@ public class Options extends JDialog {
         constraint.gridx = 1;
 
         constraint.fill = GridBagConstraints.HORIZONTAL;
-        add(p, constraint);
+        panel.add(p, constraint);
 
         constraint.fill = GridBagConstraints.NONE;
 
@@ -205,11 +243,11 @@ public class Options extends JDialog {
 
     }
 
-    JCheckBox addCheckBox(String label, boolean state) {
+    JCheckBox addCheckBox(JPanel panel, String label, boolean state) {
         constraint.gridx = 1;
         JCheckBox cb = new JCheckBox(label);
         cb.setSelected(state);
-        add(cb, constraint);
+        panel.add(cb, constraint);
         constraint.gridy++;
         return cb;
     }
@@ -218,7 +256,13 @@ public class Options extends JDialog {
     public Options(JFrame parent) {
         loadPreferences(); // Just in case. It should do nothing.
 
-        setLayout(new GridBagLayout());
+        setLayout(new BorderLayout());
+
+        tabs = new JTabbedPane();
+
+        JPanel optionsPanel = new JPanel();
+
+        optionsPanel.setLayout(new GridBagLayout());
 
         constraint = new GridBagConstraints();
 
@@ -229,41 +273,118 @@ public class Options extends JDialog {
 
         constraint.insets = new Insets(2, 2, 2, 2);
 
-        addSeparator();
+        addSeparator(optionsPanel);
 
-        mixerList = addDropdown("Recording device:", getRecordingMixerList(), get("audio.recording.device"));
-        channelList = addDropdown("Channels:", getChannelCountList(), get("audio.recording.channels"));
-        rateList = addDropdown("Sample rate:", getSampleRateList(), get("audio.recording.samplerate"));
+        mixerList = addDropdown(optionsPanel, "Recording device:", getRecordingMixerList(), get("audio.recording.device"));
+        channelList = addDropdown(optionsPanel, "Channels:", getChannelCountList(), get("audio.recording.channels"));
+        rateList = addDropdown(optionsPanel, "Sample rate:", getSampleRateList(), get("audio.recording.samplerate"));
 
-        addSeparator();
+        addSeparator(optionsPanel);
 
-        playbackList = addDropdown("Playback device:", getPlaybackMixerList(), get("audio.playback.device"));
-        addSeparator();
-        storageFolder = addFilePath("Storage folder:", get("path.storage"), true);
+        playbackList = addDropdown(optionsPanel, "Playback device:", getPlaybackMixerList(), get("audio.playback.device"));
+        addSeparator(optionsPanel);
+        storageFolder = addFilePath(optionsPanel, "Storage folder:", get("path.storage"), true);
 
-        addSeparator();
+        addSeparator(optionsPanel);
 
-        preChapterGap = addSpinner("Default pre-chapter gap:", 0, 5000, 100, getInteger("catenation.pre-chapter"), "ms");
-        postChapterGap = addSpinner("Default post-chapter gap:", 0, 5000, 100, getInteger("catenation.post-chapter"), "ms");
-        postSentenceGap = addSpinner("Default post-sentence gap:", 0, 5000, 100, getInteger("catenation.post-sentence"), "ms");
-        postParagraphGap = addSpinner("Default post-paragraph gap:", 0, 5000, 100, getInteger("catenation.post-paragraph"), "ms");
+        preChapterGap = addSpinner(optionsPanel, "Default pre-chapter gap:", 0, 5000, 100, getInteger("catenation.pre-chapter"), "ms");
+        postChapterGap = addSpinner(optionsPanel, "Default post-chapter gap:", 0, 5000, 100, getInteger("catenation.post-chapter"), "ms");
+        postSentenceGap = addSpinner(optionsPanel, "Default post-sentence gap:", 0, 5000, 100, getInteger("catenation.post-sentence"), "ms");
+        postParagraphGap = addSpinner(optionsPanel, "Default post-paragraph gap:", 0, 5000, 100, getInteger("catenation.post-paragraph"), "ms");
 
-        addSeparator();
+        addSeparator(optionsPanel);
 
-        ffmpegLocation = addFilePath("FFMPEG location:", get("path.ffmpeg"), false);
-        bitRate = addDropdown("Export bitrate:", getBitrates(), get("audio.export.bitrate"));
-        exportRate = addDropdown("Export sample rate:", getSampleRateList(), get("audio.export.samplerate"));
+        ffmpegLocation = addFilePath(optionsPanel, "FFMPEG location:", get("path.ffmpeg"), false);
+        bitRate = addDropdown(optionsPanel, "Export bitrate:", getBitrates(), get("audio.export.bitrate"));
+        exportRate = addDropdown(optionsPanel, "Export sample rate:", getSampleRateList(), get("audio.export.samplerate"));
         
 
-        addSeparator();
+        addSeparator(optionsPanel);
 
-        enableParsing = addCheckBox("Enable automatic sphinx speech-to-text (**SLOW**)", getBoolean("process.sphinx"));
+        enableParsing = addCheckBox(optionsPanel, "Enable automatic sphinx speech-to-text (**SLOW**)", getBoolean("process.sphinx"));
 
-        addSeparator();
+        addSeparator(optionsPanel);
 
-        cacheSize = addSpinner("Cache size:", 0, 5000, 1, getInteger("cache.size"), "");
+        cacheSize = addSpinner(optionsPanel, "Cache size:", 0, 5000, 1, getInteger("cache.size"), "");
 
-        addSeparator();
+        addSeparator(optionsPanel);
+
+        tabs.add("Options", optionsPanel);
+
+
+
+        JPanel eqPanel = new JPanel();
+
+        eqPanel.setLayout(new GridBagLayout());
+
+        constraint.gridx = 0;
+        constraint.gridy = 0;
+
+        sliders = new JSliderOb[31];
+        eqvals = new JTextFieldOb[31];
+
+        for (int i = 0; i < 31; i++) {
+            sliders[i] = new JSliderOb(-120, 120, (int)(Options.getFloat("audio.eq." + i) * 10));
+            sliders[i].setOrientation(SwingConstants.VERTICAL);
+            constraint.gridx = i;
+            constraint.gridy = 0;
+            eqPanel.add(sliders[i], constraint);
+            eqvals[i] = new JTextFieldOb(String.format("%.1f", Options.getFloat("audio.eq." + i)));
+            constraint.gridy = 1;
+            eqPanel.add(eqvals[i], constraint);
+
+            sliders[i].setObject(eqvals[i]);
+            eqvals[i].setObject(sliders[i]);
+
+            eqvals[i].setPreferredSize(new Dimension(40, 20));
+
+            sliders[i].addChangeListener(new ChangeListener() {
+                public void stateChanged(ChangeEvent e) {
+                    JSliderOb o = (JSliderOb)e.getSource();
+                    String v = String.format("%.1f", (float)o.getValue() / 10.0f);
+                    JTextFieldOb tf = (JTextFieldOb)o.getObject();
+                    tf.setText(v);
+                }
+            });
+
+            eqvals[i].addFocusListener(new FocusListener() {
+                public void focusGained(FocusEvent e) {
+                    JTextFieldOb o = (JTextFieldOb)e.getSource();
+                    o.selectAll();
+                }
+
+                public void focusLost(FocusEvent e) {
+                    JTextFieldOb o = (JTextFieldOb)e.getSource();
+                    String v = o.getText();
+                    float f = Utils.s2f(v);
+                    if (f < -12f) f = -12f;
+                    if (f > 12f) f = 12f;
+                    JSliderOb s = (JSliderOb)o.getObject();
+                    s.setValue((int)(f * 10));
+                    o.setText(String.format("%.1f", f));
+                }
+            });
+
+            eqvals[i].addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    JTextFieldOb o = (JTextFieldOb)e.getSource();
+                    String v = o.getText();
+                    float f = Utils.s2f(v);
+                    if (f < -12f) f = -12f;
+                    if (f > 12f) f = 12f;
+                    JSliderOb s = (JSliderOb)o.getObject();
+                    s.setValue((int)(f * 10));
+                    o.setText(String.format("%.1f", f));
+                    o.selectAll();
+                }
+            });
+        
+        }
+
+        tabs.add("EQ", eqPanel);
+
+
+        add(tabs, BorderLayout.CENTER);
 
         setTitle("Options");
 
@@ -297,7 +418,7 @@ public class Options extends JDialog {
 
         constraint.anchor = GridBagConstraints.LINE_END;
 
-        add(box, constraint);
+        add(box, BorderLayout.SOUTH);
         
         pack();
 
@@ -429,6 +550,38 @@ public class Options extends JDialog {
 
         defaultPrefs.put("cache.size", "100");
 
+        defaultPrefs.put("audio.eq.0", "0.00");
+        defaultPrefs.put("audio.eq.1", "0.00");
+        defaultPrefs.put("audio.eq.2", "0.00");
+        defaultPrefs.put("audio.eq.3", "0.00");
+        defaultPrefs.put("audio.eq.4", "0.00");
+        defaultPrefs.put("audio.eq.5", "0.00");
+        defaultPrefs.put("audio.eq.6", "0.00");
+        defaultPrefs.put("audio.eq.7", "0.00");
+        defaultPrefs.put("audio.eq.8", "0.00");
+        defaultPrefs.put("audio.eq.9", "0.00");
+        defaultPrefs.put("audio.eq.10", "0.00");
+        defaultPrefs.put("audio.eq.11", "0.00");
+        defaultPrefs.put("audio.eq.12", "0.00");
+        defaultPrefs.put("audio.eq.13", "0.00");
+        defaultPrefs.put("audio.eq.14", "0.00");
+        defaultPrefs.put("audio.eq.15", "0.00");
+        defaultPrefs.put("audio.eq.16", "0.00");
+        defaultPrefs.put("audio.eq.17", "0.00");
+        defaultPrefs.put("audio.eq.18", "0.00");
+        defaultPrefs.put("audio.eq.19", "-1.00");
+        defaultPrefs.put("audio.eq.20", "-2.00");
+        defaultPrefs.put("audio.eq.21", "-3.00");
+        defaultPrefs.put("audio.eq.22", "-4.00");
+        defaultPrefs.put("audio.eq.23", "-5.00");
+        defaultPrefs.put("audio.eq.24", "-6.00");
+        defaultPrefs.put("audio.eq.25", "-7.00");
+        defaultPrefs.put("audio.eq.26", "-8.00");
+        defaultPrefs.put("audio.eq.27", "-9.00");
+        defaultPrefs.put("audio.eq.28", "-10.00");
+        defaultPrefs.put("audio.eq.29", "-11.00");
+        defaultPrefs.put("audio.eq.30", "-12.00");
+
         if (prefs == null) {
             prefs = Preferences.userNodeForPackage(AudiobookRecorder.class);
         }
@@ -460,6 +613,15 @@ public class Options extends JDialog {
         return 0;
     }
 
+    public static Float getFloat(String key) {
+        try {
+            Float f = Float.parseFloat(get(key));
+            return f;
+        } catch (Exception e) {
+        }
+        return 0.0f;
+    }
+
     public static boolean getBoolean(String key) {
         String v = get(key);
         if (v == null) return false;
@@ -475,6 +637,36 @@ public class Options extends JDialog {
         prefs.put(key, value);
     }
 
+    public static void set(String key, Integer value) {
+        set(key, String.format("%d", value));
+    }
+
+    public static void set(String key, Boolean value) {
+        if (value) {
+            set(key, "true");
+        } else {
+            set(key, "false");
+        }
+    }
+
+    public static void set(String key, Float value) {
+        set(key, String.format("%.3f", value));
+    }
+
+    public static void set(String key, Object value) {
+        if (value instanceof Integer) {
+            set(key, (Integer)value);
+        } else if (value instanceof Float) {
+            set(key, (Float)value);
+        } else if (value instanceof String) {
+            set(key, (String)value);
+        } else if (value instanceof Boolean) {
+            set(key, (Boolean)value);
+        } else {
+            System.err.println("Bad type for key " + key);
+        }
+    }
+
     void storePreferences() {
         set("audio.recording.device", ((KVPair)mixerList.getSelectedItem()).key);
         set("audio.recording.channels", ((KVPair)channelList.getSelectedItem()).key);
@@ -482,14 +674,18 @@ public class Options extends JDialog {
         set("audio.playback.device", ((KVPair)playbackList.getSelectedItem()).key);
         set("path.storage", storageFolder.getText());
         set("path.ffmpeg", ffmpegLocation.getText());
-        set("catenation.pre-chapter", "" + preChapterGap.getValue());
-        set("catenation.post-chapter", "" + postChapterGap.getValue());
-        set("catenation.post-sentence", "" + postSentenceGap.getValue());
-        set("catenation.post-paragraph", "" + postParagraphGap.getValue());
+        set("catenation.pre-chapter", preChapterGap.getValue());
+        set("catenation.post-chapter", postChapterGap.getValue());
+        set("catenation.post-sentence", postSentenceGap.getValue());
+        set("catenation.post-paragraph", postParagraphGap.getValue());
         set("audio.export.bitrate", ((KVPair)bitRate.getSelectedItem()).key);
         set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
-        set("process.sphinx", enableParsing.isSelected() ? "true" : "false");
-        set("cache.size", "" + cacheSize.getValue());
+        set("process.sphinx", enableParsing.isSelected());
+        set("cache.size", cacheSize.getValue());
+
+        for (int i = 0; i < 31; i++) {
+            set("audio.eq." + i, eqvals[i].getText());
+        }
 
         savePreferences();
     }

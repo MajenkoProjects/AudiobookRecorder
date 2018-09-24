@@ -12,6 +12,8 @@ import javax.sound.sampled.*;
 import edu.cmu.sphinx.api.*;
 import edu.cmu.sphinx.decoder.adaptation.*;
 import edu.cmu.sphinx.result.*;
+import davaguine.jeq.spi.EqualizerInputStream;
+import davaguine.jeq.core.IIRControls;
 
 public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     
@@ -411,16 +413,25 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     // Open the audio file as an AudioInputStream and automatically
     // skip the first startOffset frames.
-    public AudioInputStream getAudioStream() {
+    public EqualizerInputStream getAudioStream() {
         File f = getFile();
         try {
             AudioInputStream s = AudioSystem.getAudioInputStream(f);
-            AudioFormat format = s.getFormat();
+            EqualizerInputStream eq = new EqualizerInputStream(s, 31);
+            AudioFormat format = eq.getFormat();
+            IIRControls controls = eq.getControls();
+            for (int i = 0; i < 31; i++) {
+                controls.setBandDbValue(i, 0, Options.getFloat("audio.eq." + i));
+                if (format.getChannels() == 2) {
+                    controls.setBandDbValue(i, 1, Options.getFloat("audio.eq." + i));
+                }
+            }
+
             int frameSize = format.getFrameSize();
 
-            s.skip(frameSize * startOffset);
+            eq.skip(frameSize * startOffset);
              
-            return s;
+            return eq;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -443,7 +454,18 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         File f = getFile();
         try {
             AudioInputStream s = AudioSystem.getAudioInputStream(f);
-            AudioFormat format = s.getFormat();
+            EqualizerInputStream eq = new EqualizerInputStream(s, 31);
+
+            AudioFormat format = eq.getFormat();
+
+            IIRControls controls = eq.getControls();
+            for (int i = 0; i < 31; i++) {
+                controls.setBandDbValue(i, 0, Options.getFloat("audio.eq." + i));
+                if (format.getChannels() == 2) {
+                    controls.setBandDbValue(i, 1, Options.getFloat("audio.eq." + i));
+                }
+            }
+
             int frameSize = format.getFrameSize();
 
             updateCrossings();
@@ -457,10 +479,10 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
             byte[] buffer = new byte[1024];
 
-            s.skip(pos);
+            eq.skip(pos);
             
             while (pos < crossEndOffset * frameSize) {
-                int nr = s.read(buffer);
+                int nr = eq.read(buffer);
                 pos += nr;
 
                 play.write(buffer, 0, nr);
@@ -477,15 +499,37 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         try {
             updateCrossings();
             AudioInputStream s = AudioSystem.getAudioInputStream(f);
-            AudioFormat format = s.getFormat();
+            EqualizerInputStream eq = new EqualizerInputStream(s, 31);
+
+
+            AudioFormat format = eq.getFormat();
+            IIRControls controls = eq.getControls();
+            for (int i = 0; i < 31; i++) {
+                controls.setBandDbValue(i, 0, Options.getFloat("audio.eq." + i));
+                if (format.getChannels() == 2) {
+                    controls.setBandDbValue(i, 1, Options.getFloat("audio.eq." + i));
+                }
+            }
+
             int frameSize = format.getFrameSize();
             int length = crossEndOffset - crossStartOffset;
-            byte[] data = new byte[length * frameSize];
 
-            s.skip(crossStartOffset * frameSize);
+            int bytesToRead = length * frameSize;
+            byte[] data = new byte[bytesToRead];
+            byte[] buf = new byte[65536];
 
-            s.read(data);
+            int pos = 0;
 
+            eq.skip(crossStartOffset * frameSize);
+
+            while (bytesToRead > 0) {
+                int r = eq.read(buf, 0, bytesToRead > 65536 ? 65536 : bytesToRead);
+                for (int i = 0; i < r; i++) {
+                    data[pos++] = buf[i];
+                    bytesToRead--;
+                }
+            }
+                
             return data;
         } catch (Exception e) {
             e.printStackTrace();

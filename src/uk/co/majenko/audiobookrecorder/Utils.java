@@ -38,4 +38,12 @@ public class Utils {
         return 0;
     }
 
+    public static float s2f(String s) {
+        try {
+            return Float.parseFloat(s);
+        } catch (Exception e) {
+        }
+        return 0.0f;
+    }
+
 }
