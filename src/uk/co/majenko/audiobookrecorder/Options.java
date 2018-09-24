@@ -381,6 +381,26 @@ public class Options extends JDialog {
         
         }
 
+        JButton smooth = new JButton("Smooth curve");
+        smooth.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Float ave[] = new Float[31];
+                for (int i = 1; i < 30; i++) {
+                    ave[i] = (Utils.s2f(eqvals[i - 1].getText()) + Utils.s2f(eqvals[i].getText()) + Utils.s2f(eqvals[i + 1].getText())) / 3.0f;
+                }
+
+                for (int i = 1; i < 30; i++) {
+                    eqvals[i].setText(String.format("%.1f", ave[i]));
+                    sliders[i].setValue((int)(ave[i] * 10));
+                }
+            }
+        });
+
+        constraint.gridx = 0;
+        constraint.gridy = 2;
+        constraint.gridwidth = 4;
+        eqPanel.add(smooth, constraint);
+
         tabs.add("EQ", eqPanel);
 
 

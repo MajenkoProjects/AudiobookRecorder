@@ -35,3 +35,4 @@ Third party software
 * JAVE ffmpeg wrapper: http://www.sauronsoftware.it/projects/jave/
 * JTattoo: http://www.sauronsoftware.it/projects/jave/
 * Icons from, or based on, Oxygen: https://github.com/KDE/oxygen-icons
+* JEQ, the Java Equaliser: https://sourceforge.net/projects/jeq/
