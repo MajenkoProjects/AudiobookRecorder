@@ -420,12 +420,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             EqualizerInputStream eq = new EqualizerInputStream(s, 31);
             AudioFormat format = eq.getFormat();
             IIRControls controls = eq.getControls();
-            for (int i = 0; i < 31; i++) {
-                controls.setBandDbValue(i, 0, Options.getFloat("audio.eq." + i));
-                if (format.getChannels() == 2) {
-                    controls.setBandDbValue(i, 1, Options.getFloat("audio.eq." + i));
-                }
-            }
+            AudiobookRecorder.window.book.equaliser.apply(controls, format.getChannels());
 
             int frameSize = format.getFrameSize();
 
@@ -459,12 +454,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             AudioFormat format = eq.getFormat();
 
             IIRControls controls = eq.getControls();
-            for (int i = 0; i < 31; i++) {
-                controls.setBandDbValue(i, 0, Options.getFloat("audio.eq." + i));
-                if (format.getChannels() == 2) {
-                    controls.setBandDbValue(i, 1, Options.getFloat("audio.eq." + i));
-                }
-            }
+            AudiobookRecorder.window.book.equaliser.apply(controls, format.getChannels());
 
             int frameSize = format.getFrameSize();
 
@@ -504,12 +494,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
             AudioFormat format = eq.getFormat();
             IIRControls controls = eq.getControls();
-            for (int i = 0; i < 31; i++) {
-                controls.setBandDbValue(i, 0, Options.getFloat("audio.eq." + i));
-                if (format.getChannels() == 2) {
-                    controls.setBandDbValue(i, 1, Options.getFloat("audio.eq." + i));
-                }
-            }
+            AudiobookRecorder.window.book.equaliser.apply(controls, format.getChannels());
 
             int frameSize = format.getFrameSize();
             int length = crossEndOffset - crossStartOffset;

@@ -48,6 +48,8 @@ public class AudiobookRecorder extends JFrame {
 
     JScrollPane mainScroll;
 
+    JDialog equaliserWindow = null;
+
     Book book = null;
 
     JTree bookTree;
@@ -1147,6 +1149,10 @@ public class AudiobookRecorder extends JFrame {
         prefs.setProperty("book.genre", book.getGenre());
         prefs.setProperty("book.comment", book.getComment());
 
+        for (int i = 0; i < 31; i++) {
+            prefs.setProperty("audio.eq." + i, String.format("%.3f", book.equaliser.getChannel(i)));
+        }
+
         for (Enumeration<Chapter> o = book.children(); o.hasMoreElements();) {
 
             Chapter c = o.nextElement();
@@ -1211,6 +1217,14 @@ public class AudiobookRecorder extends JFrame {
         book.setAuthor(prefs.getProperty("book.author"));
         book.setGenre(prefs.getProperty("book.genre"));
         book.setComment(prefs.getProperty("book.comment"));
+
+        for (int i = 0; i < 31; i++) {
+            if (prefs.getProperty("audio.eq." + i) == null) {
+                book.equaliser.setChannel(i, Options.getFloat("audio.eq." + i));
+            } else {
+                book.equaliser.setChannel(i, Utils.s2f(prefs.getProperty("audio.eq." + i)));
+            }
+        }
 
         bookTreeModel = new DefaultTreeModel(book);
         bookTree = new JTree(bookTreeModel);
@@ -1631,5 +1645,15 @@ public class AudiobookRecorder extends JFrame {
 
     public void alertNoRoomNoise() {
         JOptionPane.showMessageDialog(this, "You must record room noise\nbefore recording or playback", "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    public void showEqualiser() {
+        if (equaliserWindow == null) {
+            equaliserWindow = new JDialog();
+            equaliserWindow.setTitle("Equaliser");
+            equaliserWindow.add(book.equaliser);
+            equaliserWindow.pack();
+        }
+        equaliserWindow.setVisible(true);
     }
 }

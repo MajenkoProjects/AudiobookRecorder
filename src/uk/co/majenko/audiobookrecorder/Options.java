@@ -30,45 +30,10 @@ public class Options extends JDialog {
     JCheckBox enableParsing;
     JSpinner cacheSize;
 
-    JSliderOb[] sliders;
-    JTextFieldOb[] eqvals;
-
+    Equaliser equaliser;
 
     static HashMap<String, String> defaultPrefs;
     static Preferences prefs = null;
-
-    static class JSliderOb extends JSlider {
-        Object object;
-
-        public JSliderOb(int a, int b, int c) {
-            super(a, b, c);
-        }
-
-        public void setObject(Object o) {
-            object = o;
-        }
-
-        public Object getObject() {
-            return object;
-        }
-    }
-
-    public class JTextFieldOb extends JTextField {
-        Object object;
-
-        public JTextFieldOb(String s) {
-            super(s);
-        }
-
-        public void setObject(Object o) {
-            object = o;
-        }
-
-        public Object getObject() {
-            return object;
-        }
-    }
-        
 
     static class KVPair implements Comparable {
         public String key;
@@ -311,98 +276,13 @@ public class Options extends JDialog {
 
         tabs.add("Options", optionsPanel);
 
-
-
-        JPanel eqPanel = new JPanel();
-
-        eqPanel.setLayout(new GridBagLayout());
-
-        constraint.gridx = 0;
-        constraint.gridy = 0;
-
-        sliders = new JSliderOb[31];
-        eqvals = new JTextFieldOb[31];
+        equaliser = new Equaliser();
 
         for (int i = 0; i < 31; i++) {
-            sliders[i] = new JSliderOb(-120, 120, (int)(Options.getFloat("audio.eq." + i) * 10));
-            sliders[i].setOrientation(SwingConstants.VERTICAL);
-            constraint.gridx = i;
-            constraint.gridy = 0;
-            eqPanel.add(sliders[i], constraint);
-            eqvals[i] = new JTextFieldOb(String.format("%.1f", Options.getFloat("audio.eq." + i)));
-            constraint.gridy = 1;
-            eqPanel.add(eqvals[i], constraint);
-
-            sliders[i].setObject(eqvals[i]);
-            eqvals[i].setObject(sliders[i]);
-
-            eqvals[i].setPreferredSize(new Dimension(40, 20));
-
-            sliders[i].addChangeListener(new ChangeListener() {
-                public void stateChanged(ChangeEvent e) {
-                    JSliderOb o = (JSliderOb)e.getSource();
-                    String v = String.format("%.1f", (float)o.getValue() / 10.0f);
-                    JTextFieldOb tf = (JTextFieldOb)o.getObject();
-                    tf.setText(v);
-                }
-            });
-
-            eqvals[i].addFocusListener(new FocusListener() {
-                public void focusGained(FocusEvent e) {
-                    JTextFieldOb o = (JTextFieldOb)e.getSource();
-                    o.selectAll();
-                }
-
-                public void focusLost(FocusEvent e) {
-                    JTextFieldOb o = (JTextFieldOb)e.getSource();
-                    String v = o.getText();
-                    float f = Utils.s2f(v);
-                    if (f < -12f) f = -12f;
-                    if (f > 12f) f = 12f;
-                    JSliderOb s = (JSliderOb)o.getObject();
-                    s.setValue((int)(f * 10));
-                    o.setText(String.format("%.1f", f));
-                }
-            });
-
-            eqvals[i].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    JTextFieldOb o = (JTextFieldOb)e.getSource();
-                    String v = o.getText();
-                    float f = Utils.s2f(v);
-                    if (f < -12f) f = -12f;
-                    if (f > 12f) f = 12f;
-                    JSliderOb s = (JSliderOb)o.getObject();
-                    s.setValue((int)(f * 10));
-                    o.setText(String.format("%.1f", f));
-                    o.selectAll();
-                }
-            });
-        
+            equaliser.setChannel(i, Options.getFloat("audio.eq." + i));
         }
 
-        JButton smooth = new JButton("Smooth curve");
-        smooth.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Float ave[] = new Float[31];
-                for (int i = 1; i < 30; i++) {
-                    ave[i] = (Utils.s2f(eqvals[i - 1].getText()) + Utils.s2f(eqvals[i].getText()) + Utils.s2f(eqvals[i + 1].getText())) / 3.0f;
-                }
-
-                for (int i = 1; i < 30; i++) {
-                    eqvals[i].setText(String.format("%.1f", ave[i]));
-                    sliders[i].setValue((int)(ave[i] * 10));
-                }
-            }
-        });
-
-        constraint.gridx = 0;
-        constraint.gridy = 2;
-        constraint.gridwidth = 4;
-        eqPanel.add(smooth, constraint);
-
-        tabs.add("EQ", eqPanel);
-
+        tabs.add("EQ", equaliser);
 
         add(tabs, BorderLayout.CENTER);
 
@@ -704,7 +584,7 @@ public class Options extends JDialog {
         set("cache.size", cacheSize.getValue());
 
         for (int i = 0; i < 31; i++) {
-            set("audio.eq." + i, eqvals[i].getText());
+            set("audio.eq." + i, equaliser.getChannel(i));
         }
 
         savePreferences();

@@ -8,6 +8,7 @@ import java.util.*;
 import java.io.*;
 import java.nio.file.*;
 import javax.swing.tree.*;
+import davaguine.jeq.core.IIRControls;
 
 public class Book extends DefaultMutableTreeNode {
     
@@ -18,9 +19,14 @@ public class Book extends DefaultMutableTreeNode {
 
     ImageIcon icon;
 
+    public Equaliser equaliser;
+
+    float[] eqChannels = new float[31];
+
     public Book(String bookname) {
         super(bookname);
         name = bookname;
+        equaliser = new Equaliser();
     }
 
     public void setAuthor(String a) {

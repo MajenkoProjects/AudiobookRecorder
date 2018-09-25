@@ -15,6 +15,7 @@ public class MainToolBar extends JToolBar {
     JButton playSentence;
     JButton playonSentence;
     JButton stopPlaying;
+    JButton eq;
 
     AudiobookRecorder root;
 
@@ -98,6 +99,20 @@ public class MainToolBar extends JToolBar {
             }
         });
         add(stopPlaying);
+
+        addSeparator();
+        eq = new JButton(Icons.eq);
+        eq.setToolTipText("Equaliser");
+        eq.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                root.showEqualiser();
+            }
+        });
+
+        add(eq);
+
+        
+
 
         setFloatable(false);
     }
