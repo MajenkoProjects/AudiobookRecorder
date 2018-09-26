@@ -19,6 +19,7 @@ public class Options extends JDialog {
     JComboBox<KVPair> playbackList;
     JComboBox<KVPair> channelList;
     JComboBox<KVPair> rateList;
+    JComboBox<KVPair> bitDepth;
     JTextField storageFolder;
     JSpinner preChapterGap;
     JSpinner postChapterGap;
@@ -245,6 +246,7 @@ public class Options extends JDialog {
         mixerList = addDropdown(optionsPanel, "Recording device:", getRecordingMixerList(), get("audio.recording.device"));
         channelList = addDropdown(optionsPanel, "Channels:", getChannelCountList(), get("audio.recording.channels"));
         rateList = addDropdown(optionsPanel, "Sample rate:", getSampleRateList(), get("audio.recording.samplerate"));
+        bitDepth = addDropdown(optionsPanel, "Sample resolution:", getResolutionList(), get("audio.recording.resolution"));
 
         addSeparator(optionsPanel);
 
@@ -420,9 +422,10 @@ public class Options extends JDialog {
     }
 
     static KVPair[] getSampleRateList() {
-        KVPair[] l = new KVPair[2];
+        KVPair[] l = new KVPair[3];
         l[0] = new KVPair("44100", "44100");
         l[1] = new KVPair("48000", "48000");
+        l[2] = new KVPair("96000", "96000");
         return l;
     }
 
@@ -440,6 +443,7 @@ public class Options extends JDialog {
         }
         defaultPrefs.put("audio.recording.channels", "2");
         defaultPrefs.put("audio.recording.samplerate", "44100");
+        defaultPrefs.put("audio.recording.resolution", "16");
         if (playbackMixers.length > 0) {
             defaultPrefs.put("audio.playback.device", playbackMixers[0].key);
         } else {
@@ -584,6 +588,7 @@ public class Options extends JDialog {
         set("audio.recording.device", ((KVPair)mixerList.getSelectedItem()).key);
         set("audio.recording.channels", ((KVPair)channelList.getSelectedItem()).key);
         set("audio.recording.samplerate", ((KVPair)rateList.getSelectedItem()).key);
+        set("audio.recording.resolution", ((KVPair)bitDepth.getSelectedItem()).key);
         set("audio.playback.device", ((KVPair)playbackList.getSelectedItem()).key);
         set("path.storage", storageFolder.getText());
         set("path.ffmpeg", ffmpegLocation.getText());
@@ -606,25 +611,10 @@ public class Options extends JDialog {
     }
 
     public static AudioFormat getAudioFormat() {
-        String sampleRate = get("audio.recording.samplerate");
-        String channels = get("audio.recording.channels");
-
-        float sr = 48000f;
-        int chans = 2;
-
-        try {
-            sr = Float.parseFloat(sampleRate);
-        } catch (Exception e) {
-            sr = 48000f;
-        }
-
-        try {
-            chans = Integer.parseInt(channels);
-        } catch (Exception e) {
-            chans = 2;
-        }
-    
-        AudioFormat af = new AudioFormat(sr, 16, chans, true, false);
+        AudioFormat af = new AudioFormat(
+            getInteger("audio.recording.samplerate"), 
+            getInteger("audio.recording.resolution"), 
+            getInteger("audio.recording.channels"), true, false);
         return af;
     }
 
@@ -654,6 +644,12 @@ public class Options extends JDialog {
         pairs[1] = new KVPair("192000", "192kbps");
         pairs[2] = new KVPair("256000", "256kbps");
         pairs[3] = new KVPair("320000", "320kbps");
+        return pairs;
+    }
+
+    public static KVPair[] getResolutionList() {
+        KVPair[] pairs = new KVPair[1];
+        pairs[0] = new KVPair("16", "16 Bit");
         return pairs;
     }
 }

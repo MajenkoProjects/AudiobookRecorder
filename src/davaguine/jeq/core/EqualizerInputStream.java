@@ -89,6 +89,7 @@ public class EqualizerInputStream extends InputStream {
             case 8:
             case 16:
             case 24:
+            case 32:
                 break;
             default:
                 return false;
@@ -175,6 +176,23 @@ public class EqualizerInputStream extends InputStream {
                 }
                 break;
             }
+            case 32: {
+                l = length / 4;
+                if (l > 0) {
+                    if (bigendian)
+                        for (int i = 0; i < l; i++) {
+                            temp = ((a1 = inbuf)[inpos++] & 0xff) | ((a1[inpos++] & 0xff) << 8) | ((a1[inpos++] & 0xff) << 16) | ((a1[inpos++] & 0xff) << 24);
+                            workbuf[i] = temp; //signed && temp > 8388607 ? temp - 16777216 : temp;
+                        }
+                    else
+                        for (int i = 0; i < l; i++) {
+                            temp = (((a1 = inbuf)[inpos++] & 0xff) << 24) | ((a1[inpos++] & 0xff) << 16) | ((a1[inpos++] & 0xff) << 8) | (a1[inpos++] & 0xff);
+                            workbuf[i] = temp; //signed && temp > 8388607 ? temp - 16777216 : temp;
+                        }
+                    inlen -= inpos;
+                }
+                break;
+            }
         }
         return l;
     }
@@ -252,6 +270,27 @@ public class EqualizerInputStream extends InputStream {
                 }
                 break;
             }
+            case 32: {
+                if (bigendian) {
+                    for (int i = 0; i < length; i++) {
+                        d = workbuf[i];
+                        b[p++] = (byte) (d & 0xff);
+                        b[p++] = (byte) ((d & 0xff00) >> 8);
+                        b[p++] = (byte) ((d & 0xff0000) >> 16);
+                        b[p++] = (byte) ((d & 0xff000000) >> 24);
+                    }
+                } else {
+                    for (int i = 0; i < length; i++) {
+                        d = wrap24Bit(workbuf[i]);
+                        b[p++] = (byte) ((d & 0xff000000) >> 24);
+                        b[p++] = (byte) ((d & 0xff0000) >> 16);
+                        b[p++] = (byte) ((d & 0xff00) >> 8);
+                        b[p++] = (byte) (d & 0xff);
+                    }
+                }
+                break;
+            }
+
         }
         return p - off;
     }

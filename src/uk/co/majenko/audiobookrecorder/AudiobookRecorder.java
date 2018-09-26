@@ -1679,13 +1679,7 @@ public class AudiobookRecorder extends JFrame {
     }
 
     public boolean enableMicrophone() {
-        AudioFormat format = new AudioFormat(
-            Options.getInteger("audio.recording.samplerate"),
-            16,
-            Options.getInteger("audio.recording.channels"),
-            true,
-            false
-        );
+        AudioFormat format = Options.getAudioFormat();
 
         Mixer.Info mixer = Options.getRecordingMixer();
 

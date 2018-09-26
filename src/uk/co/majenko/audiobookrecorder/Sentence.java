@@ -347,6 +347,32 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         }
     }
 
+    public int[] getAudioDataS16LE(AudioInputStream s, AudioFormat format) throws IOException {
+        long len = s.getFrameLength();
+        int frameSize = format.getFrameSize();
+        int chans = format.getChannels();
+        int bytes = frameSize / chans;
+
+        byte[] frame = new byte[frameSize];
+        int[] samples = new int[(int)len];
+
+        for (long fno = 0; fno < len; fno++) {
+
+            s.read(frame);
+            int sample = 0;
+            if (chans == 2) { // Stereo
+                int left = (frame[1] << 8) | frame[0];
+                int right = (frame[3] << 8) | frame[2];
+                sample = (left + right) / 2;
+            } else {
+                sample = (frame[1] << 8) | frame[0];
+            }
+            samples[(int)fno] = sample;
+        }
+
+        return samples;
+    }
+
     public int[] getAudioData() {
         if (storedAudioData != null) {
             return storedAudioData;
@@ -356,28 +382,15 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             AudioInputStream s = AudioSystem.getAudioInputStream(f);
             AudioFormat format = s.getFormat();
 
-            long len = s.getFrameLength();
-            int frameSize = format.getFrameSize();
-            int chans = format.getChannels();
-            int bytes = frameSize / chans;
+            int[] samples = null;
 
-            byte[] frame = new byte[frameSize];
-            int[] samples = new int[(int)len];
-
-            if (bytes != 2) return null;
-
-            for (long fno = 0; fno < len; fno++) {
-                s.read(frame);
-                int sample = 0;
-                if (chans == 2) { // Stereo
-                    int left = (frame[1] << 8) | frame[0];
-                    int right = (frame[3] << 8) | frame[2];
-                    sample = (left + right) / 2;
-                } else {
-                    sample = (frame[1] << 8) | frame[0];
-                }
-                samples[(int)fno] = sample;
+            switch (format.getSampleSizeInBits()) {
+                case 16:
+                    samples = getAudioDataS16LE(s, format);
+                    break;
             }
+
+
             s.close();
             sampleSize = samples.length;
             storedAudioData = samples;
@@ -484,8 +497,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
             AudioFormat format = eq.getFormat();
 
-            IIRControls controls = eq.getControls();
-            AudiobookRecorder.window.book.equaliser.apply(controls, format.getChannels());
+//            IIRControls controls = eq.getControls();
+//            AudiobookRecorder.window.book.equaliser.apply(controls, format.getChannels());
 
             int frameSize = format.getFrameSize();
 
@@ -498,7 +511,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     
             play.start();
 
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[50000];
 
             eq.skip(pos);
             
