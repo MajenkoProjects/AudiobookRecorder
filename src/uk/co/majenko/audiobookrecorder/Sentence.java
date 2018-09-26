@@ -36,9 +36,74 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     TargetDataLine line;
     AudioInputStream inputStream;
 
-    Thread recordingThread = null;
-
     int[] storedAudioData = null;
+    
+    RecordingThread recordingThread;
+
+    static class RecordingThread implements Runnable {
+
+        boolean running = false;
+        boolean recording = false;
+
+        File tempFile;
+        File wavFile;
+
+        AudioFormat format;
+
+        public RecordingThread(File tf, File wf, AudioFormat af) {
+            tempFile = tf;
+            wavFile = wf;
+            format = af;
+        }
+
+        public void run() {
+            try {
+                running = true;
+                recording = true;
+                byte[] buf = new byte[AudiobookRecorder.window.microphone.getBufferSize()];
+                FileOutputStream fos = new FileOutputStream(tempFile);
+                int len = 0;
+                AudiobookRecorder.window.microphone.flush();
+                int nr = 0;
+                while (recording) {
+                    nr = AudiobookRecorder.window.microphoneStream.read(buf, 0, buf.length);
+                    len += nr;
+                    fos.write(buf, 0, nr);
+                }
+                nr = AudiobookRecorder.window.microphoneStream.read(buf, 0, buf.length);
+                len += nr;
+                fos.write(buf, 0, nr);
+                fos.close();
+
+                FileInputStream fis = new FileInputStream(tempFile);
+                AudioInputStream ais = new AudioInputStream(fis, format, len / format.getFrameSize());
+                fos = new FileOutputStream(wavFile);
+                AudioSystem.write(ais, AudioFileFormat.Type.WAVE, fos);
+                fos.close();
+                ais.close();
+                fis.close();
+
+                tempFile.delete();
+
+                recording = false;
+                running = false;
+            } catch (Exception e) {
+                e.printStackTrace();
+                running = false;
+                recording = false;
+                running = false;
+            }
+        }
+
+        public boolean isRunning() {
+            return running;
+        }
+
+        public void stopRecording() {
+            recording = false;
+        }
+    }
+
     
     public Sentence() {
         super("");
@@ -57,72 +122,30 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public boolean startRecording() {
-        AudioFormat format = new AudioFormat(
-            Options.getInteger("audio.recording.samplerate"),
-            16,
-            Options.getInteger("audio.recording.channels"),
-            true,
-            false
-        );
-
-        Mixer.Info mixer = Options.getRecordingMixer();
-
-        line = null;
-
-        try {
-            line = AudioSystem.getTargetDataLine(format, mixer);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        if (line == null) {
-            JOptionPane.showMessageDialog(AudiobookRecorder.window, "Sample format not supported", "Error", JOptionPane.ERROR_MESSAGE);
+        if (AudiobookRecorder.window.microphone == null) {
+            JOptionPane.showMessageDialog(AudiobookRecorder.window, "Microphone not started. Start the microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
 
-        inputStream = new AudioInputStream(line);
 
-        try {
-            line.open();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
+        recordingThread = new RecordingThread(getTempFile(), getFile(), Options.getAudioFormat());
 
-        line.start();
+        Thread rc = new Thread(recordingThread);
+        rc.setDaemon(true);
+        rc.start();
 
-        File audioFile = getFile();
-
-        recordingThread = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    AudioSystem.write(inputStream, AudioFileFormat.Type.WAVE, audioFile);
-                } catch (Exception e) {
-                    inputStream = null;
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        recordingThread.setDaemon(true);
-
-        recordingThread.start();
-
-        recording = true;
         return true;
     }
 
     public void stopRecording() {
-        try {
-            inputStream.close();
-            inputStream = null;
-            line.stop();
-            line.close();
-            line = null;
-        } catch (Exception e) {
-            e.printStackTrace();
+        recordingThread.stopRecording();
+        while (recordingThread.isRunning()) {
+            try {
+                Thread.sleep(10);
+            } catch (Exception e) {
+            }
         }
-        recording = false;
+
         storedAudioData = null;
 
         if (!id.equals("room-noise")) {
@@ -275,6 +298,14 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             b.mkdirs();
         }
         return new File(b, id + ".wav");
+    }
+
+    public File getTempFile() {
+        File b = new File(AudiobookRecorder.window.getBookFolder(), "files");
+        if (!b.exists()) {
+            b.mkdirs();
+        }
+        return new File(b, id + ".wax");
     }
 
     public void editText() {

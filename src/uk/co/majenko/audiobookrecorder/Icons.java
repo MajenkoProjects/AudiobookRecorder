@@ -27,5 +27,5 @@ public class Icons {
     static public final ImageIcon spinner2    = new ImageIcon(Icons.class.getResource("icons/spinner2.png"));
     static public final ImageIcon spinner3    = new ImageIcon(Icons.class.getResource("icons/spinner3.png"));
     static public final ImageIcon eq          = new ImageIcon(Icons.class.getResource("icons/eq.png"));
-
+    static public final ImageIcon mic         = new ImageIcon(Icons.class.getResource("icons/mic.png"));
 }

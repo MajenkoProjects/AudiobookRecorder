@@ -16,6 +16,7 @@ public class MainToolBar extends JToolBar {
     JButton playonSentence;
     JButton stopPlaying;
     JButton eq;
+    JToggleButton mic;
 
     AudiobookRecorder root;
 
@@ -111,7 +112,24 @@ public class MainToolBar extends JToolBar {
 
         add(eq);
 
+        addSeparator();
+
+        mic = new JToggleButton(Icons.mic);
+        mic.setToolTipText("Enable/disable microphone");
+        mic.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JToggleButton b = (JToggleButton)e.getSource();
+                if (b.isSelected()) {
+                    if (!root.enableMicrophone()) {
+                        b.setSelected(false);
+                    }
+                } else {
+                    root.disableMicrophone();
+                }
+            }
+        });
         
+        add(mic);
 
 
         setFloatable(false);

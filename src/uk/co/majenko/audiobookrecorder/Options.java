@@ -32,6 +32,8 @@ public class Options extends JDialog {
 
     Equaliser equaliser;
 
+    JTextArea startupScript;
+
     static HashMap<String, String> defaultPrefs;
     static Preferences prefs = null;
 
@@ -282,9 +284,18 @@ public class Options extends JDialog {
             equaliser.setChannel(i, Options.getFloat("audio.eq." + i));
         }
 
-        tabs.add("EQ", equaliser);
+        tabs.add("Default EQ", equaliser);
+
+        JPanel startScript = new JPanel();
+        startScript.setLayout(new BorderLayout());
+        startupScript = new JTextArea(get("scripts.startup"));
+        startScript.add(startupScript, BorderLayout.CENTER);
+
+        tabs.add("Startup Script", startScript);
 
         add(tabs, BorderLayout.CENTER);
+
+    
 
         setTitle("Options");
 
@@ -482,6 +493,8 @@ public class Options extends JDialog {
         defaultPrefs.put("audio.eq.29", "-11.00");
         defaultPrefs.put("audio.eq.30", "-12.00");
 
+        defaultPrefs.put("scripts.startup", "");
+
         if (prefs == null) {
             prefs = Preferences.userNodeForPackage(AudiobookRecorder.class);
         }
@@ -586,6 +599,8 @@ public class Options extends JDialog {
         for (int i = 0; i < 31; i++) {
             set("audio.eq." + i, equaliser.getChannel(i));
         }
+
+        set("scripts.startup", startupScript.getText());
 
         savePreferences();
     }

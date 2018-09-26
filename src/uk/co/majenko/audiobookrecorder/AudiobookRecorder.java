@@ -85,7 +85,10 @@ public class AudiobookRecorder extends JFrame {
 
     Random rng = new Random();
 
-    SourceDataLine play;
+    SourceDataLine play = null;
+
+    public TargetDataLine microphone = null;
+    public AudioInputStream microphoneStream = null;
 
     public Configuration sphinxConfig;
     public StreamSpeechRecognizer recognizer;
@@ -227,6 +230,9 @@ public class AudiobookRecorder extends JFrame {
 
 
         Options.loadPreferences();
+
+        execScript(Options.get("scripts.startup"));
+
         CacheManager.setCacheSize(Options.getInteger("cache.size"));
 
         setLayout(new BorderLayout());
@@ -951,6 +957,11 @@ public class AudiobookRecorder extends JFrame {
         if (recording != null) return;
         if (book == null) return;
 
+        if (microphone == null) {
+            JOptionPane.showMessageDialog(this, "Microphone not started. Start microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         toolBar.disableBook();
         toolBar.disableSentence();
 
@@ -978,6 +989,11 @@ public class AudiobookRecorder extends JFrame {
 
         if (recording != null) return;
         if (book == null) return;
+
+        if (microphone == null) {
+            JOptionPane.showMessageDialog(this, "Microphone not started. Start microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
         toolBar.disableBook();
         toolBar.disableSentence();
@@ -1025,6 +1041,11 @@ public class AudiobookRecorder extends JFrame {
 
         if (recording != null) return;
         if (book == null) return;
+
+        if (microphone == null) {
+            JOptionPane.showMessageDialog(this, "Microphone not started. Start microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
         toolBar.disableBook();
         toolBar.disableSentence();
@@ -1655,5 +1676,69 @@ public class AudiobookRecorder extends JFrame {
             equaliserWindow.pack();
         }
         equaliserWindow.setVisible(true);
+    }
+
+    public boolean enableMicrophone() {
+        AudioFormat format = new AudioFormat(
+            Options.getInteger("audio.recording.samplerate"),
+            16,
+            Options.getInteger("audio.recording.channels"),
+            true,
+            false
+        );
+
+        Mixer.Info mixer = Options.getRecordingMixer();
+
+        microphone = null;
+
+        try {
+            microphone = AudioSystem.getTargetDataLine(format, mixer);
+        } catch (Exception e) {
+            e.printStackTrace();
+            microphone = null;
+            return false;
+        }
+
+        if (microphone == null) {
+            JOptionPane.showMessageDialog(AudiobookRecorder.window, "Sample format not supported", "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        microphoneStream = new AudioInputStream(microphone);
+
+        try {
+            microphone.open();
+        } catch (Exception e) {
+            e.printStackTrace();
+            microphone = null;
+            return false;
+        }
+
+        microphone.start();
+        return true;
+    }
+
+    public void disableMicrophone() {
+        try {
+            microphoneStream.close();
+            microphone.stop();
+            microphone.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    } 
+
+    public void execScript(String s) {
+        if (s == null) return;
+        String[] lines = s.split("\n");
+
+        for (String line : lines) {
+            try {
+                Process p = Runtime.getRuntime().exec(line);
+                p.waitFor();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
