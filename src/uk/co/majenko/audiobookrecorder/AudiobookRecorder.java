@@ -1619,8 +1619,18 @@ public class AudiobookRecorder extends JFrame {
                             bookTree.setSelectionPath(new TreePath(s.getPath()));
                         }
                     }
+                    play.drain();
+                    play.stop();
+                    play.close();
+                    play = null;
                 } catch (Exception e) {
                     playing = null;
+                    if (play != null) {
+                        play.drain();
+                        play.stop();
+                        play.close();
+                    }
+                    play = null;
                 }
                 toolBar.enableSentence();
                 toolBar.disableStop();
@@ -1720,6 +1730,8 @@ public class AudiobookRecorder extends JFrame {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        microphone = null;
+        microphoneStream = null;
     } 
 
     public void execScript(String s) {

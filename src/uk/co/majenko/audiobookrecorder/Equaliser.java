@@ -56,11 +56,20 @@ public class Equaliser extends JPanel {
                 }
             }
         });
+        JButton load = new JButton("Load from default");
+        load.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                for (int i = 0; i < 31; i++) {
+                    channels[i].setValue(Options.getFloat("audio.eq." + i));
+                }
+            }
+        });
 
         JPanel buttons = new JPanel();
         buttons.setLayout(new FlowLayout());
         buttons.add(smooth);
         buttons.add(def);
+        buttons.add(load);
 
         add(buttons, BorderLayout.SOUTH);
     }

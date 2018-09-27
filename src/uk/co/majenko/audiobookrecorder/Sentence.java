@@ -497,8 +497,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
             AudioFormat format = eq.getFormat();
 
-//            IIRControls controls = eq.getControls();
-//            AudiobookRecorder.window.book.equaliser.apply(controls, format.getChannels());
+            IIRControls controls = eq.getControls();
+            AudiobookRecorder.window.book.equaliser.apply(controls, format.getChannels());
 
             int frameSize = format.getFrameSize();
 
@@ -511,7 +511,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     
             play.start();
 
-            byte[] buffer = new byte[50000];
+            byte[] buffer = new byte[1024];
 
             eq.skip(pos);
             
@@ -660,6 +660,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     public int findNearestZeroCrossing(int pos, int range) {
         int[] data = getAudioData();
         if (data == null) return 0;
+        if (data.length == 0) return 0;
 
         if (pos < 0) pos = 0;
         if (pos >= data.length) pos = data.length-1;

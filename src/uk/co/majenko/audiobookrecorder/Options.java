@@ -345,7 +345,7 @@ public class Options extends JDialog {
         TreeSet<KVPair> list = new TreeSet<KVPair>();
 
         AudioFormat stereoFormat = new AudioFormat(44100f, 16, 2, true, false);
-        AudioFormat monoFormat = new AudioFormat(44100f, 16, 2, true, false);
+        AudioFormat monoFormat = new AudioFormat(44100f, 16, 1, true, false);
 
         DataLine.Info stereoDIF = new DataLine.Info(TargetDataLine.class, stereoFormat);
         DataLine.Info monoDIF = new DataLine.Info(TargetDataLine.class, monoFormat);
@@ -381,7 +381,7 @@ public class Options extends JDialog {
         TreeSet<KVPair> list = new TreeSet<KVPair>();
 
         AudioFormat stereoFormat = new AudioFormat(44100f, 16, 2, true, false);
-        AudioFormat monoFormat = new AudioFormat(44100f, 16, 2, true, false);
+        AudioFormat monoFormat = new AudioFormat(44100f, 16, 1, true, false);
 
         DataLine.Info stereoDIF = new DataLine.Info(SourceDataLine.class, stereoFormat);
         DataLine.Info monoDIF = new DataLine.Info(SourceDataLine.class, monoFormat);

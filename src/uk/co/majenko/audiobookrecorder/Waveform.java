@@ -49,6 +49,7 @@ public class Waveform extends JPanel {
 
             int num = samples.length;
             int step = num / w;
+            if (step == 0) return;
 
             for (int n = 0; n < w; n++) {
                 int hcnt = 0;

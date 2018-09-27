@@ -40,6 +40,7 @@ public class IIR extends IIRBase {
     public final static float EQ_22050_RATE = 22050;
     public final static float EQ_44100_RATE = 44100;
     public final static float EQ_48000_RATE = 48000;
+    public final static float EQ_96000_RATE = 96000;
     /**
      * Supported number of bands
      */
@@ -108,7 +109,7 @@ public class IIR extends IIRBase {
      * @return true if parameters are supported
      */
     public static boolean isParamsSupported(int bands, float rate, int channels) {
-        if (rate != EQ_11025_RATE && rate != EQ_22050_RATE && rate != EQ_44100_RATE && rate != EQ_48000_RATE)
+        if (rate != EQ_11025_RATE && rate != EQ_22050_RATE && rate != EQ_44100_RATE && rate != EQ_48000_RATE && rate != EQ_96000_RATE)
             return false;
 
         switch (bands) {
@@ -178,6 +179,12 @@ public class IIR extends IIRBase {
                     break;
                 default:
                     iircf = iir_cf10_48000;
+                    break;
+            }
+        } else if (rate == EQ_96000_RATE) {
+            switch (bands) {
+                case 31:
+                    iircf = iir_cf31_96000;
                     break;
             }
         }
