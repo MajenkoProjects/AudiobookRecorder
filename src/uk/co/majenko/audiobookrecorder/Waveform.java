@@ -9,6 +9,7 @@ import javax.sound.sampled.*;
 public class Waveform extends JPanel {
 
     int[] samples = null;
+
     int leftMarker = 0;
     int rightMarker = 0;
 
@@ -20,7 +21,6 @@ public class Waveform extends JPanel {
     }
 
     public void paintComponent(Graphics g) {
-
         Dimension size = getSize();
 
         int w = size.width;
@@ -140,4 +140,5 @@ public class Waveform extends JPanel {
         samples = s;
         repaint();
     }
+
 }

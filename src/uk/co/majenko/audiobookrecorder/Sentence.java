@@ -156,6 +156,38 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         }
     }
 
+    public static final int FFTBuckets = 1024;
+
+    public double[][] getFFTProfile() {
+        double[] real = new double[FFTBuckets];
+        double[] imag = new double[FFTBuckets];
+
+        int[] samples = getAudioData();
+        int slices = (samples.length / FFTBuckets) + 1;
+
+        double[][] out = new double[slices][];
+
+        int slice = 0;
+
+        for (int i = 0; i < samples.length; i += FFTBuckets) {
+            for (int j = 0; j < FFTBuckets; j++) {
+                if (i + j < samples.length) {
+                    real[j] = samples[i+j] / 32768d;
+                    imag[j] = 0;
+                } else {
+                    real[j] = 0;
+                    imag[j] = 0;
+                }
+            }
+
+            out[slice++] = FFT.fft(real, imag, true);
+        }
+
+        return out;
+        
+        
+    }
+
     public void autoTrimSampleFFT() {
         crossStartOffset = -1;
         crossEndOffset = -1;
@@ -190,7 +222,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
             intens[block] = 0;
 
-            for (int j = 1; j < 2048; j++) {
+            for (int j = 2; j < 4096; j += 2) {
                 double d = Math.abs(av - buckets[j]);
                 if (d > 0.05) {
                     intens[block]++;
