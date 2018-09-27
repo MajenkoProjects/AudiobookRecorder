@@ -1,0 +1,76 @@
+#!/usr/bin/perl
+
+use Math::Trig;
+
+my $fs = 96000;
+
+printCo(0, 20, 25, $fs);
+printCo(20, 25, 31.5, $fs);
+printCo(25, 31.5, 40, $fs);
+printCo(31.5, 40, 50, $fs);
+printCo(40, 50, 63, $fs);
+printCo(50, 63, 80, $fs);
+printCo(63, 80, 100, $fs);
+printCo(80, 100, 125, $fs);
+printCo(100, 125, 160, $fs);
+printCo(125, 160, 200, $fs);
+printCo(160, 200, 250, $fs);
+printCo(200, 250, 315, $fs);
+printCo(250, 315, 400, $fs);
+printCo(315, 400, 500, $fs);
+printCo(400, 500, 630, $fs);
+printCo(500, 630, 800, $fs);
+printCo(630, 800, 1000, $fs);
+printCo(800, 1000, 1250, $fs);
+printCo(1000, 1250, 1600, $fs);
+printCo(1250, 1600, 2000, $fs);
+printCo(1600, 2000, 2500, $fs);
+printCo(2000, 2500, 3150, $fs);
+printCo(2500, 3150, 4000, $fs);
+printCo(3150, 4000, 5000, $fs);
+printCo(4000, 5000, 6300, $fs);
+printCo(5000, 6300, 8000, $fs);
+printCo(6300, 8000, 10000, $fs);
+printCo(8000, 10000, 12500, $fs);
+printCo(10000, 12500, 16000, $fs);
+printCo(12500, 16000, 20000, $fs);
+printCo(16000, 20000, $fs / 2, $fs);
+
+sub printCo($$$$) {
+    my $fl = shift;
+    my $f0 = shift;
+    my $fh = shift;
+    my $fs = shift;
+
+    my $f1 = $f0 - (($f0 - $fl) / 2);
+    my $f2 = $f0 + (($fh - $f0) / 2);
+
+    @coeff = coefficient($f0, $fs, $f1, $f2);
+    print "/* $f0 Hz */\n";
+    printf("new IIRCoefficients(%.10e, %.10e, %.10e),\n" , $coeff[1] * 2, $coeff[0] * 2, $coeff[2] * 2);
+}
+
+
+sub coefficient($$$$) {
+    my $f0 = shift;
+    my $fs = shift;
+    my $f1 = shift;
+    my $f2 = shift;
+
+    my $q = $f0 / ($f2 - $f1);
+
+    my $pi = 3.141592653;
+
+    my $theta0 = 2 * $pi * ($f0 / $fs);
+
+    my $thetaOverTwoQ = $theta0 / (2 * $q);
+
+    my $beta = 0.5 * ((1 - tan($thetaOverTwoQ)) / (1 + tan($thetaOverTwoQ)));
+
+    my $gamma = (0.5 + $beta) * cos($theta0);
+    
+    my $alpha = (0.5 - $beta) / 2;
+
+    return ($alpha, $beta, $gamma);
+}
+

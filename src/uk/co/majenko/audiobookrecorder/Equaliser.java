@@ -15,6 +15,12 @@ public class Equaliser extends JPanel {
 
     EqualiserChannel channels[];
 
+    static final double[] frequencies = {
+        20d, 25d, 31.5d, 40d, 50d, 63d, 80d, 100d, 125d, 160d, 200d,
+        250d, 315d, 400d, 500d, 630d, 800d, 1000d, 1250d, 1600d, 2000d,
+        2500d, 3150d, 4000d, 5000d, 6300d, 8000d, 10000d, 12500d, 16000d,
+        20000d
+    };
 
     public Equaliser() {
         super();
@@ -28,7 +34,7 @@ public class Equaliser extends JPanel {
         inner.setLayout(new FlowLayout());
 
         for (int i = 0; i < 31; i++) {
-            channels[i] = new EqualiserChannel();
+            channels[i] = new EqualiserChannel(frequencies[i]);
             inner.add(channels[i]);
         }
 
