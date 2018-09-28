@@ -142,4 +142,17 @@ public class Book extends DefaultMutableTreeNode {
     public String toString() {
         return name;
     }
+
+    @SuppressWarnings("unchecked")
+    public void renumberChapters() {
+        int id = 1;
+
+        for (Enumeration<Chapter> c = children(); c.hasMoreElements();) {
+            Chapter chp = c.nextElement();
+            if (Utils.s2i(chp.getId()) > 0) {
+                chp.setId(String.format("%04d", id));
+                id++;
+            }
+        }
+    }
 }

@@ -16,6 +16,7 @@ import com.mpatric.mp3agic.*;
 import edu.cmu.sphinx.api.*;
 import edu.cmu.sphinx.decoder.adaptation.*;
 import edu.cmu.sphinx.result.*;
+import java.nio.file.Files;
 
 public class AudiobookRecorder extends JFrame {
 
@@ -37,6 +38,8 @@ public class AudiobookRecorder extends JFrame {
     JMenuItem bookNewChapter;
     JMenuItem bookExportAudio;
 
+    JMenuItem toolsMerge;
+    JMenuItem toolsArchive;
     JMenuItem toolsOptions;
 
     JMenuItem helpAbout;
@@ -183,6 +186,22 @@ public class AudiobookRecorder extends JFrame {
         menuBar.add(bookMenu);
 
         toolsMenu = new JMenu("Tools");
+
+        toolsMerge = new JMenuItem("Merge Book...");
+        toolsMerge.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                saveBookStructure();
+                mergeBook();
+            }
+        });
+        
+        toolsArchive = new JMenuItem("Archive Book");
+        toolsArchive.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                saveBookStructure();
+                archiveBook();
+            }
+        });
         
         toolsOptions = new JMenuItem("Options");
         toolsOptions.addActionListener(new ActionListener() {
@@ -191,6 +210,9 @@ public class AudiobookRecorder extends JFrame {
             }
         });
         
+        toolsMenu.add(toolsMerge);
+        toolsMenu.add(toolsArchive);
+        toolsMenu.addSeparator();
         toolsMenu.add(toolsOptions);
 
         menuBar.add(toolsMenu);
@@ -820,6 +842,7 @@ public class AudiobookRecorder extends JFrame {
                 JMenuObject lockAll = new JMenuObject("Lock all sentences", c);
                 JMenuObject unlockAll = new JMenuObject("Unlock all sentences", c);
                 JMenuObject exportChapter = new JMenuObject("Export chapter", c);
+                JMenuObject deleteChapter = new JMenuObject("Delete chapter", c);
 
                 exportChapter.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
@@ -881,6 +904,7 @@ public class AudiobookRecorder extends JFrame {
                                 bookTreeModel.insertNodeInto(chap, book, pos);
                             }
                         }
+                        book.renumberChapters();
                     }
                 });
                 moveDown.addActionListener(new ActionListener() {
@@ -900,6 +924,7 @@ public class AudiobookRecorder extends JFrame {
                                 }
                             }
                         }
+                        book.renumberChapters();
                     }
                 });
 
@@ -938,26 +963,38 @@ public class AudiobookRecorder extends JFrame {
                         }
                     }
                 });
+
+                deleteChapter.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter c = (Chapter)o.getObject();
+                        int rv = JOptionPane.showConfirmDialog(AudiobookRecorder.this, "Are you sure you want to delete this chapter?", "Are you sure?", JOptionPane.OK_CANCEL_OPTION);
+                        if (rv == JOptionPane.OK_OPTION) {
+                            while (c.getChildCount() > 0) {
+                                Sentence s = (Sentence)c.getFirstChild();
+                                s.deleteFiles();
+                                bookTreeModel.removeNodeFromParent(s);
+                            }
+                        }
+                        bookTreeModel.removeNodeFromParent(c);
+                        book.renumberChapters();
+                    }
+                });
                         
 
                 menu.add(moveUp);
                 menu.add(moveDown);
-
                 menu.addSeparator();
                 menu.add(mergeWith);
-
                 menu.addSeparator();
-
                 menu.add(peak);
-
                 menu.addSeparator();
-
                 menu.add(lockAll);
                 menu.add(unlockAll);
-    
                 menu.addSeparator();
-
                 menu.add(exportChapter);
+                menu.addSeparator();
+                menu.add(deleteChapter);
 
                 menu.show(bookTree, e.getX(), e.getY());
             }
@@ -1759,5 +1796,113 @@ public class AudiobookRecorder extends JFrame {
                 e.printStackTrace();
             }
         }
+    }
+
+    public void mergeBook() {
+        OpenBookPanel info = new OpenBookPanel();
+        int r = JOptionPane.showConfirmDialog(this, info, "Merge Book", JOptionPane.OK_CANCEL_OPTION);
+        if (r == JOptionPane.OK_OPTION) {
+            File f = info.getSelectedFile();
+            if (!f.exists()) {
+                JOptionPane.showMessageDialog(this, "File not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (f.isDirectory()) {
+                JOptionPane.showMessageDialog(this, "File is directory.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!f.getName().endsWith(".abk")) {
+                JOptionPane.showMessageDialog(this, "Not a .abk file.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            try {
+                Properties prefs = new Properties();
+                FileInputStream fis = new FileInputStream(f);
+                prefs.loadFromXML(fis);
+
+                // Merge the opening credits if they exist
+                if (prefs.getProperty("chapter.open.name") != null) {
+                    mergeChapter(prefs, "open");
+                }
+
+                // Merge the audition if it exists
+                if (prefs.getProperty("chapter.audition.name") != null) {
+                    mergeChapter(prefs, "audition");
+                }
+
+                for (int i = 0; i < 9999; i++) {
+                    String chid = String.format("%04d", i);
+                    if (prefs.getProperty("chapter." + chid + ".name") != null) {
+                        mergeChapter(prefs, chid);
+                    }
+                }
+
+                // Merge the opening credits if they exist
+                if (prefs.getProperty("chapter.open.name") != null) {
+                    mergeChapter(prefs, "open");
+                }
+
+                // Merge the closing credits if they exist
+                if (prefs.getProperty("chapter.close.name") != null) {
+                    mergeChapter(prefs, "close");
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+
+
+        }
+    }
+
+    public void mergeChapter(Properties prefs, String chid) {
+        Chapter c = book.addChapter();
+System.err.println("Added chapter " + c.getId());
+        c.setName("Merged-" + prefs.getProperty("chapter." + chid + ".name"));
+        c.setPostGap(Utils.s2i(prefs.getProperty("chapter." + chid + ".post-gap")));
+        c.setPreGap(Utils.s2i(prefs.getProperty("chapter." + chid + ".pre-gap")));
+
+        Chapter lc = book.getLastChapter();
+        int idx = bookTreeModel.getIndexOfChild(book, lc);
+        bookTreeModel.insertNodeInto(c, book, idx+1);
+
+
+        File srcBook = new File(Options.get("path.storage"), prefs.getProperty("book.name"));
+        File srcFolder = new File(srcBook, "files");
+
+        File dstBook = new File(Options.get("path.storage"), book.getName());
+        File dstFolder = new File(dstBook, "files");
+
+        for (int i = 0; i < 100000000; i++) {
+            String id = prefs.getProperty(String.format("chapter." + chid + ".sentence.%08d.id", i));
+            String text = prefs.getProperty(String.format("chapter." + chid + ".sentence.%08d.text", i));
+            int gap = Utils.s2i(prefs.getProperty(String.format("chapter." + chid + ".sentence.%08d.post-gap", i)));
+            if (id == null) break;
+            Sentence s = new Sentence(id, text);
+            s.setPostGap(gap);
+            s.setStartOffset(Utils.s2i(prefs.getProperty(String.format("chapter." + chid + ".sentence.%08d.start-offset", i))));
+            s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter." + chid + ".sentence.%08d.end-offset", i))));
+            s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter." + chid + ".sentence.%08d.locked", i))));
+            bookTreeModel.insertNodeInto(s, c, c.getChildCount());
+
+            File srcFile = new File(srcFolder, s.getId() + ".wav");
+            File dstFile = new File(dstFolder, s.getId() + ".wav");
+
+            if (srcFile.exists()) {
+                try {
+                    Files.copy(srcFile.toPath(), dstFile.toPath());
+                } catch (Exception e) {
+                }
+            }
+
+        }
+
+    }
+   
+    public void archiveBook() {
     }
 }

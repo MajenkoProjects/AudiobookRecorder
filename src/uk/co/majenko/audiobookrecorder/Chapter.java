@@ -35,6 +35,10 @@ public class Chapter extends DefaultMutableTreeNode {
         return id;
     }
 
+    public void setId(String i) {
+        id = i;
+    }
+
     public Sentence getLastSentence() {
         DefaultMutableTreeNode ls = getLastLeaf();
         if (ls instanceof Sentence) return (Sentence)ls;
