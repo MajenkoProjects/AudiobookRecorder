@@ -154,6 +154,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 recognise();
             }
         }
+
     }
 
     public static final int FFTBuckets = 1024;

@@ -68,8 +68,8 @@ public class Book extends DefaultMutableTreeNode {
 
     @SuppressWarnings("unchecked")
     public Chapter getChapterById(String id) {
-        for (Enumeration<Object>o = children(); o.hasMoreElements();) {
-            Object ob = o.nextElement();
+        for (Enumeration o = children(); o.hasMoreElements();) {
+            Object ob = (Object)o.nextElement();
             if (ob instanceof Chapter) {
                 Chapter c = (Chapter)ob;
                 if (c.getId().equals(id)) {
@@ -152,8 +152,8 @@ public class Book extends DefaultMutableTreeNode {
     public void renumberChapters() {
         int id = 1;
 
-        for (Enumeration<Chapter> c = children(); c.hasMoreElements();) {
-            Chapter chp = c.nextElement();
+        for (Enumeration c = children(); c.hasMoreElements();) {
+            Chapter chp = (Chapter)c.nextElement();
             if (Utils.s2i(chp.getId()) > 0) {
                 chp.setId(String.format("%04d", id));
                 id++;

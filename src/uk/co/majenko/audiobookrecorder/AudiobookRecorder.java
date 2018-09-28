@@ -363,7 +363,6 @@ public class AudiobookRecorder extends JFrame {
         });
 
 
-
         JPanel controlsTop = new JPanel();
         JPanel controlsBottom = new JPanel();
         JToolBar controlsLeft = new JToolBar(JToolBar.VERTICAL);
@@ -597,6 +596,7 @@ public class AudiobookRecorder extends JFrame {
 
         setIconImage(Icons.appIcon.getImage());
 
+
         pack();
         setVisible(true);
 
@@ -735,8 +735,8 @@ public class AudiobookRecorder extends JFrame {
                 JMenuObject rec = new JMenuObject("Recognise text from audio", s);
                 JMenu moveMenu = new JMenu("Move sentence to...");
 
-                for (Enumeration<Chapter> c = book.children(); c.hasMoreElements();) {
-                    Chapter chp = c.nextElement();
+                for (Enumeration c = book.children(); c.hasMoreElements();) {
+                    Chapter chp = (Chapter)c.nextElement();
                     JMenuObject2 m = new JMenuObject2(chp.getName(), s, chp);
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -858,8 +858,8 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
 
-                for (Enumeration<Chapter> bc = book.children(); bc.hasMoreElements();) {
-                    Chapter chp = bc.nextElement();
+                for (Enumeration bc = book.children(); bc.hasMoreElements();) {
+                    Chapter chp = (Chapter)bc.nextElement();
                     if (chp.getId().equals(c.getId())) {
                         continue;
                     }
@@ -932,8 +932,8 @@ public class AudiobookRecorder extends JFrame {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter c = (Chapter)o.getObject();
-                        for (Enumeration<Sentence> s = c.children(); s.hasMoreElements();) {
-                            Sentence snt = s.nextElement();
+                        for (Enumeration s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = (Sentence)s.nextElement();
                             if (!snt.isLocked()) {
                                 snt.autoTrimSamplePeak();
                             }
@@ -945,8 +945,8 @@ public class AudiobookRecorder extends JFrame {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter c = (Chapter)o.getObject();
-                        for (Enumeration<Sentence> s = c.children(); s.hasMoreElements();) {
-                            Sentence snt = s.nextElement();
+                        for (Enumeration s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = (Sentence)s.nextElement();
                             snt.setLocked(true);
                             bookTreeModel.reload(snt);
                         }
@@ -956,8 +956,8 @@ public class AudiobookRecorder extends JFrame {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter c = (Chapter)o.getObject();
-                        for (Enumeration<Sentence> s = c.children(); s.hasMoreElements();) {
-                            Sentence snt = s.nextElement();
+                        for (Enumeration s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = (Sentence)s.nextElement();
                             snt.setLocked(false);
                             bookTreeModel.reload(snt);
                         }
@@ -1228,17 +1228,17 @@ public class AudiobookRecorder extends JFrame {
             prefs.setProperty("audio.eq." + i, String.format("%.3f", book.equaliser.getChannel(i)));
         }
 
-        for (Enumeration<Chapter> o = book.children(); o.hasMoreElements();) {
+        for (Enumeration o = book.children(); o.hasMoreElements();) {
 
-            Chapter c = o.nextElement();
+            Chapter c = (Chapter)o.nextElement();
             String keybase = "chapter." + c.getId();
             prefs.setProperty(keybase + ".name", c.getName());
             prefs.setProperty(keybase + ".pre-gap", Integer.toString(c.getPreGap()));
             prefs.setProperty(keybase + ".post-gap", Integer.toString(c.getPostGap()));
 
             int i = 0;
-            for (Enumeration<Sentence> s = c.children(); s.hasMoreElements();) {
-                Sentence snt = s.nextElement();
+            for (Enumeration s = c.children(); s.hasMoreElements();) {
+                Sentence snt = (Sentence)s.nextElement();
                 prefs.setProperty(String.format("%s.sentence.%08d.id", keybase, i), snt.getId());
                 prefs.setProperty(String.format("%s.sentence.%08d.text", keybase, i), snt.getText());
                 prefs.setProperty(String.format("%s.sentence.%08d.post-gap", keybase, i), Integer.toString(snt.getPostGap()));
@@ -1625,8 +1625,8 @@ public class AudiobookRecorder extends JFrame {
     public void exportAudio() {
 
         
-        for (Enumeration<Chapter> o = book.children(); o.hasMoreElements();) {
-            Chapter c = o.nextElement();
+        for (Enumeration o = book.children(); o.hasMoreElements();) {
+            Chapter c = (Chapter)o.nextElement();
             ExportDialog ed = new ExportDialog("Exporting " + c.getName());
 
             ExportThread t = new ExportThread(c, ed);

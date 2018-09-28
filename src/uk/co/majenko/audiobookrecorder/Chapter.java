@@ -116,7 +116,7 @@ public class Chapter extends DefaultMutableTreeNode {
         audioAttributes.setCodec("libmp3lame");
         audioAttributes.setBitRate(Options.getInteger("audio.export.bitrate"));
         audioAttributes.setSamplingRate(Options.getInteger("audio.export.samplerate"));
-        audioAttributes.setChannels(new Integer(2));
+        audioAttributes.setChannels(2); //new Integer(2));
         attributes.setFormat("mp3");
         attributes.setAudioAttributes(audioAttributes);
 
@@ -145,10 +145,10 @@ public class Chapter extends DefaultMutableTreeNode {
         int kidno = 0;
 
 
-        for (Enumeration<Sentence> s = children(); s.hasMoreElements();) {
+        for (Enumeration s = children(); s.hasMoreElements();) {
             kidno++;
             if (exportDialog != null) exportDialog.setProgress(kidno * 1000 / kids);
-            Sentence snt = s.nextElement();
+            Sentence snt = (Sentence)s.nextElement();
             data = snt.getRawAudioData();
 
             fullLength += data.length;
