@@ -100,10 +100,32 @@ public class OpenBookPanel extends JPanel {
             table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             table.setRowHeight(80);
             table.getTableHeader().setUI(null);
+
+            table.addMouseListener(new MouseAdapter() {
+                public void mousePressed(MouseEvent e) {
+                    if (e.getClickCount() == 2 && table.getSelectedRow() != -1) {
+                        Component c = (Component)OpenBookPanel.this;
+                        while ((c != null) && (!(c instanceof JOptionPane))) {
+                            c = c.getParent();
+                        }
+                        if (c == null) {
+                            System.err.println("Could not get option pane!");
+                        } else {
+                            JOptionPane op = (JOptionPane)c;
+                            op.setValue(JOptionPane.OK_OPTION);
+                        }
+                    }
+                }
+            });
+
+
+
+
             scroll.setViewportView(table);
         } catch (Exception e) {
             e.printStackTrace();
         }
+
 
     }
 
