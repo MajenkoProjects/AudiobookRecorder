@@ -388,7 +388,7 @@ public class AudiobookRecorder extends JFrame {
         statusBar = new JPanel();
         add(statusBar, BorderLayout.SOUTH);
 
-        statusLabel = new JLabel("Noise floor: " + getNoiseFloor());
+        statusLabel = new JLabel("Noise floor: " + getNoiseFloorDB() + "dB");
         statusBar.add(statusLabel);
 
         buildToolbar(centralPanel);
@@ -1343,7 +1343,7 @@ public class AudiobookRecorder extends JFrame {
         bookTree.expandPath(new TreePath(book.getPath()));
 
         toolBar.enableBook();
-        statusLabel.setText("Noise floor: " + getNoiseFloor());
+        statusLabel.setText("Noise floor: " + getNoiseFloorDB() + "dB");
         book.setIcon(Icons.book);
     }
 
@@ -1404,6 +1404,16 @@ public class AudiobookRecorder extends JFrame {
         return ms;
     }
 
+    public int getNoiseFloorDB() {
+	int nf = getNoiseFloor();
+	if (nf == 0) return 0;
+	double r = nf / 32767d;
+	double l10 = Math.log10(r);
+	double db = 20d * l10;
+
+	return (int)db;
+    }
+
     public void recordRoomNoise() {
         if (roomNoise.startRecording()) {
 
@@ -1413,7 +1423,7 @@ public class AudiobookRecorder extends JFrame {
                 public void run() {
                     roomNoise.stopRecording();
                     centralPanel.setFlash(false);
-                    statusLabel.setText("Noise floor: " + getNoiseFloor());
+			statusLabel.setText("Noise floor: " + getNoiseFloorDB() + "dB");
                 }
             }, 5000); // 5 seconds of recording
         }
