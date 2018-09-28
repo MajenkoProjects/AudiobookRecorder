@@ -9,6 +9,7 @@ import java.io.*;
 import java.nio.file.*;
 import javax.swing.tree.*;
 import davaguine.jeq.core.IIRControls;
+import javax.sound.sampled.*;
 
 public class Book extends DefaultMutableTreeNode {
     
@@ -16,6 +17,10 @@ public class Book extends DefaultMutableTreeNode {
     String author;
     String genre;
     String comment;
+
+    int sampleRate;
+    int channels;
+    int resolution;
 
     ImageIcon icon;
 
@@ -154,5 +159,16 @@ public class Book extends DefaultMutableTreeNode {
                 id++;
             }
         }
+    }
+
+    public int getSampleRate() { return sampleRate; }
+    public void setSampleRate(int sr) { sampleRate = sr; }
+    public int getChannels() { return channels; }
+    public void setChannels(int c) { channels = c; }
+    public int getResolution() { return resolution; }
+    public void setResolution(int r) { resolution = r; }
+
+    public AudioFormat getAudioFormat() {
+        return new AudioFormat(getSampleRate(), getResolution(), getChannels(), true, false);
     }
 }

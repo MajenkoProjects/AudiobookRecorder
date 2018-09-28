@@ -128,7 +128,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         }
 
 
-        recordingThread = new RecordingThread(getTempFile(), getFile(), Options.getAudioFormat());
+        recordingThread = new RecordingThread(getTempFile(), getFile(), AudiobookRecorder.window.book.getAudioFormat());
 
         Thread rc = new Thread(recordingThread);
         rc.setDaemon(true);

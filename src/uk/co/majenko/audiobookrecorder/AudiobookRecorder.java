@@ -1220,6 +1220,10 @@ public class AudiobookRecorder extends JFrame {
         prefs.setProperty("book.genre", book.getGenre());
         prefs.setProperty("book.comment", book.getComment());
 
+        prefs.setProperty("audio.recording.samplerate", "" + book.getSampleRate());
+        prefs.setProperty("audio.recording.resolution", "" + book.getResolution());
+        prefs.setProperty("audio.recording.channels", "" + book.getChannels());
+
         for (int i = 0; i < 31; i++) {
             prefs.setProperty("audio.eq." + i, String.format("%.3f", book.equaliser.getChannel(i)));
         }
@@ -1270,6 +1274,13 @@ public class AudiobookRecorder extends JFrame {
 
             File r = f.getParentFile();
             File cf = new File(r, "coverart.png");
+            if (!cf.exists()) {
+                cf = new File(r, "coverart.jpg");
+                if (!cf.exists()) {
+                    cf = new File(r, "coverart.gif");
+                }
+            }
+
             if (cf.exists()) {
                 ImageIcon i = new ImageIcon(cf.getAbsolutePath());
                 Image ri = Utils.getScaledImage(i.getImage(), 22, 22);
@@ -1288,6 +1299,25 @@ public class AudiobookRecorder extends JFrame {
         book.setAuthor(prefs.getProperty("book.author"));
         book.setGenre(prefs.getProperty("book.genre"));
         book.setComment(prefs.getProperty("book.comment"));
+
+        int sr = Utils.s2i(prefs.getProperty("audio.recording.samplerate"));
+        if (sr == 0) {
+            sr = Options.getInteger("audio.recording.samplerate");
+        }
+        book.setSampleRate(sr);
+
+        int chans = Utils.s2i(prefs.getProperty("audio.recording.channels"));
+        if (chans == 0) {
+            chans = Options.getInteger("audio.recording.channels");
+        }
+        book.setChannels(chans);
+
+        int res = Utils.s2i(prefs.getProperty("audio.recording.resolution"));
+        if (res == 0) {
+            res = Options.getInteger("audio.recording.resolution");
+        }
+        book.setResolution(res);
+
 
         for (int i = 0; i < 31; i++) {
             if (prefs.getProperty("audio.eq." + i) == null) {
