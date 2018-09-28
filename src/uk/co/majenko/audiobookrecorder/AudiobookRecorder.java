@@ -67,23 +67,11 @@ public class AudiobookRecorder extends JFrame {
     JPanel sampleControl;
     Waveform sampleWaveform;
 
-    JSpinner startOffset;
-    JSpinner endOffset;
     JSpinner postSentenceGap;
     JCheckBox locked;
 
     JButton reprocessAudioFFT;
     JButton reprocessAudioPeak;
-
-    JButton startSlowDown;
-    JButton startSlowUp;
-    JButton startFastDown;
-    JButton startFastUp;
-
-    JButton endSlowDown;
-    JButton endSlowUp;
-    JButton endFastDown;
-    JButton endFastUp;
 
     Thread playingThread = null;
 
@@ -287,6 +275,32 @@ public class AudiobookRecorder extends JFrame {
         sampleControl.setLayout(new BorderLayout());
         sampleControl.setPreferredSize(new Dimension(400, 150));
         sampleWaveform = new Waveform();
+
+        sampleWaveform.addMarkerDragListener(new MarkerDragListener() {
+            public void leftMarkerMoved(MarkerDragEvent e) {
+                if (selectedSentence != null) {
+                    if (!selectedSentence.isLocked()) {
+                        selectedSentence.setStartOffset(e.getPosition());
+                        selectedSentence.updateCrossings();
+                        sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
+                    } else {
+                        sampleWaveform.setLeftMarker(selectedSentence.getStartOffset());
+                    }
+                }
+            }
+
+            public void rightMarkerMoved(MarkerDragEvent e) {
+                if (selectedSentence != null) {
+                    if (!selectedSentence.isLocked()) {
+                        selectedSentence.setEndOffset(e.getPosition());
+                        selectedSentence.updateCrossings();
+                        sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
+                    } else {
+                        sampleWaveform.setRightMarker(selectedSentence.getEndOffset());
+                    }
+                }
+            }
+        });
     
         sampleControl.add(sampleWaveform, BorderLayout.CENTER);
 
@@ -299,8 +313,6 @@ public class AudiobookRecorder extends JFrame {
                     sampleWaveform.setData(selectedSentence.getAudioData());
                     sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
                     sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
-                    startOffset.setValue(selectedSentence.getStartOffset());
-                    endOffset.setValue(selectedSentence.getEndOffset());
                     postSentenceGap.setValue(selectedSentence.getPostGap());
                 }
             }
@@ -315,43 +327,13 @@ public class AudiobookRecorder extends JFrame {
                     sampleWaveform.setData(selectedSentence.getAudioData());
                     sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
                     sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
-                    startOffset.setValue(selectedSentence.getStartOffset());
-                    endOffset.setValue(selectedSentence.getEndOffset());
                     postSentenceGap.setValue(selectedSentence.getPostGap());
                 }
             }
         });
 
-        startOffset = new JSpinner(new SteppedNumericSpinnerModel(0, 0, 1, 0));
-        startOffset.setPreferredSize(new Dimension(100, 20));
-        endOffset = new JSpinner(new SteppedNumericSpinnerModel(0, 0, 1, 0));
-        endOffset.setPreferredSize(new Dimension(100, 20));
         postSentenceGap = new JSpinner(new SteppedNumericSpinnerModel(0, 5000, 100, 0));
         postSentenceGap.setPreferredSize(new Dimension(75, 20));
-
-        startOffset.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                JSpinner ob = (JSpinner)e.getSource();
-                if (selectedSentence != null) {
-                    selectedSentence.setStartOffset((Integer)ob.getValue());
-                    sampleWaveform.setLeftMarker((Integer)ob.getValue());
-                    selectedSentence.updateStartCrossing();
-                    sampleWaveform.setLeftAltMarker(selectedSentence.getStartCrossing());
-                }
-            }
-        });
-
-        endOffset.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                JSpinner ob = (JSpinner)e.getSource();
-                if (selectedSentence != null) {
-                    selectedSentence.setEndOffset((Integer)ob.getValue());
-                    sampleWaveform.setRightMarker((Integer)ob.getValue());
-                    selectedSentence.updateEndCrossing();
-                    sampleWaveform.setRightAltMarker(selectedSentence.getEndCrossing());
-                }
-            }
-        });
 
         postSentenceGap.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
@@ -364,7 +346,6 @@ public class AudiobookRecorder extends JFrame {
 
 
         JPanel controlsTop = new JPanel();
-        JPanel controlsBottom = new JPanel();
         JToolBar controlsLeft = new JToolBar(JToolBar.VERTICAL);
         JToolBar controlsRight = new JToolBar(JToolBar.VERTICAL);
 
@@ -373,119 +354,6 @@ public class AudiobookRecorder extends JFrame {
 
         controlsLeft.add(reprocessAudioFFT);
         controlsLeft.add(reprocessAudioPeak);
-
-        controlsBottom.add(new JLabel("Start Offset:"));
-
-        startFastDown = new JButton("<<");
-        startFastDown.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                SteppedNumericSpinnerModel m = (SteppedNumericSpinnerModel)startOffset.getModel();
-                int f = (Integer)startOffset.getValue();
-                int max = m.getMaximum();
-                f -= (max / 10);
-                if (f < 0) f = 0;
-                startOffset.setValue(f);
-            }
-        });
-        controlsBottom.add(startFastDown);
-
-        startSlowDown = new JButton("<");
-        startSlowDown.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                SteppedNumericSpinnerModel m = (SteppedNumericSpinnerModel)startOffset.getModel();
-                int f = (Integer)startOffset.getValue();
-                int max = m.getMaximum();
-                f -= (max / 100);
-                if (f < 0) f = 0;
-                startOffset.setValue(f);
-            }
-        });
-        controlsBottom.add(startSlowDown);
-
-        controlsBottom.add(startOffset);
-
-        startSlowUp = new JButton(">");
-        startSlowUp.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                SteppedNumericSpinnerModel m = (SteppedNumericSpinnerModel)startOffset.getModel();
-                int f = (Integer)startOffset.getValue();
-                int max = m.getMaximum();
-                f += (max / 100);
-                if (f > max) f = max;
-                startOffset.setValue(f);
-            }
-        });
-        controlsBottom.add(startSlowUp);
-
-        startFastUp = new JButton(">>");
-        startFastUp.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                SteppedNumericSpinnerModel m = (SteppedNumericSpinnerModel)startOffset.getModel();
-                int f = (Integer)startOffset.getValue();
-                int max = m.getMaximum();
-                f += (max / 10);
-                if (f > max) f = max;
-                startOffset.setValue(f);
-            }
-        });
-        controlsBottom.add(startFastUp);
-
-
-        controlsBottom.add(new JLabel("End Offset:"));
-
-        endFastDown = new JButton("<<");
-        endFastDown.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                SteppedNumericSpinnerModel m = (SteppedNumericSpinnerModel)endOffset.getModel();
-                int f = (Integer)endOffset.getValue();
-                int max = m.getMaximum();
-                f -= (max / 10);
-                if (f < 0) f = 0;
-                endOffset.setValue(f);
-            }
-        });
-        controlsBottom.add(endFastDown);
-
-        endSlowDown = new JButton("<");
-        endSlowDown.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                SteppedNumericSpinnerModel m = (SteppedNumericSpinnerModel)endOffset.getModel();
-                int f = (Integer)endOffset.getValue();
-                int max = m.getMaximum();
-                f -= (max / 100);
-                if (f < 0) f = 0;
-                endOffset.setValue(f);
-            }
-        });
-        controlsBottom.add(endSlowDown);
-
-        controlsBottom.add(endOffset);
-
-        endSlowUp = new JButton(">");
-        endSlowUp.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                SteppedNumericSpinnerModel m = (SteppedNumericSpinnerModel)endOffset.getModel();
-                int f = (Integer)endOffset.getValue();
-                int max = m.getMaximum();
-                f += (max / 100);
-                if (f > max) f = max;
-                endOffset.setValue(f);
-            }
-        });
-        controlsBottom.add(endSlowUp);
-
-        endFastUp = new JButton(">>");
-        endFastUp.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                SteppedNumericSpinnerModel m = (SteppedNumericSpinnerModel)endOffset.getModel();
-                int f = (Integer)endOffset.getValue();
-                int max = m.getMaximum();
-                f += (max / 10);
-                if (f > max) f = max;
-                endOffset.setValue(f);
-            }
-        });
-        controlsBottom.add(endFastUp);
 
         locked = new JCheckBox("Sentence locked");
 
@@ -512,7 +380,6 @@ public class AudiobookRecorder extends JFrame {
         controlsTop.add(new JLabel("ms"));
 
         sampleControl.add(controlsTop, BorderLayout.NORTH);
-        sampleControl.add(controlsBottom, BorderLayout.SOUTH);
         sampleControl.add(controlsLeft, BorderLayout.WEST);
         sampleControl.add(controlsRight, BorderLayout.EAST);
 
@@ -1350,31 +1217,12 @@ public class AudiobookRecorder extends JFrame {
                     sampleWaveform.setMarkers(s.getStartOffset(), s.getEndOffset());
                     s.updateCrossings();
                     sampleWaveform.setAltMarkers(s.getStartCrossing(), s.getEndCrossing());
-                    startOffset.setValue(s.getStartOffset());
-                    endOffset.setValue(s.getEndOffset());
                     postSentenceGap.setValue(s.getPostGap());
                     locked.setSelected(s.isLocked());
 
                     postSentenceGap.setEnabled(!s.isLocked());
-                    startOffset.setEnabled(!s.isLocked());
-                    endOffset.setEnabled(!s.isLocked());
                     reprocessAudioFFT.setEnabled(!s.isLocked());
                     reprocessAudioPeak.setEnabled(!s.isLocked());
-
-                    startSlowDown.setEnabled(!s.isLocked());
-                    startSlowUp.setEnabled(!s.isLocked());
-                    startFastDown.setEnabled(!s.isLocked());
-                    startFastUp.setEnabled(!s.isLocked());
-
-                    endSlowDown.setEnabled(!s.isLocked());
-                    endSlowUp.setEnabled(!s.isLocked());
-                    endFastDown.setEnabled(!s.isLocked());
-                    endFastUp.setEnabled(!s.isLocked());
-
-                    int samples = s.getSampleSize();
-
-                    ((SteppedNumericSpinnerModel)startOffset.getModel()).setMaximum(samples);
-                    ((SteppedNumericSpinnerModel)endOffset.getModel()).setMaximum(samples);
 
                     if (playing == null) {
                         toolBar.enableSentence();
@@ -1387,8 +1235,6 @@ public class AudiobookRecorder extends JFrame {
                     selectedSentence = null;
                     toolBar.disableSentence();
                     sampleWaveform.clearData();
-                    startOffset.setValue(0);
-                    endOffset.setValue(0);
                     toolBar.disableStop();
                     postSentenceGap.setValue(0);
                     locked.setSelected(false);
