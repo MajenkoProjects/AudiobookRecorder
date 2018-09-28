@@ -31,6 +31,7 @@ public class AudiobookRecorder extends JFrame {
 
     JMenuItem fileNewBook;
     JMenuItem fileOpenBook;
+    JMenuItem fileSave;
     JMenuItem fileExit;
 
     JMenuItem bookNewChapter;
@@ -125,15 +126,24 @@ public class AudiobookRecorder extends JFrame {
         fileNewBook = new JMenuItem("New Book...");
         fileNewBook.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                saveBookStructure();
                 createNewBook();
             }
         });
         fileOpenBook = new JMenuItem("Open Book...");
         fileOpenBook.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                saveBookStructure();
                 openBook();
             }
         });
+        fileSave = new JMenuItem("Save Book");
+        fileSave.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                saveBookStructure();
+            }
+        });
+
         fileExit = new JMenuItem("Exit");
         fileExit.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -144,6 +154,7 @@ public class AudiobookRecorder extends JFrame {
 
         fileMenu.add(fileNewBook);
         fileMenu.add(fileOpenBook);
+        fileMenu.add(fileSave);
         fileMenu.addSeparator();
         fileMenu.add(fileExit);
 
@@ -625,6 +636,8 @@ public class AudiobookRecorder extends JFrame {
         prefs.setProperty("chapter.close.post-gap", Options.get("catenation.post-chapter"));
 
         buildBook(prefs);
+
+        Options.set("path.last-book", book.getName());
     }
 
     class JMenuObject extends JMenuItem {
