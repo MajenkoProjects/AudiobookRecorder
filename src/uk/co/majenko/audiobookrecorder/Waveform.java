@@ -23,6 +23,10 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
 
     int step = 1;
 
+    int zoomFactor = 1;
+    int offsetFactor = 0;
+    int offset = 0;
+
     ArrayList<MarkerDragListener> markerDragListeners;
 
     public Waveform() {
@@ -66,8 +70,12 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
         if (samples != null) {
 
             int num = samples.length;
-            step = num / w;
+            step = num / zoomFactor / w;
             if (step == 0) return;
+
+            double off = offsetFactor / 1000d;
+            int ns = (num - (w * step));
+            offset = (int)(ns * off);
 
             for (int n = 0; n < w; n++) {
                 int hcnt = 0;
@@ -79,7 +87,7 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
                 int lmax = 0;
 
                 for (int o = 0; o < step; o++) {
-                    int sample = samples[(n * step) + o];
+                    int sample = samples[offset + (n * step) + o];
                     if (sample >= 0) {
                         have += sample;
                         hcnt++;
@@ -100,23 +108,23 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
                 have /= scale;
                 lave /= scale;
 
-                g.setColor(new Color(0, 0, 100));
+                g.setColor(new Color(0, 20, 200));
                 g.drawLine(n, h/2 + lmax, n, h/2 - hmax);
-                g.setColor(new Color(0, 0, 200));
+                g.setColor(new Color(0, 100, 255));
                 g.drawLine(n, h/2 + (int)lave, n, h/2 - (int)have);
             }
 
             g.setColor(new Color(255, 0, 0, 32));
-            g.fillRect(0, 0, leftAltMarker/step, h);
-            g.fillRect(rightAltMarker/step, 0, w , h);
+            g.fillRect(0, 0, (leftAltMarker - offset)/step, h);
+            g.fillRect((rightAltMarker - offset)/step, 0, (num - rightAltMarker) / step , h);
 
             g.setColor(new Color(255, 0, 0));
-            g.drawLine(leftAltMarker/step, 0, leftAltMarker/step, h);
-            g.drawLine(rightAltMarker/step, 0, rightAltMarker/step, h);
+            g.drawLine((leftAltMarker - offset)/step, 0, (leftAltMarker - offset)/step, h);
+            g.drawLine((rightAltMarker - offset)/step, 0, (rightAltMarker - offset)/step, h);
 
             g.setColor(new Color(255, 255, 0));
-            g.drawLine(leftMarker/step, 0, leftMarker/step, h);
-            g.drawLine(rightMarker/step, 0, rightMarker/step, h);
+            g.drawLine((leftMarker - offset)/step, 0, (leftMarker - offset)/step, h);
+            g.drawLine((rightMarker - offset)/step, 0, (rightMarker - offset)/step, h);
 
         }
     }
@@ -177,13 +185,13 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
 
     public void mousePressed(MouseEvent e) {
         int x = e.getX();
-        if ((x >= (leftMarker/step) - 2) && (x <= (leftMarker/step) + 2)) {
+        if ((x >= ((leftMarker - offset)/step) - 2) && (x <= ((leftMarker - offset)/step) + 2)) {
             leftMarkerSaved = leftMarker;
             rightMarkerSaved = rightMarker;
             dragging = 1;
             return;
         }
-        if ((x >= (rightMarker/step) - 2) && (x <= (rightMarker/step) + 2)) {
+        if ((x >= ((rightMarker - offset)/step) - 2) && (x <= ((rightMarker - offset)/step) + 2)) {
             rightMarkerSaved = rightMarker;
             leftMarkerSaved = leftMarker;
             dragging = 2;
@@ -211,11 +219,11 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
 
     public void mouseMoved(MouseEvent e) {
         int x = e.getX();
-        if ((x >= (leftMarker/step) - 2) && (x <= (leftMarker/step) + 2)) {
+        if ((x >= ((leftMarker - offset)/step) - 2) && (x <= ((leftMarker - offset)/step) + 2)) {
             setCursor(Cursor.getPredefinedCursor(Cursor.W_RESIZE_CURSOR));
             return;
         }
-        if ((x >= (rightMarker/step) - 2) && (x <= (rightMarker/step) + 2)) {
+        if ((x >= ((rightMarker - offset)/step) - 2) && (x <= ((rightMarker - offset)/step) + 2)) {
             setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
             return;
         }
@@ -229,12 +237,12 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
         int x = e.getX();
 
         if (dragging == 1) {
-            leftMarker = x * step;
+            leftMarker = (x * step) + offset;
             if (leftMarker > rightMarker) {
                 leftMarker  = rightMarker;
             }
         } else if (dragging == 2) {
-            rightMarker = x * step;
+            rightMarker = (x * step) + offset;
             if (rightMarker < leftMarker) {
                 rightMarker = leftMarker;
             }
@@ -243,4 +251,24 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
         repaint();
         
     }
+
+    public void setOffset(int permil) {
+        offsetFactor = permil;
+        if (offsetFactor < 0) offsetFactor = 0;
+        if (offsetFactor > 1000) offsetFactor = 1000;
+        repaint();
+    }
+
+    public void increaseZoom() {
+        zoomFactor *= 2;
+        if (zoomFactor > 64) zoomFactor = 64;
+        repaint();
+    }
+
+    public void decreaseZoom() {
+        zoomFactor /= 2;
+        if (zoomFactor < 1) zoomFactor = 1;
+        repaint();
+    }
+
 }

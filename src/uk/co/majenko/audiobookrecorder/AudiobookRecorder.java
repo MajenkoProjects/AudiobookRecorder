@@ -66,6 +66,7 @@ public class AudiobookRecorder extends JFrame {
 
     JPanel sampleControl;
     Waveform sampleWaveform;
+    JScrollBar sampleScroll;
 
     JSpinner postSentenceGap;
     JCheckBox locked;
@@ -276,6 +277,18 @@ public class AudiobookRecorder extends JFrame {
         sampleControl.setPreferredSize(new Dimension(400, 150));
         sampleWaveform = new Waveform();
 
+        sampleScroll = new JScrollBar(JScrollBar.HORIZONTAL);
+        sampleScroll.setMinimum(0);
+        sampleScroll.setMaximum(1000);
+        sampleScroll.addAdjustmentListener(new AdjustmentListener() {
+            public void adjustmentValueChanged(AdjustmentEvent e) {
+                sampleWaveform.setOffset(sampleScroll.getValue());
+            }
+        });
+
+        sampleControl.add(sampleScroll, BorderLayout.SOUTH);
+        
+
         sampleWaveform.addMarkerDragListener(new MarkerDragListener() {
             public void leftMarkerMoved(MarkerDragEvent e) {
                 if (selectedSentence != null) {
@@ -345,7 +358,7 @@ public class AudiobookRecorder extends JFrame {
         });
 
 
-        JPanel controlsTop = new JPanel();
+        JToolBar controlsTop = new JToolBar(JToolBar.HORIZONTAL);
         JToolBar controlsLeft = new JToolBar(JToolBar.VERTICAL);
         JToolBar controlsRight = new JToolBar(JToolBar.VERTICAL);
 
@@ -378,6 +391,24 @@ public class AudiobookRecorder extends JFrame {
         controlsTop.add(new JLabel("Post gap:"));
         controlsTop.add(postSentenceGap);
         controlsTop.add(new JLabel("ms"));
+
+        JButton zoomIn = new JButton(Icons.zoomIn);
+        zoomIn.setToolTipText("Zoom In");
+        zoomIn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                sampleWaveform.increaseZoom();
+            }
+        });
+        controlsRight.add(zoomIn);
+
+        JButton zoomOut = new JButton(Icons.zoomOut);
+        zoomOut.setToolTipText("Zoom Out");
+        zoomOut.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                sampleWaveform.decreaseZoom();
+            }
+        });
+        controlsRight.add(zoomOut);
 
         sampleControl.add(controlsTop, BorderLayout.NORTH);
         sampleControl.add(controlsLeft, BorderLayout.WEST);
