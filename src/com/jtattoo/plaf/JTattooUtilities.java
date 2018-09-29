@@ -299,7 +299,6 @@ public class JTattooUtilities {
         return fm;
     }
     
-    @SuppressWarnings("unchecked")
     public static void drawString(JComponent c, Graphics g, String text, int x, int y) {
         Graphics2D g2D = (Graphics2D) g;
         Object savedRenderingHint = null;
@@ -307,25 +306,12 @@ public class JTattooUtilities {
             savedRenderingHint = g2D.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING);
             g2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, AbstractLookAndFeel.getTheme().getTextAntiAliasingHint());
         }
-        if (getJavaVersion() >= 1.6) {
-            try {
-                Class swingUtilities2Class = Class.forName("sun.swing.SwingUtilities2");
-                Class classParams[] = {JComponent.class, Graphics.class, String.class, Integer.TYPE, Integer.TYPE};
-                Method m = swingUtilities2Class.getMethod("drawString", classParams);
-                Object methodParams[] = {c, g, text, x, y};
-                m.invoke(null, methodParams);
-            } catch (Exception ex) {
-                g.drawString(text, x, y);
-            }
-        } else {
-            g.drawString(text, x, y);
-        }
+        g.drawString(text, x, y);
         if (AbstractLookAndFeel.getTheme().isTextAntiAliasingOn()) {
             g2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, savedRenderingHint);
         }
     }
 
-    @SuppressWarnings("unchecked")
     public static void drawStringUnderlineCharAt(JComponent c, Graphics g, String text, int underlinedIndex, int x, int y) {
         Graphics2D g2D = (Graphics2D) g;
         Object savedRenderingHint = null;
@@ -333,21 +319,7 @@ public class JTattooUtilities {
             savedRenderingHint = g2D.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING);
             g2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, AbstractLookAndFeel.getTheme().getTextAntiAliasingHint());
         }
-        if (getJavaVersion() >= 1.6 && getJavaVersion() <= 1.9) {
-            try {
-                Class swingUtilities2Class = Class.forName("sun.swing.SwingUtilities2");
-                Class classParams[] = {JComponent.class, Graphics.class, String.class, Integer.TYPE, Integer.TYPE, Integer.TYPE};
-                Method m = swingUtilities2Class.getMethod("drawStringUnderlineCharAt", classParams);
-                Object methodParams[] = {c, g, text, underlinedIndex, x, y};
-                m.invoke(null, methodParams);
-            } catch (Exception ex) {
-                BasicGraphicsUtils.drawString(g, text, underlinedIndex, x, y);
-            }
-        } else if (getJavaVersion() >= 1.4) {
-            BasicGraphicsUtils.drawStringUnderlineCharAt(g, text, underlinedIndex, x, y);
-        } else {
-            BasicGraphicsUtils.drawString(g, text, underlinedIndex, x, y);
-        }
+        BasicGraphicsUtils.drawStringUnderlineCharAt(g, text, underlinedIndex, x, y);
         if (AbstractLookAndFeel.getTheme().isTextAntiAliasingOn()) {
             g2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, savedRenderingHint);
         }
