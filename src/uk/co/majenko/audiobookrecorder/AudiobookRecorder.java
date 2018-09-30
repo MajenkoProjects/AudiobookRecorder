@@ -65,7 +65,7 @@ public class AudiobookRecorder extends JFrame {
     Sentence selectedSentence = null;
 
     JPanel sampleControl;
-    Waveform sampleWaveform;
+    public Waveform sampleWaveform;
     JScrollBar sampleScroll;
 
     JSpinner postSentenceGap;
@@ -388,9 +388,12 @@ public class AudiobookRecorder extends JFrame {
 
         controlsTop.add(locked);
 
+        controlsTop.add(Box.createHorizontalGlue());
         controlsTop.add(new JLabel("Post gap:"));
         controlsTop.add(postSentenceGap);
         controlsTop.add(new JLabel("ms"));
+        controlsTop.add(Box.createHorizontalGlue());
+
 
         JButton zoomIn = new JButton(Icons.zoomIn);
         zoomIn.setToolTipText("Zoom In");
@@ -1654,6 +1657,9 @@ public class AudiobookRecorder extends JFrame {
             play = null;
         }
         playing = null;
+        if (selectedSentence != null) {
+            selectedSentence.stopPlaying();
+        }
     }
 
     public void alertNoRoomNoise() {

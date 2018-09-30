@@ -16,6 +16,8 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
     int leftMarkerSaved = 0;
     int rightMarkerSaved = 0;
 
+    int playMarker = 0;
+
     int leftAltMarker = 0;
     int rightAltMarker = 0;
 
@@ -126,6 +128,10 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
             g.drawLine((leftMarker - offset)/step, 0, (leftMarker - offset)/step, h);
             g.drawLine((rightMarker - offset)/step, 0, (rightMarker - offset)/step, h);
 
+            g.setColor(new Color(0, 255, 255));
+            for (int i = 0; i < h; i += 2) {
+                g.drawLine((playMarker - offset) / step, i, (playMarker - offset) / step, i);
+            }
         }
     }
 
@@ -168,6 +174,7 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
 
     public void setData(int[] s) {
         samples = s;
+        playMarker = 0;
         repaint();
     }
 
@@ -271,4 +278,8 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
         repaint();
     }
 
+    public void setPlayMarker(int m) {
+        playMarker = m;
+        repaint();
+    }
 }

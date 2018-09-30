@@ -30,6 +30,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     boolean locked;
 
     boolean recording;
+    boolean playing;
 
     boolean inSample;
 
@@ -555,9 +556,12 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
             eq.skip(pos);
             
-            while (pos < crossEndOffset * frameSize) {
+            playing = true;
+            while ((pos < crossEndOffset * frameSize) && playing) {
                 int nr = eq.read(buffer);
                 pos += nr;
+
+                AudiobookRecorder.window.sampleWaveform.setPlayMarker(pos / frameSize);
 
                 play.write(buffer, 0, nr);
             };
@@ -566,6 +570,10 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void stopPlaying() {
+        playing = false;
     }
 
     public byte[] getRawAudioData() {
