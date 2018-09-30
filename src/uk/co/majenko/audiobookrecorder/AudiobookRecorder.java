@@ -1668,6 +1668,7 @@ public class AudiobookRecorder extends JFrame {
             equaliserWindow.pack();
         }
         equaliserWindow.setVisible(true);
+        equaliserWindow.setLocationRelativeTo(this);
     }
 
     public boolean enableMicrophone() {
@@ -1721,9 +1722,12 @@ public class AudiobookRecorder extends JFrame {
         String[] lines = s.split("\n");
 
         for (String line : lines) {
+            line = line.trim();
             try {
-                Process p = Runtime.getRuntime().exec(line);
-                p.waitFor();
+                if (!line.equals("")) {
+                    Process p = Runtime.getRuntime().exec(line);
+                    p.waitFor();
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
