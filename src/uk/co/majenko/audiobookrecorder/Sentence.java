@@ -558,10 +558,10 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             
             playing = true;
             while ((pos < crossEndOffset * frameSize) && playing) {
+                AudiobookRecorder.window.sampleWaveform.setPlayMarker(pos / frameSize);
                 int nr = eq.read(buffer);
                 pos += nr;
 
-                AudiobookRecorder.window.sampleWaveform.setPlayMarker(pos / frameSize);
 
                 play.write(buffer, 0, nr);
             };

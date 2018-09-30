@@ -7,15 +7,15 @@ import java.awt.event.*;
 
 public class MainToolBar extends JToolBar {
 
-    JButton newBook;
-    JButton openBook;
-    JButton saveBook;
-    JButton newChapter;
-    JButton recordRoomNoise;
-    JButton playSentence;
-    JButton playonSentence;
-    JButton stopPlaying;
-    JButton eq;
+    JButtonSpacePlay newBook;
+    JButtonSpacePlay openBook;
+    JButtonSpacePlay saveBook;
+    JButtonSpacePlay newChapter;
+    JButtonSpacePlay recordRoomNoise;
+    JButtonSpacePlay playSentence;
+    JButtonSpacePlay playonSentence;
+    JButtonSpacePlay stopPlaying;
+    JButtonSpacePlay eq;
     JToggleButton mic;
 
     AudiobookRecorder root;
@@ -25,27 +25,21 @@ public class MainToolBar extends JToolBar {
 
         root = r;
 
-        newBook = new JButton(Icons.newBook);
-        newBook.setToolTipText("New Book");
-        newBook.addActionListener(new ActionListener() {
+        newBook = new JButtonSpacePlay(Icons.newBook, "New Book", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 root.createNewBook();
             }
         });
         add(newBook);
 
-        openBook = new JButton(Icons.openBook);
-        openBook.setToolTipText("Open Book");
-        openBook.addActionListener(new ActionListener() {
+        openBook = new JButtonSpacePlay(Icons.openBook, "Open Book", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 root.openBook();
             }
         });
         add(openBook);
 
-        saveBook = new JButton(Icons.save);
-        saveBook.setToolTipText("Save Book");
-        saveBook.addActionListener(new ActionListener() {
+        saveBook = new JButtonSpacePlay(Icons.save, "Save Book", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 root.saveBookStructure();
             }
@@ -54,18 +48,14 @@ public class MainToolBar extends JToolBar {
 
         addSeparator();
 
-        newChapter = new JButton(Icons.newChapter);
-        newChapter.setToolTipText("New Chapter");
-        newChapter.addActionListener(new ActionListener() {
+        newChapter = new JButtonSpacePlay(Icons.newChapter, "New Chapter", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 root.addChapter();
             }
         });
         add(newChapter);
 
-        recordRoomNoise = new JButton(Icons.recordRoom);
-        recordRoomNoise.setToolTipText("Record Room Noise");
-        recordRoomNoise.addActionListener(new ActionListener() {
+        recordRoomNoise = new JButtonSpacePlay(Icons.recordRoom, "Record Room Noise", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 root.recordRoomNoise();
             }
@@ -74,27 +64,21 @@ public class MainToolBar extends JToolBar {
 
         addSeparator();
 
-        playSentence = new JButton(Icons.play);
-        playSentence.setToolTipText("Play sentence");
-        playSentence.addActionListener(new ActionListener() {
+        playSentence = new JButtonSpacePlay(Icons.play, "Play sentence", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 root.playSelectedSentence();
             }
         });
         add(playSentence);
 
-        playonSentence = new JButton(Icons.playon);
-        playonSentence.setToolTipText("Play from sentence");
-        playonSentence.addActionListener(new ActionListener() {
+        playonSentence = new JButtonSpacePlay(Icons.playon, "Play from sentence", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 root.playFromSelectedSentence();
             }
         });
         add(playonSentence);
 
-        stopPlaying = new JButton(Icons.stop);
-        stopPlaying.setToolTipText("Stop playing / recording");
-        stopPlaying.addActionListener(new ActionListener() {
+        stopPlaying = new JButtonSpacePlay(Icons.stop, "Stop playing", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 root.stopPlaying();
             }
@@ -102,9 +86,7 @@ public class MainToolBar extends JToolBar {
         add(stopPlaying);
 
         addSeparator();
-        eq = new JButton(Icons.eq);
-        eq.setToolTipText("Equaliser");
-        eq.addActionListener(new ActionListener() {
+        eq = new JButtonSpacePlay(Icons.eq, "Equaliser", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 root.showEqualiser();
             }
@@ -114,9 +96,7 @@ public class MainToolBar extends JToolBar {
 
         addSeparator();
 
-        mic = new JToggleButton(Icons.mic);
-        mic.setToolTipText("Enable/disable microphone");
-        mic.addActionListener(new ActionListener() {
+        mic = new JToggleButtonSpacePlay(Icons.mic, "Enable / disable microphone", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 JToggleButton b = (JToggleButton)e.getSource();
                 if (b.isSelected()) {

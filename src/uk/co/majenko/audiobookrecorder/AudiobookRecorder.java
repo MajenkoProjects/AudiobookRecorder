@@ -362,13 +362,15 @@ public class AudiobookRecorder extends JFrame {
         JToolBar controlsLeft = new JToolBar(JToolBar.VERTICAL);
         JToolBar controlsRight = new JToolBar(JToolBar.VERTICAL);
 
+        controlsTop.setFloatable(false);
         controlsLeft.setFloatable(false);
         controlsRight.setFloatable(false);
 
         controlsLeft.add(reprocessAudioFFT);
         controlsLeft.add(reprocessAudioPeak);
 
-        locked = new JCheckBox("Sentence locked");
+        locked = new JCheckBox("Phrase locked");
+        locked.setFocusable(false);
 
         locked.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -634,7 +636,7 @@ public class AudiobookRecorder extends JFrame {
 
                 JPopupMenu menu = new JPopupMenu();
                 JMenuObject rec = new JMenuObject("Recognise text from audio", s);
-                JMenu moveMenu = new JMenu("Move sentence to...");
+                JMenu moveMenu = new JMenu("Move phrase to...");
 
                 for (Enumeration c = book.children(); c.hasMoreElements();) {
                     Chapter chp = (Chapter)c.nextElement();
@@ -680,8 +682,8 @@ public class AudiobookRecorder extends JFrame {
                 });
 
 
-                JMenuObject ins = new JMenuObject("Insert sentence above", s);
-                JMenuObject del = new JMenuObject("Delete sentence", s);
+                JMenuObject ins = new JMenuObject("Insert phrase above", s);
+                JMenuObject del = new JMenuObject("Delete phrase", s);
 
 
                 ins.addActionListener(new ActionListener() {
@@ -741,8 +743,8 @@ public class AudiobookRecorder extends JFrame {
                 JMenuObject moveUp = new JMenuObject("Move Up", c);
                 JMenuObject moveDown = new JMenuObject("Move Down", c);
                 JMenu mergeWith = new JMenu("Merge chapter with");
-                JMenuObject lockAll = new JMenuObject("Lock all sentences", c);
-                JMenuObject unlockAll = new JMenuObject("Unlock all sentences", c);
+                JMenuObject lockAll = new JMenuObject("Lock all phrases", c);
+                JMenuObject unlockAll = new JMenuObject("Unlock all phrases", c);
                 JMenuObject exportChapter = new JMenuObject("Export chapter", c);
                 JMenuObject deleteChapter = new JMenuObject("Delete chapter", c);
 
