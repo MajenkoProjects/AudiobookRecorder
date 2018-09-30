@@ -734,6 +734,7 @@ public class AudiobookRecorder extends JFrame {
 
                 JPopupMenu menu = new JPopupMenu();
                 JMenuObject peak = new JMenuObject("Auto-trim all (Peak)", c);
+                JMenuObject fft = new JMenuObject("Auto-trim all (FFT)", c);
                 JMenuObject moveUp = new JMenuObject("Move Up", c);
                 JMenuObject moveDown = new JMenuObject("Move Down", c);
                 JMenu mergeWith = new JMenu("Merge chapter with");
@@ -839,6 +840,19 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
 
+                fft.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter c = (Chapter)o.getObject();
+                        for (Enumeration s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = (Sentence)s.nextElement();
+                            if (!snt.isLocked()) {
+                                snt.autoTrimSampleFFT();
+                            }
+                        }
+                    }
+                });
+
                 lockAll.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
@@ -886,6 +900,7 @@ public class AudiobookRecorder extends JFrame {
                 menu.add(mergeWith);
                 menu.addSeparator();
                 menu.add(peak);
+                menu.add(fft);
                 menu.addSeparator();
                 menu.add(lockAll);
                 menu.add(unlockAll);
@@ -1431,7 +1446,7 @@ public class AudiobookRecorder extends JFrame {
         }
 
         ms *= 10;
-        ms /= 9;
+        ms /= 7;
         return ms;
     }
 

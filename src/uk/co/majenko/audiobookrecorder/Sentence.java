@@ -149,7 +149,12 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         storedAudioData = null;
 
         if (!id.equals("room-noise")) {
-            autoTrimSamplePeak();
+            String tm = Options.get("audio.recording.trim");
+            if (tm.equals("peak")) {
+                autoTrimSamplePeak();
+            } else if (tm.equals("fft")) {
+                autoTrimSampleFFT();
+            }
             if (Options.getBoolean("process.sphinx")) {
                 recognise();
             }
@@ -255,6 +260,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             if (intens[i] > 0) break;
             end = i;
         }
+
+        end++;
 
         if (end <= 0) {
             end = blocks - 1;

@@ -20,6 +20,7 @@ public class Options extends JDialog {
     JComboBox<KVPair> channelList;
     JComboBox<KVPair> rateList;
     JComboBox<KVPair> bitDepth;
+    JComboBox<KVPair> trimMethod;
     JTextField storageFolder;
     JSpinner preChapterGap;
     JSpinner postChapterGap;
@@ -247,6 +248,7 @@ public class Options extends JDialog {
         channelList = addDropdown(optionsPanel, "Channels:", getChannelCountList(), get("audio.recording.channels"));
         rateList = addDropdown(optionsPanel, "Sample rate:", getSampleRateList(), get("audio.recording.samplerate"));
         bitDepth = addDropdown(optionsPanel, "Sample resolution:", getResolutionList(), get("audio.recording.resolution"));
+        trimMethod = addDropdown(optionsPanel, "Auto-trim method:", getTrimMethods(), get("audio.recording.trim"));
 
         addSeparator(optionsPanel);
 
@@ -444,6 +446,7 @@ public class Options extends JDialog {
         defaultPrefs.put("audio.recording.channels", "2");
         defaultPrefs.put("audio.recording.samplerate", "44100");
         defaultPrefs.put("audio.recording.resolution", "16");
+        defaultPrefs.put("audio.recording.trim", "peak");
         if (playbackMixers.length > 0) {
             defaultPrefs.put("audio.playback.device", playbackMixers[0].key);
         } else {
@@ -589,6 +592,7 @@ public class Options extends JDialog {
         set("audio.recording.channels", ((KVPair)channelList.getSelectedItem()).key);
         set("audio.recording.samplerate", ((KVPair)rateList.getSelectedItem()).key);
         set("audio.recording.resolution", ((KVPair)bitDepth.getSelectedItem()).key);
+        set("audio.recording.trim", ((KVPair)trimMethod.getSelectedItem()).key);
         set("audio.playback.device", ((KVPair)playbackList.getSelectedItem()).key);
         set("path.storage", storageFolder.getText());
         set("path.ffmpeg", ffmpegLocation.getText());
@@ -650,6 +654,13 @@ public class Options extends JDialog {
     public static KVPair[] getResolutionList() {
         KVPair[] pairs = new KVPair[1];
         pairs[0] = new KVPair("16", "16 Bit");
+        return pairs;
+    }
+
+    public static KVPair[] getTrimMethods() {
+        KVPair[] pairs = new KVPair[2];
+        pairs[0] = new KVPair("peak", "Peak Amplitude");
+        pairs[1] = new KVPair("fft", "FFT Analysis");
         return pairs;
     }
 }
