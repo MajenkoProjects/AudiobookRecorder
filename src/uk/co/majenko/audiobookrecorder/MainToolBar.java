@@ -97,14 +97,23 @@ public class MainToolBar extends JToolBar {
         addSeparator();
 
         mic = new JToggleButtonSpacePlay(Icons.mic, "Enable / disable microphone", new ActionListener() {
+            Color bgCol = null;
             public void actionPerformed(ActionEvent e) {
                 JToggleButton b = (JToggleButton)e.getSource();
                 if (b.isSelected()) {
                     if (!root.enableMicrophone()) {
                         b.setSelected(false);
+                    } else {
+                        if (bgCol == null) {
+                            bgCol = b.getBackground();
+                        }
+                        b.setBackground(Color.RED);
                     }
                 } else {
                     root.disableMicrophone();
+                    if (bgCol != null) {
+                        b.setBackground(bgCol);
+                    }
                 }
             }
         });

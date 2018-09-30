@@ -71,8 +71,8 @@ public class AudiobookRecorder extends JFrame {
     JSpinner postSentenceGap;
     JCheckBox locked;
 
-    JButton reprocessAudioFFT;
-    JButton reprocessAudioPeak;
+    JButtonSpacePlay reprocessAudioFFT;
+    JButtonSpacePlay reprocessAudioPeak;
 
     Thread playingThread = null;
 
@@ -317,9 +317,7 @@ public class AudiobookRecorder extends JFrame {
     
         sampleControl.add(sampleWaveform, BorderLayout.CENTER);
 
-        reprocessAudioFFT = new JButton(Icons.fft);
-        reprocessAudioFFT.setToolTipText("Autotrim Audio (FFT)");
-        reprocessAudioFFT.addActionListener(new ActionListener() {
+        reprocessAudioFFT = new JButtonSpacePlay(Icons.fft, "Autotrim Audio (FFT)", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedSentence != null) {
                     selectedSentence.autoTrimSampleFFT();
@@ -331,9 +329,7 @@ public class AudiobookRecorder extends JFrame {
             }
         });
 
-        reprocessAudioPeak = new JButton(Icons.peak);
-        reprocessAudioPeak.setToolTipText("Autotrim Audio (Peak)");
-        reprocessAudioPeak.addActionListener(new ActionListener() {
+        reprocessAudioPeak = new JButtonSpacePlay(Icons.peak, "Autotrim Audio (Peak)", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedSentence != null) {
                     selectedSentence.autoTrimSamplePeak();
@@ -397,18 +393,14 @@ public class AudiobookRecorder extends JFrame {
         controlsTop.add(Box.createHorizontalGlue());
 
 
-        JButton zoomIn = new JButton(Icons.zoomIn);
-        zoomIn.setToolTipText("Zoom In");
-        zoomIn.addActionListener(new ActionListener() {
+        JButtonSpacePlay zoomIn = new JButtonSpacePlay(Icons.zoomIn, "Zoom In", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 sampleWaveform.increaseZoom();
             }
         });
         controlsRight.add(zoomIn);
 
-        JButton zoomOut = new JButton(Icons.zoomOut);
-        zoomOut.setToolTipText("Zoom Out");
-        zoomOut.addActionListener(new ActionListener() {
+        JButtonSpacePlay zoomOut = new JButtonSpacePlay(Icons.zoomOut, "Zoom Out", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 sampleWaveform.decreaseZoom();
             }
