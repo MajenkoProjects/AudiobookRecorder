@@ -432,7 +432,7 @@ public class AudiobookRecorder extends JFrame {
 
         centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released D"), "deleteLast");
 
-        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("SPACE"), "startPlayback");
+        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("SPACE"), "startStopPlayback");
 
         centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("E"), "startRerecord");
         centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released E"), "stopRecord");
@@ -490,10 +490,14 @@ public class AudiobookRecorder extends JFrame {
             }
         });
 
-        centralPanel.getActionMap().put("startPlayback", new AbstractAction() {
+        centralPanel.getActionMap().put("startStopPlayback", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (bookTree.isEditing()) return;
-                playSelectedSentence();
+                if (playing == null) {
+                    playSelectedSentence();
+                } else {
+                    stopPlaying();
+                }
             }
         });
 
