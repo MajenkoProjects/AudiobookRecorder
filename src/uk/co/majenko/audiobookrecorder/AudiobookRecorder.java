@@ -524,6 +524,11 @@ public class AudiobookRecorder extends JFrame {
                 }
             }
         }
+
+        if (!Options.getBoolean("interface.donations.hide")) {
+            JOptionPane.showMessageDialog(this, new DonationPanel(), "Thank you", JOptionPane.PLAIN_MESSAGE);
+        }
+
     }
 
     public static void main(String args[]) {
