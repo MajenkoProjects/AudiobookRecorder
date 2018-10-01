@@ -17,6 +17,7 @@ import edu.cmu.sphinx.api.*;
 import edu.cmu.sphinx.decoder.adaptation.*;
 import edu.cmu.sphinx.result.*;
 import java.nio.file.Files;
+import java.util.zip.*;
 
 public class AudiobookRecorder extends JFrame {
 
@@ -1957,7 +1958,119 @@ public class AudiobookRecorder extends JFrame {
         }
 
     }
-   
+
+    ArrayList<File> gatherFiles(File root) {
+        ArrayList<File> fileList = new ArrayList<File>();
+        File[] files = root.listFiles();
+        for (File f : files) {
+            if (f.getName().startsWith(".")) continue; 
+            if (!f.isDirectory()) {
+                fileList.add(f);
+            }
+        }
+
+        for (File f : files) {
+            if (f.getName().startsWith(".")) continue; 
+            if (f.isDirectory()) {
+                fileList.add(f);
+                fileList.addAll(gatherFiles(f));
+            }
+        }
+        return fileList;
+    }
+
+    public class ArchiveBookThread implements Runnable {
+        ProgressDialog pd;
+
+        public ArchiveBookThread(ProgressDialog p) {
+            pd = p;
+        }
+
+        public void run() {
+            try {
+                String name = AudiobookRecorder.this.book.getName();
+                File storageDir = new File(Options.get("path.storage"));
+                File bookDir = new File(storageDir, name);
+                File archiveDir = new File(storageDir, "archive");
+
+                ArrayList<File> fileList = gatherFiles(bookDir);
+
+                if (!archiveDir.exists()) {
+                    archiveDir.mkdirs();
+                }
+
+                File archiveFile = new File(archiveDir, name + ".abz");
+                System.err.println("Archiving to " + archiveFile.getAbsolutePath());
+                if (archiveFile.exists()) {
+                    archiveFile.delete();
+                }
+
+                FileOutputStream fos = new FileOutputStream(archiveFile);
+                ZipOutputStream zos = new ZipOutputStream(fos);
+            
+                zos.putNextEntry(new ZipEntry(name + "/"));
+                zos.closeEntry();
+
+                int numFiles = fileList.size();
+                int fileNo = 0;
+
+                String prefix = storageDir.getAbsolutePath();
+
+                for (File f : fileList) {
+                    fileNo++;
+                    int pct = fileNo * 2000 / numFiles;
+                    pd.setProgress(pct);
+
+                    String path = f.getAbsolutePath().substring(prefix.length() + 1);
+
+                    if (f.isDirectory()) {
+                        ZipEntry entry = new ZipEntry(path + "/");
+                        zos.putNextEntry(entry);
+                        zos.closeEntry();
+                    } else {
+                        ZipEntry entry = new ZipEntry(path);
+                        entry.setTime(f.lastModified());
+                        zos.putNextEntry(entry);
+
+                        FileInputStream fis = new FileInputStream(f);
+                        byte[] buffer = new byte[1024];
+                        int bytesRead = 0;
+                        while ((bytesRead = fis.read(buffer, 0, 1024)) != -1) {
+                            zos.write(buffer, 0, bytesRead);
+                        }
+                        fis.close();
+                        zos.closeEntry();
+                    }
+                }
+
+                zos.flush();
+                zos.close();
+
+                while (fileList.size() > 0) {
+                    File f = fileList.remove(fileList.size() - 1);
+                    f.delete();
+                }
+            } catch (Exception e) {
+            }
+            pd.closeDialog();
+        }
+    }
+
     public void archiveBook() {
+        int r = JOptionPane.showConfirmDialog(this, "This will stash the current book away\nin the archives folder in a compressed\nform. The existing book files will be deleted\nand the book closed.\n\nAre you sure you want to do this?", "Archive Book", JOptionPane.OK_CANCEL_OPTION);
+
+        if (r == JOptionPane.OK_OPTION) {
+
+            ProgressDialog pd = new ProgressDialog("Archiving book...");
+            saveBookStructure();
+
+            ArchiveBookThread runnable = new ArchiveBookThread(pd);
+            Thread t = new Thread(runnable);
+            t.start();
+            pd.setVisible(true);
+            book = null;
+            bookTree = null;
+            mainScroll.setViewportView(null);
+        }
     }
 }
