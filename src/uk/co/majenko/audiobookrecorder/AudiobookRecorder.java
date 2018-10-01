@@ -693,6 +693,7 @@ public class AudiobookRecorder extends JFrame {
 
                 JMenuObject ins = new JMenuObject("Insert phrase above", s);
                 JMenuObject del = new JMenuObject("Delete phrase", s);
+                JMenuObject dup = new JMenuObject("Duplicate phrase", s);
 
 
                 ins.addActionListener(new ActionListener() {
@@ -714,6 +715,21 @@ public class AudiobookRecorder extends JFrame {
                         if (!s.isLocked()) {
                             s.deleteFiles();
                             bookTreeModel.removeNodeFromParent(s);
+                        }
+                    }
+                });
+
+                dup.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        try {
+                            JMenuObject o = (JMenuObject)e.getSource();
+                            Sentence s = (Sentence)o.getObject();
+                            Sentence newSentence = s.cloneSentence();
+                            Chapter c = (Chapter)s.getParent();
+                            int idx = bookTreeModel.getIndexOfChild(c, s);
+                            bookTreeModel.insertNodeInto(newSentence, c, idx);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
                         }
                     }
                 });
@@ -740,6 +756,8 @@ public class AudiobookRecorder extends JFrame {
                 menu.addSeparator();
                 menu.add(ins);
                 menu.add(del);
+                menu.addSeparator();
+                menu.add(dup);
                 menu.show(bookTree, e.getX(), e.getY());
             } else if (node instanceof Chapter) {
                 Chapter c = (Chapter)node;
@@ -1542,21 +1560,52 @@ public class AudiobookRecorder extends JFrame {
         }
     }
 
+
     public void playSelectedSentence() {
         if (selectedSentence == null) return;
-
         if (playing != null) return;
-
+        if (getNoiseFloor() == 0) {
+            alertNoRoomNoise();
+            return;
+        }
         playing = selectedSentence;
-
         toolBar.disableSentence();
         toolBar.enableStop();
 
-
         playingThread = new Thread(new Runnable() {
             public void run() {
-                playing.play();
-                playing = null;
+                Sentence s = playing;
+                byte[] data;
+
+                try {
+
+                    AudioFormat format = s.getAudioFormat();
+                    play = AudioSystem.getSourceDataLine(format, Options.getPlaybackMixer());
+                    play.open(format);
+                    play.start();
+
+                    bookTree.scrollPathToVisible(new TreePath(s.getPath()));
+                    data = s.getRawAudioData();
+                    for (int pos = 0; pos < data.length; pos += 1024) {
+                        sampleWaveform.setPlayMarker(pos / format.getFrameSize());
+                        int l = data.length - pos;
+                        if (l > 1024) l = 1024;
+                        play.write(data, pos, l);
+                    }
+
+                    play.drain();
+                    play.stop();
+                    play.close();
+                    play = null;
+                } catch (Exception e) {
+                    playing = null;
+                    if (play != null) {
+                        play.drain();
+                        play.stop();
+                        play.close();
+                    }
+                    play = null;
+                }
                 toolBar.enableSentence();
                 toolBar.disableStop();
             }
@@ -1564,7 +1613,6 @@ public class AudiobookRecorder extends JFrame {
 
         playingThread.setDaemon(true);
         playingThread.start();
-
     }
 
     class ExportThread implements Runnable {
@@ -1726,9 +1774,6 @@ public class AudiobookRecorder extends JFrame {
             play = null;
         }
         playing = null;
-        if (selectedSentence != null) {
-            selectedSentence.stopPlaying();
-        }
     }
 
     public void alertNoRoomNoise() {
@@ -1872,7 +1917,6 @@ public class AudiobookRecorder extends JFrame {
 
     public void mergeChapter(Properties prefs, String chid) {
         Chapter c = book.addChapter();
-System.err.println("Added chapter " + c.getId());
         c.setName("Merged-" + prefs.getProperty("chapter." + chid + ".name"));
         c.setPostGap(Utils.s2i(prefs.getProperty("chapter." + chid + ".post-gap")));
         c.setPreGap(Utils.s2i(prefs.getProperty("chapter." + chid + ".pre-gap")));

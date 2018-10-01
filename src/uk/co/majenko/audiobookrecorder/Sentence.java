@@ -30,12 +30,13 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     boolean locked;
 
     boolean recording;
-    boolean playing;
 
     boolean inSample;
 
     TargetDataLine line;
     AudioInputStream inputStream;
+    AudioFormat storedFormat = null;
+    double storedLength = -1d;
 
     int[] storedAudioData = null;
     
@@ -148,6 +149,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         }
 
         storedAudioData = null;
+        storedFormat = null;
+        storedLength = -1;
 
         if (!id.equals("room-noise")) {
             String tm = Options.get("audio.recording.trim");
@@ -421,7 +424,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         File f = getFile();
         try {
             AudioInputStream s = AudioSystem.getAudioInputStream(f);
-            AudioFormat format = s.getFormat();
+            AudioFormat format = getAudioFormat();
 
             int[] samples = null;
 
@@ -503,7 +506,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         try {
             AudioInputStream s = AudioSystem.getAudioInputStream(f);
             EqualizerInputStream eq = new EqualizerInputStream(s, 31);
-            AudioFormat format = eq.getFormat();
+            AudioFormat format = getAudioFormat();
             IIRControls controls = eq.getControls();
             AudiobookRecorder.window.book.equaliser.apply(controls, format.getChannels());
 
@@ -519,63 +522,20 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public AudioFormat getAudioFormat() {
+        if (storedFormat != null) return storedFormat; 
+
         File f = getFile();
         try {
             AudioInputStream s = AudioSystem.getAudioInputStream(f);
-            AudioFormat format = s.getFormat();
-            return format;
+            storedFormat = s.getFormat();
+            s.close();
+            return storedFormat;
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
     
-    public void play() {
-        File f = getFile();
-        try {
-            AudioInputStream s = AudioSystem.getAudioInputStream(f);
-            EqualizerInputStream eq = new EqualizerInputStream(s, 31);
-
-            AudioFormat format = eq.getFormat();
-
-            IIRControls controls = eq.getControls();
-            AudiobookRecorder.window.book.equaliser.apply(controls, format.getChannels());
-
-            int frameSize = format.getFrameSize();
-
-            updateCrossings();
-
-            int pos = crossStartOffset * frameSize;
-
-            SourceDataLine play = AudioSystem.getSourceDataLine(format, Options.getPlaybackMixer());
-            play.open(format);
-    
-            play.start();
-
-            byte[] buffer = new byte[1024];
-
-            eq.skip(pos);
-            
-            playing = true;
-            while ((pos < crossEndOffset * frameSize) && playing) {
-                AudiobookRecorder.window.sampleWaveform.setPlayMarker((pos - crossStartOffset) / frameSize);
-                int nr = eq.read(buffer);
-                pos += nr;
-
-
-                play.write(buffer, 0, nr);
-            };
-            play.drain();
-            play.close(); 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void stopPlaying() {
-        playing = false;
-    }
-
     public byte[] getRawAudioData() {
         File f = getFile();
         try {
@@ -584,7 +544,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             EqualizerInputStream eq = new EqualizerInputStream(s, 31);
 
 
-            AudioFormat format = eq.getFormat();
+            AudioFormat format = getAudioFormat();
             IIRControls controls = eq.getControls();
             AudiobookRecorder.window.book.equaliser.apply(controls, format.getChannels());
 
@@ -634,7 +594,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                     recognizer = new StreamSpeechRecognizer(sphinxConfig);
 
                     AudioInputStream s = AudioSystem.getAudioInputStream(getFile());
-                    AudioFormat format = s.getFormat();
+                    AudioFormat format = getAudioFormat();
                     int frameSize = format.getFrameSize();
                     int length = (int)s.getFrameLength();
                     byte[] data = new byte[length * frameSize];
@@ -741,5 +701,33 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             forwardsPrev = data[forwards];
         }
         return pos;
+    }
+
+    /* Get the length of the sample in seconds */
+    public double getLength() {
+        if (storedLength > -1d) return storedLength;
+        AudioFormat format = getAudioFormat();
+        float sampleFrequency = format.getFrameRate();
+        int length = crossEndOffset - crossStartOffset;
+        double time = (double)length / (double)sampleFrequency;
+        storedLength = time;
+        return time;
+    }
+
+    public Sentence cloneSentence() throws IOException {
+        Sentence sentence = new Sentence();
+        sentence.setPostGap(getPostGap());
+        if (!id.equals(text)) {
+            sentence.setText(text);
+        }
+        sentence.setStartOffset(getStartOffset());
+        sentence.setEndOffset(getEndOffset());
+
+        File from = getFile();
+        File to = sentence.getFile();
+        Files.copy(from.toPath(), to.toPath());
+
+        sentence.updateCrossings();
+        return sentence;
     }
 }

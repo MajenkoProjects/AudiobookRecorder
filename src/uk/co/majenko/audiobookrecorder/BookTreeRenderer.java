@@ -23,6 +23,7 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
             if (s.isInSample()) {
                 ret.setIcon(Icons.star);
             }
+
         } else if (value instanceof Chapter) {
             ret.setIcon(Icons.chapter);
         } else if (value instanceof Book) {

@@ -200,4 +200,18 @@ public class Chapter extends DefaultMutableTreeNode {
         wavFile.delete();
     }
 
+    public double getChapterLength() {
+        double totalTime = Options.getInteger("audio.recording.pre-chapter") / 1000d;
+        for (Enumeration s = children(); s.hasMoreElements();) {
+            Sentence sentence = (Sentence)s.nextElement();
+            totalTime += sentence.getLength();
+            if (s.hasMoreElements()) {
+                totalTime += (sentence.getPostGap() / 1000d);
+            } else {
+                totalTime += Options.getInteger("audio.recording.post-chapter") / 1000d;
+            }
+        }
+        return totalTime;
+    }
+
 }
