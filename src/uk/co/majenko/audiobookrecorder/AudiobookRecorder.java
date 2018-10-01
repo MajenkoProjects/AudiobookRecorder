@@ -780,7 +780,7 @@ public class AudiobookRecorder extends JFrame {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter chap = (Chapter)o.getObject();
 
-                        ExportDialog ed = new ExportDialog("Exporting " + chap.getName());
+                        ProgressDialog ed = new ProgressDialog("Exporting " + chap.getName());
 
                         ExportThread t = new ExportThread(chap, ed);
                         Thread nt = new Thread(t);
@@ -1616,10 +1616,10 @@ public class AudiobookRecorder extends JFrame {
     }
 
     class ExportThread implements Runnable {
-        ExportDialog exportDialog;
+        ProgressDialog exportDialog;
         Chapter chapter;
 
-        public ExportThread(Chapter c, ExportDialog e) {
+        public ExportThread(Chapter c, ProgressDialog e) {
             super();
             exportDialog = e;
             chapter = c;
@@ -1644,7 +1644,7 @@ public class AudiobookRecorder extends JFrame {
         
         for (Enumeration o = book.children(); o.hasMoreElements();) {
             Chapter c = (Chapter)o.nextElement();
-            ExportDialog ed = new ExportDialog("Exporting " + c.getName());
+            ProgressDialog ed = new ProgressDialog("Exporting " + c.getName());
 
             ExportThread t = new ExportThread(c, ed);
             Thread nt = new Thread(t);

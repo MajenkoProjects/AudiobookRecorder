@@ -8,7 +8,7 @@ import java.awt.event.*;
 import java.util.*;
 import it.sauronsoftware.jave.*;
 
-public class ExportDialog extends JDialog implements EncoderProgressListener {
+public class ProgressDialog extends JDialog implements EncoderProgressListener {
     JLabel message;
     JLabel icon;
 
@@ -18,7 +18,7 @@ public class ExportDialog extends JDialog implements EncoderProgressListener {
 
 
 
-    public ExportDialog(String m) {
+    public ProgressDialog(String m) {
         super();
 
         setModalityType(Dialog.ModalityType.APPLICATION_MODAL);

@@ -81,7 +81,7 @@ public class Chapter extends DefaultMutableTreeNode {
     }
 
     @SuppressWarnings("unchecked")
-    public void exportChapter(ExportDialog exportDialog) throws 
+    public void exportChapter(ProgressDialog exportDialog) throws 
                     FileNotFoundException, IOException, InputFormatException, NotSupportedException,
                     EncoderException, UnsupportedTagException, InvalidDataException {
 
