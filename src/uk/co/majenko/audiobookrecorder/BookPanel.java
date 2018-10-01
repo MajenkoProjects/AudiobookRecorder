@@ -38,6 +38,12 @@ public class BookPanel extends JPanel {
             genre = props.getProperty("book.genre");
             comment = props.getProperty("book.comment");
             File icon = new File(root, "coverart.png");
+            if (!icon.exists()) {
+                icon = new File(root, "coverart.jpg");
+            }
+            if (!icon.exists()) {
+                icon = new File(root, "coverart.gif");
+            }
             if (icon.exists()) {
                 cover = new ImageIcon(icon.getAbsolutePath());
                 resizedCover = Utils.getScaledImage(cover.getImage(), 75, 75);
