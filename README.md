@@ -27,6 +27,7 @@ From here on much is controlled by key presses.
 * Press and hold "R" to record a new phrase - the screen flashes red while it's recording.  The phrase is
   appended to the currently selected chapter, or to the last chapter if none is selected.
 * Press and hold "T" to record a new phrase that is the start of a new paragraph.  This adds the "post paragraph" gap to the previous sentence. Otherwise it does the same as "R".
+* Press and hold "F" to record a "continuation" phrase. This sets the previous phrase's post-gap to be the "short" gap instead of the normal length gap.
 * Press "D" to delete the last phrase you recorded.
 * Press "E" to re-record the currently selected phrase.
 

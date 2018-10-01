@@ -421,6 +421,9 @@ public class AudiobookRecorder extends JFrame {
 
         buildToolbar(centralPanel);
 
+        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("F"), "startRecordShort");
+        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released F"), "stopRecord");
+
         centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("R"), "startRecord");
         centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released R"), "stopRecord");
 
@@ -442,6 +445,16 @@ public class AudiobookRecorder extends JFrame {
                     return;
                 }
                 startRecording();
+            }
+        });
+        centralPanel.getActionMap().put("startRecordShort", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                if (bookTree.isEditing()) return;
+                if (getNoiseFloor() == 0) {
+                    alertNoRoomNoise();
+                    return;
+                }
+                startRecordingShort();
             }
         });
         centralPanel.getActionMap().put("startRecordNewPara", new AbstractAction() {
@@ -944,6 +957,59 @@ public class AudiobookRecorder extends JFrame {
             centralPanel.setFlash(true);
         }
     }
+
+    public void startRecordingShort() {
+
+        if (recording != null) return;
+        if (book == null) return;
+
+        if (microphone == null) {
+            JOptionPane.showMessageDialog(this, "Microphone not started. Start microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        toolBar.disableBook();
+        toolBar.disableSentence();
+
+        DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
+
+        if (selectedNode == null) {
+            selectedNode = book.getLastChapter();
+            bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
+        }
+
+        if (selectedNode instanceof Book) {
+            selectedNode = book.getLastChapter();
+            bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
+        }
+
+        if (selectedNode instanceof Sentence) {
+            selectedNode = (DefaultMutableTreeNode)selectedNode.getParent();
+            bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
+        }
+
+        Chapter c = (Chapter)selectedNode;
+
+        DefaultMutableTreeNode lastLeaf = c.getLastLeaf();
+
+        if (lastLeaf instanceof Sentence) {
+            Sentence lastSentence = (Sentence)lastLeaf;
+            lastSentence.setPostGap(Options.getInteger("catenation.short-sentence"));
+        }
+
+        Sentence s = new Sentence();
+        bookTreeModel.insertNodeInto(s, c, c.getChildCount());
+
+        bookTree.expandPath(new TreePath(c.getPath()));
+        bookTree.setSelectionPath(new TreePath(s.getPath()));
+        bookTree.scrollPathToVisible(new TreePath(s.getPath()));
+
+        if (s.startRecording()) {
+            recording = s;
+            centralPanel.setFlash(true);
+        }
+    }
+
 
     public void startRecordingNewParagraph() {
 

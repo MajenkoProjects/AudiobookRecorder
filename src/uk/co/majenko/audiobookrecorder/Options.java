@@ -25,6 +25,7 @@ public class Options extends JDialog {
     JSpinner preChapterGap;
     JSpinner postChapterGap;
     JSpinner postSentenceGap;
+    JSpinner shortSentenceGap;
     JSpinner postParagraphGap;
     JTextField ffmpegLocation;
     JComboBox<KVPair> bitRate;
@@ -261,6 +262,7 @@ public class Options extends JDialog {
         preChapterGap = addSpinner(optionsPanel, "Default pre-chapter gap:", 0, 5000, 100, getInteger("catenation.pre-chapter"), "ms");
         postChapterGap = addSpinner(optionsPanel, "Default post-chapter gap:", 0, 5000, 100, getInteger("catenation.post-chapter"), "ms");
         postSentenceGap = addSpinner(optionsPanel, "Default post-sentence gap:", 0, 5000, 100, getInteger("catenation.post-sentence"), "ms");
+        shortSentenceGap = addSpinner(optionsPanel, "Short post-sentence gap:", 0, 5000, 100, getInteger("catenation.short-sentence"), "ms");
         postParagraphGap = addSpinner(optionsPanel, "Default post-paragraph gap:", 0, 5000, 100, getInteger("catenation.post-paragraph"), "ms");
 
         addSeparator(optionsPanel);
@@ -456,6 +458,7 @@ public class Options extends JDialog {
         defaultPrefs.put("catenation.pre-chapter", "1000");
         defaultPrefs.put("catenation.post-chapter", "1500");
         defaultPrefs.put("catenation.post-sentence", "1000");
+        defaultPrefs.put("catenation.short-sentence", "100");
         defaultPrefs.put("catenation.post-paragraph", "2000");
     
         defaultPrefs.put("path.storage", (new File(System.getProperty("user.home"), "Recordings")).toString());
@@ -599,6 +602,7 @@ public class Options extends JDialog {
         set("catenation.pre-chapter", preChapterGap.getValue());
         set("catenation.post-chapter", postChapterGap.getValue());
         set("catenation.post-sentence", postSentenceGap.getValue());
+        set("catenation.short-sentence", shortSentenceGap.getValue());
         set("catenation.post-paragraph", postParagraphGap.getValue());
         set("audio.export.bitrate", ((KVPair)bitRate.getSelectedItem()).key);
         set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
