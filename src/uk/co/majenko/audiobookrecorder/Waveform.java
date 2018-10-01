@@ -279,7 +279,7 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
     }
 
     public void setPlayMarker(int m) {
-        playMarker = m;
+        playMarker = leftAltMarker + m;
         repaint();
     }
 }

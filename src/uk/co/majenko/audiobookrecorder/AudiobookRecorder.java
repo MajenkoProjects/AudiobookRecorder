@@ -1645,7 +1645,12 @@ public class AudiobookRecorder extends JFrame {
                             play.write(data, 0, data.length);
                         }
                         data = s.getRawAudioData();
-                        play.write(data, 0, data.length);
+                        for (int pos = 0; pos < data.length; pos += 1024) {
+                            sampleWaveform.setPlayMarker(pos / format.getFrameSize());
+                            int l = data.length - pos;
+                            if (l > 1024) l = 1024;
+                            play.write(data, pos, l);
+                        }
 
                         DefaultMutableTreeNode next = s.getNextSibling();
                         boolean last = false;
