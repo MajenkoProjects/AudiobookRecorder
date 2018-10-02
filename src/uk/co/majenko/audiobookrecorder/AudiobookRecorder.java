@@ -18,6 +18,8 @@ import edu.cmu.sphinx.decoder.adaptation.*;
 import edu.cmu.sphinx.result.*;
 import java.nio.file.Files;
 import java.util.zip.*;
+import javax.swing.filechooser.*;
+import javax.imageio.*;
 
 public class AudiobookRecorder extends JFrame {
 
@@ -35,6 +37,7 @@ public class AudiobookRecorder extends JFrame {
     JMenuItem fileOpenBook;
     JMenuItem fileSave;
     JMenuItem fileExit;
+    JMenuItem fileOpenArchive;
 
     JMenuItem bookNewChapter;
     JMenuItem bookExportAudio;
@@ -137,6 +140,13 @@ public class AudiobookRecorder extends JFrame {
             }
         });
 
+        fileOpenArchive = new JMenuItem("Open Archive...");
+        fileOpenArchive.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                openArchive();
+            }
+        });
+
         fileExit = new JMenuItem("Exit");
         fileExit.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -148,6 +158,8 @@ public class AudiobookRecorder extends JFrame {
         fileMenu.add(fileNewBook);
         fileMenu.add(fileOpenBook);
         fileMenu.add(fileSave);
+        fileMenu.addSeparator();
+        fileMenu.add(fileOpenArchive);
         fileMenu.addSeparator();
         fileMenu.add(fileExit);
 
@@ -2070,6 +2082,7 @@ public class AudiobookRecorder extends JFrame {
                         zos.closeEntry();
                     } else {
                         ZipEntry entry = new ZipEntry(path);
+                        entry.setSize(f.length());
                         entry.setTime(f.lastModified());
                         zos.putNextEntry(entry);
 
@@ -2112,6 +2125,81 @@ public class AudiobookRecorder extends JFrame {
             book = null;
             bookTree = null;
             mainScroll.setViewportView(null);
+        }
+    }
+
+    public void openArchive() {
+        JFileChooser jc = new JFileChooser(new File(Options.get("path.storage"), "archive"));
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Audiobook Archives", "abz");
+        jc.addChoosableFileFilter(filter);
+        jc.setFileFilter(filter);
+        jc.setDialogTitle("Select Audiobook Archive");
+        int r = jc.showOpenDialog(this);
+        
+        if (r == JFileChooser.APPROVE_OPTION) {
+            File f = jc.getSelectedFile();
+            if (f.exists()) {
+
+                try {
+                    ZipInputStream zis = new ZipInputStream(new FileInputStream(f)) {
+                        public void close() throws IOException {
+                            return;
+                        }
+                    };
+                    ZipEntry entry = null;
+                    ImageIcon cover = null;
+                    Properties props = new Properties();
+
+                    boolean gotMeta = false;
+                    boolean gotCover = false;
+
+                    while ((entry = zis.getNextEntry()) != null) {
+                        if (gotMeta && gotCover) break;
+
+                        if (entry.getName().endsWith("/audiobook.abk")) {
+                            props.loadFromXML(zis);
+                            gotMeta = true;
+                        }
+
+                        if (
+                                entry.getName().endsWith("/coverart.png") ||
+                                entry.getName().endsWith("/coverart.jpg") ||
+                                entry.getName().endsWith("/coverart.gif") 
+                            ) {
+                            cover = new ImageIcon(ImageIO.read(zis));
+                            gotCover = true;
+                        }
+                    }
+                    zis.close();
+
+                    BookPanel pan = new BookPanel(props, cover);
+                    int okToImport = JOptionPane.showConfirmDialog(this, pan, "Import this book?", JOptionPane.OK_CANCEL_OPTION);
+                    if (okToImport == JOptionPane.OK_OPTION) {
+                        zis = new ZipInputStream(new FileInputStream(f));
+                        while ((entry = zis.getNextEntry()) != null) {
+                            File out = new File(Options.get("path.storage"), entry.getName());
+                            if (entry.isDirectory()) {
+                                out.mkdirs();
+                            } else {
+                                byte[] buffer = new byte[1024];
+                                int nr;
+                                FileOutputStream fos = new FileOutputStream(out);
+                                while ((nr = zis.read(buffer, 0, 1024)) > 0) {
+                                    fos.write(buffer, 0, nr);
+                                }
+                                fos.close();
+                            }
+                        }
+                        zis.close();
+
+                        File bookdir = new File(Options.get("path.storage"), props.getProperty("book.name"));
+                        File conf = new File(bookdir, "audiobook.abk");
+                        loadBookStructure(conf);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 }

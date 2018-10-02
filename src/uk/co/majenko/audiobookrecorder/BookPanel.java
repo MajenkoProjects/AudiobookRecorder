@@ -28,30 +28,48 @@ public class BookPanel extends JPanel {
 
     boolean highlight = false;
 
+    public BookPanel(Properties p, ImageIcon i) {
+        loadBookData(p, i);
+    }
+
     public BookPanel(File r) {
         try {
             root = r;
             Properties props = new Properties();
             props.loadFromXML(new FileInputStream(new File(root, "audiobook.abk")));
+            loadBookData(props, null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void loadBookData(Properties props, ImageIcon i) {
+        try {
             name = props.getProperty("book.name");
             author = props.getProperty("book.author");
             genre = props.getProperty("book.genre");
             comment = props.getProperty("book.comment");
-            File icon = new File(root, "coverart.png");
-            if (!icon.exists()) {
-                icon = new File(root, "coverart.jpg");
-            }
-            if (!icon.exists()) {
-                icon = new File(root, "coverart.gif");
-            }
-            if (icon.exists()) {
-                cover = new ImageIcon(icon.getAbsolutePath());
+            if (i == null) {
+                File icon = new File(root, "coverart.png");
+                if (!icon.exists()) {
+                    icon = new File(root, "coverart.jpg");
+                }
+                if (!icon.exists()) {
+                    icon = new File(root, "coverart.gif");
+                }
+                if (icon.exists()) {
+                    cover = new ImageIcon(icon.getAbsolutePath());
+                    resizedCover = Utils.getScaledImage(cover.getImage(), 75, 75);
+                    iconLabel = new JLabel(new ImageIcon(resizedCover));
+                } else {
+                    cover = null;
+                    resizedCover = null;
+                    iconLabel = new JLabel("");
+                }
+            } else {
+                cover = i;
                 resizedCover = Utils.getScaledImage(cover.getImage(), 75, 75);
                 iconLabel = new JLabel(new ImageIcon(resizedCover));
-            } else {
-                cover = null;
-                resizedCover = null;
-                iconLabel = new JLabel("");
             }
 
             iconLabel.setSize(new Dimension(75, 75));
