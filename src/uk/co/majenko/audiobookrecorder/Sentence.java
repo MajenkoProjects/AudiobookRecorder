@@ -579,30 +579,23 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             setText("[recognising...]");
             AudiobookRecorder.window.bookTreeModel.reload(this);
 
-            AudioInputStream s = AudioSystem.getAudioInputStream(getFile());
             AudioFormat format = getAudioFormat();
 
-            int frameSize = format.getFrameSize();
-            int length = (int)s.getFrameLength();
-            byte[] data = new byte[length * frameSize];
+            byte[] inData = getRawAudioData();
+            int inLength = inData.length;
+            int bps = format.getFrameSize();
+            int inSamples = inLength / bps;
 
-            s.read(data);
+            int outSamples = inSamples / 4;
+            byte[] outData = new byte[outSamples * bps];
 
-            int channels = format.getChannels();
-            int newLen = (length / 3);
-            byte[] decimated = new byte[newLen * 2];
-
-            for (int i = 0; i < newLen; i++) {
-                if (channels == 1) {
-                    decimated[i * 2] = data[i * 6];
-                    decimated[i * 2 + 1] = data[i * 6 + 1];
-                } else {
-                    decimated[i * 2] = data[i * 12];
-                    decimated[i * 2 + 1] = data[i * 12 + 1];
+            for (int i = 0; i < outSamples; i++) {
+                for (int j = 0; j < bps; j++) {
+                    outData[i * bps + j] = inData[(i * 4) * bps + j];
                 }
             }
 
-            ByteArrayInputStream bas = new ByteArrayInputStream(decimated);
+            ByteArrayInputStream bas = new ByteArrayInputStream(outData);
             recognizer.startRecognition(bas);
             SpeechResult result;
             String res = "";
@@ -633,7 +626,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                     AudioInputStream s = AudioSystem.getAudioInputStream(getFile());
                     AudioFormat format = getAudioFormat();
 
-                    sphinxConfig.setSampleRate((int)(format.getSampleRate() / 3f));
+                    sphinxConfig.setSampleRate((int)(format.getSampleRate() / 4f));
 
                     StreamSpeechRecognizer recognizer;
 

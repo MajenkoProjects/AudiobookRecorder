@@ -679,7 +679,7 @@ public class AudiobookRecorder extends JFrame {
                 sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
                 sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
 
-                sphinxConfig.setSampleRate((int)(book.getAudioFormat().getSampleRate() / 3f));
+                sphinxConfig.setSampleRate((int)(book.getAudioFormat().getSampleRate() / 4f));
 
                 StreamSpeechRecognizer recognizer;
 
