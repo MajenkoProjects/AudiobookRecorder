@@ -574,66 +574,75 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         return null;
     }
 
+    public void doRecognition(StreamSpeechRecognizer recognizer) {
+        try {
+            setText("[recognising...]");
+            AudiobookRecorder.window.bookTreeModel.reload(this);
+
+            AudioInputStream s = AudioSystem.getAudioInputStream(getFile());
+            AudioFormat format = getAudioFormat();
+
+            int frameSize = format.getFrameSize();
+            int length = (int)s.getFrameLength();
+            byte[] data = new byte[length * frameSize];
+
+            s.read(data);
+
+            int channels = format.getChannels();
+            int newLen = (length / 3);
+            byte[] decimated = new byte[newLen * 2];
+
+            for (int i = 0; i < newLen; i++) {
+                if (channels == 1) {
+                    decimated[i * 2] = data[i * 6];
+                    decimated[i * 2 + 1] = data[i * 6 + 1];
+                } else {
+                    decimated[i * 2] = data[i * 12];
+                    decimated[i * 2 + 1] = data[i * 12 + 1];
+                }
+            }
+
+            ByteArrayInputStream bas = new ByteArrayInputStream(decimated);
+            recognizer.startRecognition(bas);
+            SpeechResult result;
+            String res = "";
+            while ((result = recognizer.getResult()) != null) {
+                res += result.getHypothesis();
+                res += " ";
+            }
+            recognizer.stopRecognition();
+
+            text = res;
+
+            AudiobookRecorder.window.bookTreeModel.reload(Sentence.this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void recognise() {
-
-
         Thread t = new Thread(new Runnable() {
-
             public void run() {
                 try {
-
                     Configuration sphinxConfig = new Configuration();
 
                     sphinxConfig.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
                     sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
                     sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
 
+                    AudioInputStream s = AudioSystem.getAudioInputStream(getFile());
+                    AudioFormat format = getAudioFormat();
+
+                    sphinxConfig.setSampleRate((int)(format.getSampleRate() / 3f));
 
                     StreamSpeechRecognizer recognizer;
 
                     recognizer = new StreamSpeechRecognizer(sphinxConfig);
 
-                    AudioInputStream s = AudioSystem.getAudioInputStream(getFile());
-                    AudioFormat format = getAudioFormat();
-                    int frameSize = format.getFrameSize();
-                    int length = (int)s.getFrameLength();
-                    byte[] data = new byte[length * frameSize];
-
-                    s.read(data);
-
-                    int channels = format.getChannels();
-                    int newLen = (length / 3);
-                    byte[] decimated = new byte[newLen * 2];
-
-                    for (int i = 0; i < newLen; i++) {
-                        if (channels == 1) {
-                            decimated[i * 2] = data[i * 6];
-                            decimated[i * 2 + 1] = data[i * 6 + 1];
-                        } else {
-                            decimated[i * 2] = data[i * 12];
-                            decimated[i * 2 + 1] = data[i * 12 + 1];
-                        }
-                    }
-
-
-                    ByteArrayInputStream bas = new ByteArrayInputStream(decimated);
-                    recognizer.startRecognition(bas);
-                    SpeechResult result;
-                    String res = "";
-                    while ((result = recognizer.getResult()) != null) {
-                        res += result.getHypothesis();
-                        res += " ";
-                    }
-                    recognizer.stopRecognition(); 
-
-                    text = res;
-
-                    AudiobookRecorder.window.bookTreeModel.reload(Sentence.this);
-
+                    doRecognition(recognizer);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-
             }
         });
 

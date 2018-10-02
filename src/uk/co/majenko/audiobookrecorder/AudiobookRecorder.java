@@ -595,9 +595,10 @@ public class AudiobookRecorder extends JFrame {
             ob = null;
         }
 
-        public JMenuObject(String p, Object o) {  
+        public JMenuObject(String p, Object o, ActionListener l) {  
             super(p);
             ob = o;
+            addActionListener(l);
         }
 
         public void setObject(Object o) {
@@ -619,10 +620,11 @@ public class AudiobookRecorder extends JFrame {
             ob2 = null;
         }
 
-        public JMenuObject2(String p, Object o1, Object o2) {  
+        public JMenuObject2(String p, Object o1, Object o2, ActionListener l) {  
             super(p);
             ob1 = o1;
             ob2 = o2;
+            addActionListener(l);
         }
 
         public void setObject1(Object o) {
@@ -642,6 +644,41 @@ public class AudiobookRecorder extends JFrame {
         }
     }
 
+    class BatchConversionThread implements Runnable {
+        Chapter chapter;
+
+        public BatchConversionThread(Chapter c) {
+            chapter = c;
+        }
+        public void run() {
+            try {
+                Configuration sphinxConfig = new Configuration();
+
+                sphinxConfig.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
+                sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
+                sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
+
+                sphinxConfig.setSampleRate((int)(book.getAudioFormat().getSampleRate() / 3f));
+
+                StreamSpeechRecognizer recognizer;
+
+                recognizer = new StreamSpeechRecognizer(sphinxConfig);
+
+
+                for (Enumeration s = chapter.children(); s.hasMoreElements();) {
+                    Sentence snt = (Sentence)s.nextElement();
+                    if (!snt.isLocked()) {
+                        if (snt.getId().equals(snt.getText())) {
+                            snt.doRecognition(recognizer);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
     void treePopup(MouseEvent e) {
 
@@ -657,13 +694,25 @@ public class AudiobookRecorder extends JFrame {
                 bookTree.setSelectionPath(new TreePath(s.getPath()));
 
                 JPopupMenu menu = new JPopupMenu();
-                JMenuObject rec = new JMenuObject("Recognise text from audio", s);
+
+                JMenuObject rec = new JMenuObject("Recognise text from audio", s, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Sentence s = (Sentence)o.getObject();
+                        if (!s.isLocked()) {
+                            s.recognise();
+                        }
+                    }
+                });
+
+
+
                 JMenu moveMenu = new JMenu("Move phrase to...");
+
 
                 for (Enumeration c = book.children(); c.hasMoreElements();) {
                     Chapter chp = (Chapter)c.nextElement();
-                    JMenuObject2 m = new JMenuObject2(chp.getName(), s, chp);
-                    m.addActionListener(new ActionListener() {
+                    JMenuObject2 m = new JMenuObject2(chp.getName(), s, chp, new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
                             JMenuObject2 ob = (JMenuObject2)e.getSource();
                             Sentence sentence = (Sentence)ob.getObject1();
@@ -676,10 +725,7 @@ public class AudiobookRecorder extends JFrame {
                     moveMenu.add(m);
                 }
 
-                JMenuObject moveUp = new JMenuObject("Move Up", s);
-                JMenuObject moveDown = new JMenuObject("Move Down", s);
-
-                moveUp.addActionListener(new ActionListener() {
+                JMenuObject moveUp = new JMenuObject("Move Up", s, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence sent = (Sentence)o.getObject();
@@ -691,7 +737,7 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
 
-                moveDown.addActionListener(new ActionListener() {
+                JMenuObject moveDown = new JMenuObject("Move Down", s, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence sent = (Sentence)o.getObject();
@@ -704,12 +750,7 @@ public class AudiobookRecorder extends JFrame {
                 });
 
 
-                JMenuObject ins = new JMenuObject("Insert phrase above", s);
-                JMenuObject del = new JMenuObject("Delete phrase", s);
-                JMenuObject dup = new JMenuObject("Duplicate phrase", s);
-
-
-                ins.addActionListener(new ActionListener() {
+                JMenuObject ins = new JMenuObject("Insert phrase above", s, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence s = (Sentence)o.getObject();
@@ -721,7 +762,7 @@ public class AudiobookRecorder extends JFrame {
                         
                 });
 
-                del.addActionListener(new ActionListener() {
+                JMenuObject del = new JMenuObject("Delete phrase", s, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence s = (Sentence)o.getObject();
@@ -732,7 +773,7 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
 
-                dup.addActionListener(new ActionListener() {
+                JMenuObject dup = new JMenuObject("Duplicate phrase", s, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         try {
                             JMenuObject o = (JMenuObject)e.getSource();
@@ -743,18 +784,6 @@ public class AudiobookRecorder extends JFrame {
                             bookTreeModel.insertNodeInto(newSentence, c, idx);
                         } catch (Exception ex) {
                             ex.printStackTrace();
-                        }
-                    }
-                });
-
-                rec.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        JMenuObject o = (JMenuObject)e.getSource();
-                        Sentence s = (Sentence)o.getObject();
-                        if (!s.isLocked()) {
-                            s.setText("[recognising...]");
-                            bookTreeModel.reload(s);
-                            s.recognise();
                         }
                     }
                 });
@@ -774,65 +803,39 @@ public class AudiobookRecorder extends JFrame {
                 menu.show(bookTree, e.getX(), e.getY());
             } else if (node instanceof Chapter) {
                 Chapter c = (Chapter)node;
+                int idNumber = Utils.s2i(c.getId());
 
                 bookTree.setSelectionPath(new TreePath(c.getPath()));
 
                 JPopupMenu menu = new JPopupMenu();
-                JMenuObject peak = new JMenuObject("Auto-trim all (Peak)", c);
-                JMenuObject fft = new JMenuObject("Auto-trim all (FFT)", c);
-                JMenuObject moveUp = new JMenuObject("Move Up", c);
-                JMenuObject moveDown = new JMenuObject("Move Down", c);
-                JMenu mergeWith = new JMenu("Merge chapter with");
-                JMenuObject lockAll = new JMenuObject("Lock all phrases", c);
-                JMenuObject unlockAll = new JMenuObject("Unlock all phrases", c);
-                JMenuObject exportChapter = new JMenuObject("Export chapter", c);
-                JMenuObject deleteChapter = new JMenuObject("Delete chapter", c);
 
-                exportChapter.addActionListener(new ActionListener() {
+                JMenuObject peak = new JMenuObject("Auto-trim all (Peak)", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
-                        Chapter chap = (Chapter)o.getObject();
-
-                        ProgressDialog ed = new ProgressDialog("Exporting " + chap.getName());
-
-                        ExportThread t = new ExportThread(chap, ed);
-                        Thread nt = new Thread(t);
-                        nt.start();
-                        ed.setVisible(true);
+                        Chapter c = (Chapter)o.getObject();
+                        for (Enumeration s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = (Sentence)s.nextElement();
+                            if (!snt.isLocked()) {
+                                snt.autoTrimSamplePeak();
+                            }
+                        }
                     }
                 });
 
-                for (Enumeration bc = book.children(); bc.hasMoreElements();) {
-                    Chapter chp = (Chapter)bc.nextElement();
-                    if (chp.getId().equals(c.getId())) {
-                        continue;
-                    }
-                    JMenuObject2 m = new JMenuObject2(chp.getName(), c, chp);
-                    m.addActionListener(new ActionListener() {
-                        public void actionPerformed(ActionEvent e) {
-                            JMenuObject2 ob = (JMenuObject2)e.getSource();
-                            Chapter source = (Chapter)ob.getObject1();
-                            Chapter target = (Chapter)ob.getObject2();
-
-                            DefaultMutableTreeNode n = source.getFirstLeaf();
-                            while (n instanceof Sentence) {
-                                bookTreeModel.removeNodeFromParent(n);
-                                bookTreeModel.insertNodeInto(n, target, target.getChildCount());
-                                n = source.getFirstLeaf();
+                JMenuObject fft = new JMenuObject("Auto-trim all (FFT)", c, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter c = (Chapter)o.getObject();
+                        for (Enumeration s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = (Sentence)s.nextElement();
+                            if (!snt.isLocked()) {
+                                snt.autoTrimSampleFFT();
                             }
                         }
-                    });
-                    mergeWith.add(m);
-                }
+                    }
+                });
 
-
-
-                int idNumber = Utils.s2i(c.getId());
-
-                moveUp.setEnabled(idNumber > 0);
-                moveDown.setEnabled(idNumber > 0);
-
-                moveUp.addActionListener(new ActionListener() {
+                JMenuObject moveUp = new JMenuObject("Move Up", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter chap = (Chapter)o.getObject();
@@ -851,7 +854,9 @@ public class AudiobookRecorder extends JFrame {
                         book.renumberChapters();
                     }
                 });
-                moveDown.addActionListener(new ActionListener() {
+                moveUp.setEnabled(idNumber > 0);
+
+                JMenuObject moveDown = new JMenuObject("Move Down", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter chap = (Chapter)o.getObject();
@@ -871,34 +876,32 @@ public class AudiobookRecorder extends JFrame {
                         book.renumberChapters();
                     }
                 });
+                moveDown.setEnabled(idNumber > 0);
 
-                peak.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        JMenuObject o = (JMenuObject)e.getSource();
-                        Chapter c = (Chapter)o.getObject();
-                        for (Enumeration s = c.children(); s.hasMoreElements();) {
-                            Sentence snt = (Sentence)s.nextElement();
-                            if (!snt.isLocked()) {
-                                snt.autoTrimSamplePeak();
+                JMenu mergeWith = new JMenu("Merge chapter with");
+                for (Enumeration bc = book.children(); bc.hasMoreElements();) {
+                    Chapter chp = (Chapter)bc.nextElement();
+                    if (chp.getId().equals(c.getId())) {
+                        continue;
+                    }
+                    JMenuObject2 m = new JMenuObject2(chp.getName(), c, chp, new ActionListener() {
+                        public void actionPerformed(ActionEvent e) {
+                            JMenuObject2 ob = (JMenuObject2)e.getSource();
+                            Chapter source = (Chapter)ob.getObject1();
+                            Chapter target = (Chapter)ob.getObject2();
+
+                            DefaultMutableTreeNode n = source.getFirstLeaf();
+                            while (n instanceof Sentence) {
+                                bookTreeModel.removeNodeFromParent(n);
+                                bookTreeModel.insertNodeInto(n, target, target.getChildCount());
+                                n = source.getFirstLeaf();
                             }
                         }
-                    }
-                });
+                    });
+                    mergeWith.add(m);
+                }
 
-                fft.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        JMenuObject o = (JMenuObject)e.getSource();
-                        Chapter c = (Chapter)o.getObject();
-                        for (Enumeration s = c.children(); s.hasMoreElements();) {
-                            Sentence snt = (Sentence)s.nextElement();
-                            if (!snt.isLocked()) {
-                                snt.autoTrimSampleFFT();
-                            }
-                        }
-                    }
-                });
-
-                lockAll.addActionListener(new ActionListener() {
+                JMenuObject lockAll = new JMenuObject("Lock all phrases", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter c = (Chapter)o.getObject();
@@ -909,7 +912,8 @@ public class AudiobookRecorder extends JFrame {
                         }
                     }
                 });
-                unlockAll.addActionListener(new ActionListener() {
+
+                JMenuObject unlockAll = new JMenuObject("Unlock all phrases", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter c = (Chapter)o.getObject();
@@ -921,7 +925,21 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
 
-                deleteChapter.addActionListener(new ActionListener() {
+                JMenuObject exportChapter = new JMenuObject("Export chapter", c, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter chap = (Chapter)o.getObject();
+
+                        ProgressDialog ed = new ProgressDialog("Exporting " + chap.getName());
+
+                        ExportThread t = new ExportThread(chap, ed);
+                        Thread nt = new Thread(t);
+                        nt.start();
+                        ed.setVisible(true);
+                    }
+                });
+
+                JMenuObject deleteChapter = new JMenuObject("Delete chapter", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter c = (Chapter)o.getObject();
@@ -938,7 +956,18 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
                         
+                JMenuObject convertAll = new JMenuObject("Detect all text", c, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter c = (Chapter)o.getObject();
+                        BatchConversionThread r = new BatchConversionThread(c);
+                        Thread t = new Thread(r);
+                        t.start();
+                    }
+                });
 
+                menu.add(convertAll);
+                menu.addSeparator();
                 menu.add(moveUp);
                 menu.add(moveDown);
                 menu.addSeparator();
