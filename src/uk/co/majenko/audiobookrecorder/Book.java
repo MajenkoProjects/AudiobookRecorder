@@ -32,6 +32,7 @@ public class Book extends DefaultMutableTreeNode {
         super(bookname);
         name = bookname;
         equaliser = new Equaliser();
+        AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name);
     }
 
     public void setAuthor(String a) {
@@ -140,6 +141,7 @@ public class Book extends DefaultMutableTreeNode {
                 AudiobookRecorder.window.bookTreeModel.reload(this);
                 Options.set("path.last-book", name);
                 Options.savePreferences();
+                AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name);
             }
         }
     }
