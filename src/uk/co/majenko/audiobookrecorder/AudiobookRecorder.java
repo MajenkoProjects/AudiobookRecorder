@@ -44,6 +44,7 @@ public class AudiobookRecorder extends JFrame {
 
     JMenuItem toolsMerge;
     JMenuItem toolsArchive;
+    JMenuItem toolsCoverArt;
     JMenuItem toolsOptions;
 
     JMenuItem helpAbout;
@@ -204,6 +205,13 @@ public class AudiobookRecorder extends JFrame {
                 archiveBook();
             }
         });
+
+        toolsCoverArt = new JMenuItem("Import Cover Art...");
+        toolsCoverArt.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                loadCoverArt();
+            }
+        });
         
         toolsOptions = new JMenuItem("Options");
         toolsOptions.addActionListener(new ActionListener() {
@@ -214,6 +222,7 @@ public class AudiobookRecorder extends JFrame {
         
         toolsMenu.add(toolsMerge);
         toolsMenu.add(toolsArchive);
+        toolsMenu.add(toolsCoverArt);
         toolsMenu.addSeparator();
         toolsMenu.add(toolsOptions);
 
@@ -1538,6 +1547,7 @@ public class AudiobookRecorder extends JFrame {
         int r = JOptionPane.showConfirmDialog(this, info, "Open Book", JOptionPane.OK_CANCEL_OPTION);
         if (r == JOptionPane.OK_OPTION) {
             File f = info.getSelectedFile();
+            if (f == null) return;
             if (!f.exists()) {
                 JOptionPane.showMessageDialog(this, "File not found.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
@@ -2196,6 +2206,53 @@ public class AudiobookRecorder extends JFrame {
                         File conf = new File(bookdir, "audiobook.abk");
                         loadBookStructure(conf);
                     }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public void loadCoverArt() {
+        if (book == null) return;
+
+        JFileChooser jc = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Image Files", "png", "jpg", "gif");
+        jc.addChoosableFileFilter(filter);
+        jc.setFileFilter(filter);
+        jc.setDialogTitle("Select coverart image");
+        int r = jc.showOpenDialog(this);
+
+        if (r == JFileChooser.APPROVE_OPTION) {
+            File src = jc.getSelectedFile();
+            if (src.exists()) {
+                File dest = null;
+                File bookFolder = new File(Options.get("path.storage"), book.getName());
+                if (src.getName().endsWith(".png")) {
+                    dest = new File(bookFolder, "coverart.png");
+                } else if (src.getName().endsWith(".jpg")) {
+                    dest = new File(bookFolder, "coverart.jpg");
+                } else if (src.getName().endsWith(".gif")) {
+                    dest = new File(bookFolder, "coverart.gif");
+                }
+
+                if (dest == null) {
+                    JOptionPane.showMessageDialog(this, "Invalid image format or filename", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                try {
+                    new File(bookFolder, "coverart.png").delete();
+                    new File(bookFolder, "coverart.jpg").delete();
+                    new File(bookFolder, "coverart.gif").delete();
+
+                    Files.copy(src.toPath(), dest.toPath());
+
+                    ImageIcon i = new ImageIcon(dest.getAbsolutePath());
+                    Image ri = Utils.getScaledImage(i.getImage(), 22, 22);
+                    book.setIcon(new ImageIcon(ri));
+                    bookTreeModel.reload(book);
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
