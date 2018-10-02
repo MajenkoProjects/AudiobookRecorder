@@ -72,3 +72,15 @@ files) is placed.
 
 When you export the book as MP3 a new folder "export" is created within the book's folder where the MP3 files are placed.
 MP3 files are all tagged with the book title, chapter title, chapter number and comment.
+
+
+Building
+========
+
+1. Check out this repo
+2. Install `ant` and `default-jdk`
+3. Install [git LFS support](https://help.github.com/articles/installing-git-large-file-storage/)
+4. Pull the large files with `git lfs pull`
+5. Build with `ant build`
+6. Run with `java -jar ./AudiobookRecorder.jar`
+
