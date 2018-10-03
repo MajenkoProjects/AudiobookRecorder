@@ -75,6 +75,7 @@ public class AudiobookRecorder extends JFrame {
 
     JSpinner postSentenceGap;
     JCheckBox locked;
+    JCheckBox attention;
 
     JButtonSpacePlay reprocessAudioFFT;
     JButtonSpacePlay reprocessAudioPeak;
@@ -402,8 +403,28 @@ public class AudiobookRecorder extends JFrame {
                 bookTreeModel.reload(selectedSentence);
             }
         });
-
         controlsTop.add(locked);
+
+        attention = new JCheckBox("Flag for attention");
+        attention.setFocusable(false);
+
+        attention.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JCheckBox c = (JCheckBox)e.getSource();
+                if (c.isSelected()) {
+                    if (selectedSentence != null) {
+                        selectedSentence.setAttentionFlag(true);
+                    }
+                } else {
+                    if (selectedSentence != null) {
+                        selectedSentence.setAttentionFlag(false);
+                    }
+                }
+                bookTreeModel.reload(selectedSentence);
+            }
+        });
+
+        controlsTop.add(attention);
 
         controlsTop.add(Box.createHorizontalGlue());
         controlsTop.add(new JLabel("Post gap:"));
@@ -1287,6 +1308,7 @@ public class AudiobookRecorder extends JFrame {
                 prefs.setProperty(String.format("%s.sentence.%08d.start-offset", keybase, i), Integer.toString(snt.getStartOffset()));
                 prefs.setProperty(String.format("%s.sentence.%08d.end-offset", keybase, i), Integer.toString(snt.getEndOffset()));
                 prefs.setProperty(String.format("%s.sentence.%08d.locked", keybase, i), snt.isLocked() ? "true" : "false");
+                prefs.setProperty(String.format("%s.sentence.%08d.attention", keybase, i), snt.getAttentionFlag() ? "true" : "false");
                 i++;
             }
         }
@@ -1394,6 +1416,7 @@ public class AudiobookRecorder extends JFrame {
                     sampleWaveform.setAltMarkers(s.getStartCrossing(), s.getEndCrossing());
                     postSentenceGap.setValue(s.getPostGap());
                     locked.setSelected(s.isLocked());
+                    attention.setSelected(s.getAttentionFlag());
 
                     postSentenceGap.setEnabled(!s.isLocked());
                     reprocessAudioFFT.setEnabled(!s.isLocked());
@@ -1403,6 +1426,7 @@ public class AudiobookRecorder extends JFrame {
                     sampleWaveform.clearData();
                     postSentenceGap.setValue(0);
                     locked.setSelected(false);
+                    attention.setSelected(false);
                 }
             }
         });
@@ -1441,6 +1465,7 @@ public class AudiobookRecorder extends JFrame {
             s.setStartOffset(Utils.s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.start-offset", i))));
             s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.end-offset", i))));
             s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.locked", i))));
+            s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.attention", i))));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
@@ -1459,6 +1484,7 @@ public class AudiobookRecorder extends JFrame {
             s.setStartOffset(Utils.s2i(prefs.getProperty(String.format("chapter.open.sentence.%08d.start-offset", i))));
             s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.open.sentence.%08d.end-offset", i))));
             s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.locked", i))));
+            s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.attention", i))));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
@@ -1483,6 +1509,7 @@ public class AudiobookRecorder extends JFrame {
                 s.setStartOffset(Utils.s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.start-offset", cno, i))));
                 s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.end-offset", cno, i))));
                 s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.locked", cno, i))));
+            s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.attention", cno, i))));
                 bookTreeModel.insertNodeInto(s, c, c.getChildCount());
             }
         }
@@ -1502,6 +1529,7 @@ public class AudiobookRecorder extends JFrame {
             s.setStartOffset(Utils.s2i(prefs.getProperty(String.format("chapter.close.sentence.%08d.start-offset", i))));
             s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.close.sentence.%08d.end-offset", i))));
             s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.locked", i))));
+            s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.attention", i))));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 

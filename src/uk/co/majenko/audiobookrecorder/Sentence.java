@@ -32,6 +32,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     boolean recording;
 
     boolean inSample;
+    boolean attention = false;
 
     TargetDataLine line;
     AudioInputStream inputStream;
@@ -731,5 +732,13 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
         sentence.updateCrossings();
         return sentence;
+    }
+
+    public void setAttentionFlag(boolean f) {
+        attention = f;
+    }
+
+    public boolean getAttentionFlag() {
+        return attention;
     }
 }

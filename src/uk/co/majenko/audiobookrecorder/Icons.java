@@ -31,4 +31,5 @@ public class Icons {
     static public final ImageIcon zoomIn      = new ImageIcon(Icons.class.getResource("icons/zoom-in.png"));
     static public final ImageIcon zoomOut     = new ImageIcon(Icons.class.getResource("icons/zoom-out.png"));
     static public final ImageIcon dollar      = new ImageIcon(Icons.class.getResource("icons/dollar.png"));
+    static public final ImageIcon attention   = new ImageIcon(Icons.class.getResource("icons/attention.png"));
 }

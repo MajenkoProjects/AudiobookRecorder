@@ -11,8 +11,11 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
         if (value instanceof Sentence) {
             Sentence s = (Sentence)value;
 
-            if (s.isLocked()) {
-                ret.setForeground(new Color(0x20, 0x00, 0x00));
+            if (s.getAttentionFlag()) {
+                ret.setForeground(new Color(0xFF, 0xFF, 0x00));
+                ret.setIcon(Icons.attention);
+            } else if (s.isLocked()) {
+                ret.setForeground(new Color(0x00, 0x80, 0x00));
                 ret.setIcon(Icons.locked);
             } else if (s.getStartOffset() == 0) {
                 ret.setIcon(Icons.important);
