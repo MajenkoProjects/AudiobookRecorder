@@ -91,7 +91,6 @@ public class AudiobookRecorder extends JFrame {
     public Configuration sphinxConfig;
     public StreamSpeechRecognizer recognizer;
 
-
     public static AudiobookRecorder window;
 
     void initSphinx() {
@@ -2054,7 +2053,7 @@ public class AudiobookRecorder extends JFrame {
                 String name = AudiobookRecorder.this.book.getName();
                 File storageDir = new File(Options.get("path.storage"));
                 File bookDir = new File(storageDir, name);
-                File archiveDir = new File(storageDir, "archive");
+                File archiveDir = new File(Options.get("path.archive"));
 
                 ArrayList<File> fileList = gatherFiles(bookDir);
 
@@ -2139,7 +2138,7 @@ public class AudiobookRecorder extends JFrame {
     }
 
     public void openArchive() {
-        JFileChooser jc = new JFileChooser(new File(Options.get("path.storage"), "archive"));
+        JFileChooser jc = new JFileChooser(new File(Options.get("path.archive")));
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Audiobook Archives", "abz");
         jc.addChoosableFileFilter(filter);
         jc.setFileFilter(filter);

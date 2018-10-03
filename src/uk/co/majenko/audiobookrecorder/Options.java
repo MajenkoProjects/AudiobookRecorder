@@ -22,6 +22,7 @@ public class Options extends JDialog {
     JComboBox<KVPair> bitDepth;
     JComboBox<KVPair> trimMethod;
     JTextField storageFolder;
+    JTextField archiveFolder;
     JSpinner preChapterGap;
     JSpinner postChapterGap;
     JSpinner postSentenceGap;
@@ -256,6 +257,7 @@ public class Options extends JDialog {
         playbackList = addDropdown(optionsPanel, "Playback device:", getPlaybackMixerList(), get("audio.playback.device"));
         addSeparator(optionsPanel);
         storageFolder = addFilePath(optionsPanel, "Storage folder:", get("path.storage"), true);
+        archiveFolder = addFilePath(optionsPanel, "Archive folder:", get("path.archive"), true);
 
         addSeparator(optionsPanel);
 
@@ -462,6 +464,7 @@ public class Options extends JDialog {
         defaultPrefs.put("catenation.post-paragraph", "2000");
     
         defaultPrefs.put("path.storage", (new File(System.getProperty("user.home"), "Recordings")).toString());
+        defaultPrefs.put("path.archive", (new File(new File(System.getProperty("user.home"), "Recordings"),"archive")).toString());
         defaultPrefs.put("path.ffmpeg", "");
 
         defaultPrefs.put("audio.export.bitrate", "256000");
@@ -598,6 +601,7 @@ public class Options extends JDialog {
         set("audio.recording.trim", ((KVPair)trimMethod.getSelectedItem()).key);
         set("audio.playback.device", ((KVPair)playbackList.getSelectedItem()).key);
         set("path.storage", storageFolder.getText());
+        set("path.archive", archiveFolder.getText());
         set("path.ffmpeg", ffmpegLocation.getText());
         set("catenation.pre-chapter", preChapterGap.getValue());
         set("catenation.post-chapter", postChapterGap.getValue());
