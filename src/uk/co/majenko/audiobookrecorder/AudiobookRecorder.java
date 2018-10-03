@@ -109,8 +109,6 @@ public class AudiobookRecorder extends JFrame {
 
     void buildToolbar(Container ob) {
         toolBar = new MainToolBar(this);
-        toolBar.disableBook();
-        toolBar.disableSentence();
         ob.add(toolBar, BorderLayout.NORTH); 
     }
 
@@ -1019,9 +1017,6 @@ public class AudiobookRecorder extends JFrame {
             return;
         }
 
-        toolBar.disableBook();
-        toolBar.disableSentence();
-
         DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
 
         if (selectedNode == null) {
@@ -1051,9 +1046,6 @@ public class AudiobookRecorder extends JFrame {
             JOptionPane.showMessageDialog(this, "Microphone not started. Start microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
-        toolBar.disableBook();
-        toolBar.disableSentence();
 
         DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
 
@@ -1105,9 +1097,6 @@ public class AudiobookRecorder extends JFrame {
             return;
         }
 
-        toolBar.disableBook();
-        toolBar.disableSentence();
-
         DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
 
         if (selectedNode == null) {
@@ -1157,9 +1146,6 @@ public class AudiobookRecorder extends JFrame {
             return;
         }
 
-        toolBar.disableBook();
-        toolBar.disableSentence();
-
         DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
 
         if (selectedNode == null) {
@@ -1201,10 +1187,6 @@ public class AudiobookRecorder extends JFrame {
         bookTree.expandPath(new TreePath(((DefaultMutableTreeNode)recording.getParent()).getPath()));
         bookTree.setSelectionPath(new TreePath(recording.getPath()));
         bookTree.scrollPathToVisible(new TreePath(recording.getPath()));
-
-        toolBar.enableBook();
-        toolBar.enableSentence();
-        toolBar.disableStop();
 
         centralPanel.setFlash(false);
         recording = null;
@@ -1396,7 +1378,7 @@ public class AudiobookRecorder extends JFrame {
 
 
         InputMap im = bookTree.getInputMap(JComponent.WHEN_FOCUSED);
-        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "startPlayback");
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "startStopPlayback");
 
         roomNoise = new Sentence("room-noise", "Room Noise");
 
@@ -1416,19 +1398,9 @@ public class AudiobookRecorder extends JFrame {
                     postSentenceGap.setEnabled(!s.isLocked());
                     reprocessAudioFFT.setEnabled(!s.isLocked());
                     reprocessAudioPeak.setEnabled(!s.isLocked());
-
-                    if (playing == null) {
-                        toolBar.enableSentence();
-                        toolBar.disableStop();
-                    } else {
-                        toolBar.disableSentence();
-                        toolBar.enableStop();
-                    }
                 } else {
                     selectedSentence = null;
-                    toolBar.disableSentence();
                     sampleWaveform.clearData();
-                    toolBar.disableStop();
                     postSentenceGap.setValue(0);
                     locked.setSelected(false);
                 }
@@ -1535,7 +1507,6 @@ public class AudiobookRecorder extends JFrame {
 
         bookTree.expandPath(new TreePath(book.getPath()));
 
-        toolBar.enableBook();
         statusLabel.setText("Noise floor: " + getNoiseFloorDB() + "dB");
         book.setIcon(Icons.book);
     }
@@ -1632,8 +1603,6 @@ public class AudiobookRecorder extends JFrame {
             return;
         }
         playing = selectedSentence;
-        toolBar.disableSentence();
-        toolBar.enableStop();
 
         playingThread = new Thread(new Runnable() {
             public void run() {
@@ -1660,6 +1629,7 @@ public class AudiobookRecorder extends JFrame {
                     play.stop();
                     play.close();
                     play = null;
+                    playing = null;
                 } catch (Exception e) {
                     playing = null;
                     if (play != null) {
@@ -1669,8 +1639,6 @@ public class AudiobookRecorder extends JFrame {
                     }
                     play = null;
                 }
-                toolBar.enableSentence();
-                toolBar.disableStop();
             }
         });
 
@@ -1727,8 +1695,6 @@ public class AudiobookRecorder extends JFrame {
             return;
         }
         playing = selectedSentence;
-        toolBar.disableSentence();
-        toolBar.enableStop();
 
         playingThread = new Thread(new Runnable() {
             public void run() {
@@ -1797,8 +1763,6 @@ public class AudiobookRecorder extends JFrame {
                     }
                     play = null;
                 }
-                toolBar.enableSentence();
-                toolBar.disableStop();
             }
         });
 

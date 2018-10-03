@@ -124,31 +124,4 @@ public class MainToolBar extends JToolBar {
         setFloatable(false);
     }
 
-    public void enableBook() {
-        newChapter.setEnabled(true);
-        recordRoomNoise.setEnabled(true);
-    }
-
-    public void disableBook() {
-        newChapter.setEnabled(false);
-        recordRoomNoise.setEnabled(false);
-    }
-
-    public void enableSentence() {
-        playSentence.setEnabled(true);
-        playonSentence.setEnabled(true);
-    }
-
-    public void disableSentence() {
-        playSentence.setEnabled(false);
-        playonSentence.setEnabled(false);
-    }
-
-    public void enableStop() {
-        stopPlaying.setEnabled(true);
-    }
-
-    public void disableStop() {
-        stopPlaying.setEnabled(false);
-    }
 }
