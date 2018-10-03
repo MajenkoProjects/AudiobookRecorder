@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=AudiobookRecorder
+GenericName=Audiobook Recorder
+X-GNOME-FullName=AudiobookRecorder
+Comment=Record audiobooks with ease
+Keywords=audio
+Exec=AudiobookRecorder
+Terminal=false
+Type=Application
+StartupNotify=true
+Icon=AudiobookRecorder
+Categories=AudioVideo;Audio;Recorder;
+X-AppStream-Ignore=true
