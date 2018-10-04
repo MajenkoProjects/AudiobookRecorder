@@ -283,27 +283,19 @@ public class Options extends JDialog {
         cacheSize = addSpinner(optionsPanel, "Cache size:", 0, 5000, 1, getInteger("cache.size"), "");
 
         addSeparator(optionsPanel);
-
-        tabs.add("Options", optionsPanel);
-
+        tabs.add("Options", new JScrollPane(optionsPanel));
         equaliser = new Equaliser();
-
         for (int i = 0; i < 31; i++) {
             equaliser.setChannel(i, Options.getFloat("audio.eq." + i));
         }
-
-        tabs.add("Default EQ", equaliser);
+        tabs.add("Default EQ", new JScrollPane(equaliser));
 
         JPanel startScript = new JPanel();
         startScript.setLayout(new BorderLayout());
         startupScript = new JTextArea(get("scripts.startup"));
         startScript.add(startupScript, BorderLayout.CENTER);
-
         tabs.add("Startup Script", startScript);
-
         add(tabs, BorderLayout.CENTER);
-
-    
 
         setTitle("Options");
 

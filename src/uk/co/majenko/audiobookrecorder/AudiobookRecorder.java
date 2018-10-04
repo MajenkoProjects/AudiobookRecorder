@@ -1839,7 +1839,7 @@ public class AudiobookRecorder extends JFrame {
         if (equaliserWindow == null) {
             equaliserWindow = new JDialog();
             equaliserWindow.setTitle("Equaliser");
-            equaliserWindow.add(book.equaliser);
+            equaliserWindow.add(new JScrollPane(book.equaliser));
             equaliserWindow.pack();
         }
         equaliserWindow.setVisible(true);
