@@ -1055,6 +1055,40 @@ public class AudiobookRecorder extends JFrame {
                 menu.add(deleteChapter);
 
                 menu.show(bookTree, e.getX(), e.getY());
+            } else if (node instanceof Book) {
+                JPopupMenu menu = new JPopupMenu();
+
+                JMenuItem editData = new JMenuItem("Edit Data...");
+                editData.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        BookInfoPanel info = new BookInfoPanel(
+                            book.getName(),
+                            book.getAuthor(),
+                            book.getGenre(),
+                            book.getComment(),
+                            book.getACX()
+                        );
+                        int r = JOptionPane.showConfirmDialog(AudiobookRecorder.this, info, "Edit Book", JOptionPane.OK_CANCEL_OPTION);
+                        if (r != JOptionPane.OK_OPTION) return;
+
+                        String tit = info.getTitle();
+                        String aut = info.getAuthor();
+                        String gen = info.getGenre();
+                        String com = info.getComment();
+                        String acx = info.getACX();
+
+                        book.setAuthor(aut);
+                        book.setGenre(gen);
+                        book.setComment(com);
+                        book.setACX(acx);
+                        if (!(book.getName().equals(tit))) {
+                            book.renameBook(tit);
+                        }
+                    }
+                });
+                menu.add(editData);
+
+                menu.show(bookTree, e.getX(), e.getY());
             }
 
         }

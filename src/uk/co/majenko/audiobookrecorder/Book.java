@@ -44,7 +44,7 @@ public class Book extends DefaultMutableTreeNode {
     public String getAuthor() { return author; }
     public String getGenre() { return genre; }
     public String getComment() { return comment; }
-    public String getACX() { return ACX; }
+    public String getACX() { if (ACX == null) return ""; return ACX; }
 
     public Chapter getClosingCredits() {
         return getChapterById("close");
@@ -112,24 +112,28 @@ public class Book extends DefaultMutableTreeNode {
     public void setUserObject(Object o) {
         if (o instanceof String) {
             String newName = (String)o;
+            if (newName.equals(name)) return;
+            renameBook(newName);
+        }
+    }
 
-            File oldDir = new File(Options.get("path.storage"), name);
-            File newDir = new File(Options.get("path.storage"), newName);
+    public void renameBook(String newName) {
+        File oldDir = new File(Options.get("path.storage"), name);
+        File newDir = new File(Options.get("path.storage"), newName);
 
-            if (newDir.exists()) {
-                JOptionPane.showMessageDialog(AudiobookRecorder.window, "Book already exists", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+        if (newDir.exists()) {
+            JOptionPane.showMessageDialog(AudiobookRecorder.window, "Book already exists", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-            if (oldDir.exists() && oldDir.isDirectory()) {
-                oldDir.renameTo(newDir);
-                name = newName;
-                AudiobookRecorder.window.saveBookStructure();
-                AudiobookRecorder.window.bookTreeModel.reload(this);
-                Options.set("path.last-book", name);
-                Options.savePreferences();
-                AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name);
-            }
+        if (oldDir.exists() && oldDir.isDirectory()) {
+            oldDir.renameTo(newDir);
+            name = newName;
+            AudiobookRecorder.window.saveBookStructure();
+            AudiobookRecorder.window.bookTreeModel.reload(this);
+            Options.set("path.last-book", name);
+            Options.savePreferences();
+            AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name);
         }
     }
 
