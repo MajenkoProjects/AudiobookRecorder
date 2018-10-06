@@ -40,12 +40,7 @@ public class DonationPanel extends JPanel {
         JButton donate = new JButton("Donate!");
         donate.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (Desktop.isDesktopSupported()) {
-                    try {
-                        Desktop.getDesktop().browse(new URI("https://paypal.me/majenko"));
-                    } catch (Exception ex) {
-                    }
-                }
+                Utils.browse("https://paypal.me/majenko");
             }
         });
 

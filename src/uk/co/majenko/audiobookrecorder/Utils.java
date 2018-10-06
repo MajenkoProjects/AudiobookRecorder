@@ -8,6 +8,7 @@ import java.awt.image.*;
 import javax.swing.border.*;
 import java.util.*;
 import java.io.*;
+import java.net.*;
 
 public class Utils {
     public static Image getScaledImage(Image srcImg, int w, int h){
@@ -46,4 +47,12 @@ public class Utils {
         return 0.0f;
     }
 
+    public static void browse(String url) {
+        if (Desktop.isDesktopSupported()) {
+            try {
+                Desktop.getDesktop().browse(new URI(url));
+            } catch (Exception ex) {
+            }
+        }
+    }
 }

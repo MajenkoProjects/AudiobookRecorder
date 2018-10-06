@@ -41,6 +41,10 @@ public class AudiobookRecorder extends JFrame {
 
     JMenuItem bookNewChapter;
     JMenuItem bookExportAudio;
+    JMenu bookVisitACX;
+    JMenuItem bookVisitTitle;
+    JMenuItem bookVisitAudition;
+    JMenuItem bookVisitProduce;
 
     JMenuItem toolsMerge;
     JMenuItem toolsArchive;
@@ -183,6 +187,33 @@ public class AudiobookRecorder extends JFrame {
 
         bookMenu.add(bookNewChapter);
         bookMenu.add(bookExportAudio);
+
+        bookVisitACX = new JMenu("Visit ACX");
+        bookMenu.add(bookVisitACX);
+
+        bookVisitTitle = new JMenuItem("Title");
+        bookVisitTitle.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Utils.browse("https://www.acx.com/titleview/" + book.getACX());
+            }
+        });
+        bookVisitACX.add(bookVisitTitle);
+
+        bookVisitAudition = new JMenuItem("Audition");
+        bookVisitAudition.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Utils.browse("https://www.acx.com/titleview/" + book.getACX() + "?bucket=AUDITION_READY");
+            }
+        });
+        bookVisitACX.add(bookVisitAudition);
+
+        bookVisitProduce = new JMenuItem("Produce");
+        bookVisitProduce.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Utils.browse("https://www.acx.com/titleview/" + book.getACX() + "?bucket=PRODUCE");
+            }
+        });
+        bookVisitACX.add(bookVisitProduce);
 
         menuBar.add(bookMenu);
 
@@ -589,7 +620,7 @@ public class AudiobookRecorder extends JFrame {
     }
 
     public void createNewBook() {
-        BookInfoPanel info = new BookInfoPanel("", "", "", "");
+        BookInfoPanel info = new BookInfoPanel("", "", "", "", "");
         int r = JOptionPane.showConfirmDialog(this, info, "New Book", JOptionPane.OK_CANCEL_OPTION);
         if (r != JOptionPane.OK_OPTION) return;
 
@@ -608,6 +639,7 @@ public class AudiobookRecorder extends JFrame {
         prefs.setProperty("book.author", info.getAuthor());
         prefs.setProperty("book.genre", info.getGenre());
         prefs.setProperty("book.comment", info.getComment());
+        prefs.setProperty("book.acx", info.getACX());
         prefs.setProperty("chapter.audition.name", "Audition");
         prefs.setProperty("chapter.audition.pre-gap", Options.get("catenation.pre-chapter"));
         prefs.setProperty("chapter.audition.post-gap", Options.get("catenation.post-chapter"));
@@ -1282,6 +1314,7 @@ public class AudiobookRecorder extends JFrame {
         prefs.setProperty("book.author", book.getAuthor());
         prefs.setProperty("book.genre", book.getGenre());
         prefs.setProperty("book.comment", book.getComment());
+        prefs.setProperty("book.acx", book.getACX());
 
         prefs.setProperty("audio.recording.samplerate", "" + book.getSampleRate());
         prefs.setProperty("audio.recording.resolution", "" + book.getResolution());
@@ -1363,6 +1396,7 @@ public class AudiobookRecorder extends JFrame {
         book.setAuthor(prefs.getProperty("book.author"));
         book.setGenre(prefs.getProperty("book.genre"));
         book.setComment(prefs.getProperty("book.comment"));
+        book.setACX(prefs.getProperty("book.acx"));
 
         int sr = Utils.s2i(prefs.getProperty("audio.recording.samplerate"));
         if (sr == 0) {

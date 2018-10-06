@@ -17,6 +17,7 @@ public class Book extends DefaultMutableTreeNode {
     String author;
     String genre;
     String comment;
+    String ACX;
 
     int sampleRate;
     int channels;
@@ -35,29 +36,15 @@ public class Book extends DefaultMutableTreeNode {
         AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name);
     }
 
-    public void setAuthor(String a) {
-        author = a;
-    }
+    public void setAuthor(String a) { author = a; }
+    public void setGenre(String g) { genre = g; }
+    public void setComment(String c) { comment = c; }
+    public void setACX(String c) { ACX = c; }
 
-    public void setGenre(String g) {
-        genre = g;
-    }
-
-    public void setComment(String c) {
-        comment = c;
-    }
-
-    public String getAuthor() {
-        return author;
-    }
-
-    public String getGenre() {
-        return genre;
-    }
-
-    public String getComment() {
-        return comment;
-    }
+    public String getAuthor() { return author; }
+    public String getGenre() { return genre; }
+    public String getComment() { return comment; }
+    public String getACX() { return ACX; }
 
     public Chapter getClosingCredits() {
         return getChapterById("close");
