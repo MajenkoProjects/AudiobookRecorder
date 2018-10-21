@@ -11,6 +11,10 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
         if (value instanceof Sentence) {
             Sentence s = (Sentence)value;
 
+            if (s.getOverrideText() != null) {
+                ret.setText(s.getOverrideText());
+            }
+
             if (s.getAttentionFlag()) {
                 ret.setForeground(new Color(0xFF, 0xFF, 0x00));
                 ret.setIcon(Icons.attention);

@@ -9,11 +9,24 @@ import java.io.*;
 import java.nio.file.*;
 import javax.swing.tree.*;
 import javax.sound.sampled.*;
-import edu.cmu.sphinx.api.*;
-import edu.cmu.sphinx.decoder.adaptation.*;
-import edu.cmu.sphinx.result.*;
 import davaguine.jeq.spi.EqualizerInputStream;
 import davaguine.jeq.core.IIRControls;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+
+import org.json.*;
+
+import java.util.Timer;
+
 
 public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     
@@ -33,6 +46,19 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     boolean inSample;
     boolean attention = false;
+
+    String havenJobId = "";
+
+    // 0: Not processed
+    // 1: Submitted
+    // 2: Procesisng finished
+    // 3: Processing failed
+    int havenStatus = 0;
+
+    String overrideText = null;
+
+    public void setOverrideText(String s) { overrideText = s; }
+    public String getOverrideText() { return overrideText; }
 
     TargetDataLine line;
     AudioInputStream inputStream;
@@ -160,7 +186,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             } else if (tm.equals("fft")) {
                 autoTrimSampleFFT();
             }
-            if (Options.getBoolean("process.sphinx")) {
+            if (Options.getBoolean("process.haven.auto")) {
                 recognise();
             }
         }
@@ -330,6 +356,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public void setText(String t) {
+        overrideText = null;
         text = t;
     }
 
@@ -575,72 +602,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         return null;
     }
 
-    public void doRecognition(StreamSpeechRecognizer recognizer) {
-        try {
-            setText("[recognising...]");
-            AudiobookRecorder.window.bookTreeModel.reload(this);
-
-            AudioFormat format = getAudioFormat();
-
-            byte[] inData = getRawAudioData();
-            int inLength = inData.length;
-            int bps = format.getFrameSize();
-            int inSamples = inLength / bps;
-
-            int outSamples = inSamples / 4;
-            byte[] outData = new byte[outSamples * bps];
-
-            for (int i = 0; i < outSamples; i++) {
-                for (int j = 0; j < bps; j++) {
-                    outData[i * bps + j] = inData[(i * 4) * bps + j];
-                }
-            }
-
-            ByteArrayInputStream bas = new ByteArrayInputStream(outData);
-            recognizer.startRecognition(bas);
-            SpeechResult result;
-            String res = "";
-            while ((result = recognizer.getResult()) != null) {
-                res += result.getHypothesis();
-                res += " ";
-            }
-            recognizer.stopRecognition();
-
-            text = res;
-
-            AudiobookRecorder.window.bookTreeModel.reload(Sentence.this);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     public void recognise() {
-        Thread t = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    Configuration sphinxConfig = new Configuration();
-
-                    sphinxConfig.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
-                    sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
-                    sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
-
-                    AudioInputStream s = AudioSystem.getAudioInputStream(getFile());
-                    AudioFormat format = getAudioFormat();
-
-                    sphinxConfig.setSampleRate((int)(format.getSampleRate() / 4f));
-
-                    StreamSpeechRecognizer recognizer;
-
-                    recognizer = new StreamSpeechRecognizer(sphinxConfig);
-
-                    doRecognition(recognizer);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        t.start();
+        AudiobookRecorder.window.havenQueue.submit(Sentence.this);
     }
 
     public void setLocked(boolean l) {
@@ -740,5 +703,135 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public boolean getAttentionFlag() {
         return attention;
+    }
+
+    public String getHavenJobId() {
+        return havenJobId;
+    }
+
+    public void setHavenJobId(String i) {
+        havenJobId = i;
+    }
+
+    public int getHavenStatus() {
+        return havenStatus;
+    }
+
+    public void setHavenStatus(int i) {
+        havenStatus = i;
+    }
+
+    public boolean postHavenData() {
+        String apiKey = Options.get("process.haven.apikey");
+        if (apiKey == null || apiKey.equals("")) return false;
+
+        CloseableHttpClient httpclient = HttpClients.createDefault();
+
+        setOverrideText("[submitting...]");
+        AudiobookRecorder.window.bookTreeModel.reload(this);
+
+        try {
+            HttpPost httppost = new HttpPost("https://api.havenondemand.com/1/api/async/recognizespeech/v2?apikey=" + apiKey);
+
+            FileBody bin = new FileBody(getFile());
+            StringBody language = new StringBody("en-GB");
+
+            HttpEntity reqEntity = MultipartEntityBuilder.create()
+                .addPart("language_model", language)
+                .addPart("file", bin)
+                .build();
+
+            httppost.setEntity(reqEntity);
+
+            CloseableHttpResponse response = httpclient.execute(httppost);
+            try {
+                if (response.getStatusLine().getStatusCode() != 200) {
+                    System.err.println("Error posting data: " + response.getStatusLine().getStatusCode());
+                    return false;
+                }
+
+                HttpEntity resEntity = response.getEntity();
+                if (resEntity != null) {
+                    JSONObject obj = new JSONObject(EntityUtils.toString(resEntity));
+                    havenJobId = obj.getString("jobID");
+                    System.err.println("Submitted new Haven OnDemand job #" + havenJobId);
+                    havenStatus = 1;
+                }
+                EntityUtils.consume(resEntity);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                return false;
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return false;
+        }
+
+
+    return true;
+// eddec91c-6018-4dcd-bd8d-5e96b23e334c --form "language_model=en-US" --form "file=@3e67460c-f298-4e2c-a412-d375d489e1b3.wav" 
+    }
+
+    public void processPendingHaven() {
+        if (havenStatus != 1) return;
+
+        
+        String apiKey = Options.get("process.haven.apikey");
+        if (apiKey == null || apiKey.equals("")) return;
+
+        CloseableHttpClient httpclient = HttpClients.createDefault();
+
+
+        try {
+            HttpPost httppost = new HttpPost("https://api.havenondemand.com/1/job/status/" + havenJobId + "?apikey=" + apiKey);
+
+            HttpEntity reqEntity = MultipartEntityBuilder.create().build();
+            httppost.setEntity(reqEntity);
+
+            CloseableHttpResponse response = httpclient.execute(httppost);
+            try {
+                if (response.getStatusLine().getStatusCode() != 200) {
+                    havenStatus = 3; 
+                    return;
+                }
+
+                HttpEntity resEntity = response.getEntity();
+                if (resEntity != null) {
+                    JSONObject obj = new JSONObject(EntityUtils.toString(resEntity));
+
+                    System.err.println(havenJobId + ": " + obj.getString("status"));
+
+                    if (obj.getString("status").equals("finished")) {
+                        havenStatus = 2;
+                        JSONArray textItems = obj.getJSONArray("actions").getJSONObject(0).getJSONObject("result").getJSONArray("items");
+
+                        StringBuilder out = new StringBuilder();
+
+                        for (int i = 0; i < textItems.length(); i++) {
+                            out.append(textItems.getJSONObject(i).getString("text"));
+                            out.append(" ");
+                        }
+                        String result = out.toString();
+                        setText(result.trim());
+                        AudiobookRecorder.window.bookTreeModel.reload(Sentence.this);
+                        System.err.println(result);
+                    } else if (obj.getString("status").equals("queued")) {
+                        havenStatus = 1;
+                        setOverrideText("[processing...]");
+                        AudiobookRecorder.window.bookTreeModel.reload(Sentence.this);
+                    } else {
+                        text = id;
+                        AudiobookRecorder.window.bookTreeModel.reload(Sentence.this);
+                        havenStatus = 3;
+                        return;
+                    }
+                }
+                EntityUtils.consume(resEntity);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 }

@@ -34,6 +34,8 @@ public class Options extends JDialog {
     JCheckBox enableParsing;
     JSpinner cacheSize;
 
+    JTextField havenApiKey;
+
     Equaliser equaliser;
 
     JTextArea startupScript;
@@ -97,6 +99,27 @@ public class Options extends JDialog {
 
         return o;
     }
+
+    JTextField addTextField(JPanel panel, String label, String def) {
+        JLabel l = new JLabel(label);
+        constraint.gridx = 0;
+        constraint.gridwidth = 1;
+        constraint.gridheight = 1;
+        constraint.anchor = GridBagConstraints.LINE_START;
+        panel.add(l, constraint);
+
+        JTextField a = new JTextField(def);
+        constraint.gridx = 1;
+
+        constraint.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(a, constraint);
+
+        constraint.fill = GridBagConstraints.NONE;
+
+        constraint.gridy++;
+        return a;
+    }
+        
 
     JTextField addFilePath(JPanel panel, String label, String path, boolean dironly) {
         JLabel l = new JLabel(label);
@@ -276,7 +299,8 @@ public class Options extends JDialog {
 
         addSeparator(optionsPanel);
 
-        enableParsing = addCheckBox(optionsPanel, "Enable automatic sphinx speech-to-text (**SLOW**)", getBoolean("process.sphinx"));
+        enableParsing = addCheckBox(optionsPanel, "Enable automatic speech-to-text submission", getBoolean("process.haven.auto"));
+        havenApiKey = addTextField(optionsPanel, "Haven OnDemand API Key", get("process.haven.apikey"));
 
         addSeparator(optionsPanel);
 
@@ -463,6 +487,7 @@ public class Options extends JDialog {
         defaultPrefs.put("audio.export.samplerate", "44100");
 
         defaultPrefs.put("process.sphinx", "false");
+        defaultPrefs.put("process.haven.apikey", "");
 
         defaultPrefs.put("cache.size", "100");
 
@@ -603,6 +628,7 @@ public class Options extends JDialog {
         set("audio.export.bitrate", ((KVPair)bitRate.getSelectedItem()).key);
         set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
         set("process.sphinx", enableParsing.isSelected());
+        set("process.haven.apikey", havenApiKey.getText());
         set("cache.size", cacheSize.getValue());
 
         for (int i = 0; i < 31; i++) {

@@ -13,9 +13,6 @@ import java.util.prefs.*;
 import java.io.*;
 import it.sauronsoftware.jave.*;
 import com.mpatric.mp3agic.*;
-import edu.cmu.sphinx.api.*;
-import edu.cmu.sphinx.decoder.adaptation.*;
-import edu.cmu.sphinx.result.*;
 import java.nio.file.Files;
 import java.util.zip.*;
 import javax.swing.filechooser.*;
@@ -90,30 +87,19 @@ public class AudiobookRecorder extends JFrame {
 
     SourceDataLine play = null;
 
+    public HavenQueue havenQueue = new HavenQueue();
+
+
     public TargetDataLine microphone = null;
     public AudioInputStream microphoneStream = null;
 
-    public Configuration sphinxConfig;
-    public StreamSpeechRecognizer recognizer;
-
     public static AudiobookRecorder window;
-
-    void initSphinx() {
-        sphinxConfig = new Configuration();
-
-        sphinxConfig.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
-        sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
-        sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
-
-        try {
-            recognizer = new StreamSpeechRecognizer(sphinxConfig);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     void buildToolbar(Container ob) {
         toolBar = new MainToolBar(this);
+        toolBar.addSeparator();
+        toolBar.add(Box.createHorizontalGlue());
+        toolBar.add(havenQueue);
         ob.add(toolBar, BorderLayout.NORTH); 
     }
 
@@ -715,41 +701,6 @@ public class AudiobookRecorder extends JFrame {
         }
     }
 
-    class BatchConversionThread implements Runnable {
-        Chapter chapter;
-
-        public BatchConversionThread(Chapter c) {
-            chapter = c;
-        }
-        public void run() {
-            try {
-                Configuration sphinxConfig = new Configuration();
-
-                sphinxConfig.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
-                sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
-                sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
-
-                sphinxConfig.setSampleRate((int)(book.getAudioFormat().getSampleRate() / 4f));
-
-                StreamSpeechRecognizer recognizer;
-
-                recognizer = new StreamSpeechRecognizer(sphinxConfig);
-
-
-                for (Enumeration s = chapter.children(); s.hasMoreElements();) {
-                    Sentence snt = (Sentence)s.nextElement();
-                    if (!snt.isLocked()) {
-                        if (snt.getId().equals(snt.getText())) {
-                            snt.doRecognition(recognizer);
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
     @SuppressWarnings("unchecked")
     void treePopup(MouseEvent e) {
 
@@ -771,7 +722,7 @@ public class AudiobookRecorder extends JFrame {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence s = (Sentence)o.getObject();
                         if (!s.isLocked()) {
-                            s.recognise();
+                            havenQueue.submit(s);
                         }
                     }
                 });
@@ -1031,9 +982,12 @@ public class AudiobookRecorder extends JFrame {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter c = (Chapter)o.getObject();
-                        BatchConversionThread r = new BatchConversionThread(c);
-                        Thread t = new Thread(r);
-                        t.start();
+                        for (Enumeration s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = (Sentence)s.nextElement();
+                            if (snt.getId().equals(snt.getText())) {
+                                havenQueue.submit(snt);
+                            }
+                        }
                     }
                 });
 
