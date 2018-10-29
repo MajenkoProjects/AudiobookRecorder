@@ -135,7 +135,7 @@ public class Chapter extends DefaultMutableTreeNode {
         File exportFile = new File(export, name + ".wax");
         File wavFile = new File(export, name + ".wav");
         File mp3File = new File(export, name + "-untagged.mp3");
-        File taggedFile = new File(export, name + ".mp3");
+        File taggedFile = new File(export, book.getName() + " - " + name + ".mp3");
 
         FileOutputStream fos = new FileOutputStream(exportFile);
         data = AudiobookRecorder.window.getRoomNoise(Utils.s2i(Options.get("catenation.pre-chapter")));
