@@ -34,6 +34,10 @@ public class Options extends JDialog {
     JCheckBox enableParsing;
     JSpinner cacheSize;
 
+    JSpinner etherealIterations;
+    JSpinner etherealAttenuation;
+    JSpinner etherealOffset;
+
     JTextField havenApiKey;
 
     Equaliser equaliser;
@@ -319,6 +323,26 @@ public class Options extends JDialog {
         startupScript = new JTextArea(get("scripts.startup"));
         startScript.add(startupScript, BorderLayout.CENTER);
         tabs.add("Startup Script", startScript);
+
+
+
+        JPanel effects = new JPanel();
+        effects.setLayout(new GridBagLayout());
+        constraint.gridx = 0;
+        constraint.gridy = 0;
+        constraint.gridwidth = 1;
+        constraint.gridheight = 1;
+
+        etherealOffset = addSpinner(effects, "Ethereal Voice Offset", 0, 2000, 10, getInteger("effects.ethereal.offset"), "ms");
+        etherealIterations = addSpinner(effects, "Ethereal Voice Iterations", 1, 10, 1, getInteger("effects.ethereal.iterations"), "");
+        etherealAttenuation = addSpinner(effects, "Ethereal Voice Attenuation", 0, 100, 1, getInteger("effects.ethereal.attenuation"), "%");
+
+        tabs.add("Effects", effects);
+
+
+
+
+
         add(tabs, BorderLayout.CENTER);
 
         setTitle("Options");
@@ -525,6 +549,10 @@ public class Options extends JDialog {
 
         defaultPrefs.put("scripts.startup", "");
 
+        defaultPrefs.put("effects.ethereal.offset", "50");
+        defaultPrefs.put("effects.ethereal.iterations", "3");
+        defaultPrefs.put("effects.ethereal.attenuation", "50");
+
         if (prefs == null) {
             prefs = Preferences.userNodeForPackage(AudiobookRecorder.class);
         }
@@ -630,6 +658,10 @@ public class Options extends JDialog {
         set("process.sphinx", enableParsing.isSelected());
         set("process.haven.apikey", havenApiKey.getText());
         set("cache.size", cacheSize.getValue());
+
+        set("effects.ethereal.offset", etherealOffset.getValue());
+        set("effects.ethereal.iterations", etherealIterations.getValue());
+        set("effects.ethereal.attenuation", etherealAttenuation.getValue());
 
         for (int i = 0; i < 31; i++) {
             set("audio.eq." + i, equaliser.getChannel(i));

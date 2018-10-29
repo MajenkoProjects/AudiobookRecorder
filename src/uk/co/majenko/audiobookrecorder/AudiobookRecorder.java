@@ -77,6 +77,7 @@ public class AudiobookRecorder extends JFrame {
     JSpinner postSentenceGap;
     JCheckBox locked;
     JCheckBox attention;
+    JCheckBox ethereal;
 
     JButtonSpacePlay reprocessAudioFFT;
     JButtonSpacePlay reprocessAudioPeak;
@@ -442,6 +443,27 @@ public class AudiobookRecorder extends JFrame {
         });
 
         controlsTop.add(attention);
+
+        ethereal = new JCheckBox("Ethereal voice");
+        ethereal.setFocusable(false);
+
+        ethereal.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JCheckBox c = (JCheckBox)e.getSource();
+                if (c.isSelected()) {
+                    if (selectedSentence != null) {
+                        selectedSentence.setEthereal(true);
+                    }
+                } else {
+                    if (selectedSentence != null) {
+                        selectedSentence.setEthereal(false);
+                    }
+                }
+                bookTreeModel.reload(selectedSentence);
+            }
+        });
+
+        controlsTop.add(ethereal);
 
         controlsTop.add(Box.createHorizontalGlue());
         controlsTop.add(new JLabel("Post gap:"));
@@ -1015,6 +1037,7 @@ public class AudiobookRecorder extends JFrame {
                 JMenuItem editData = new JMenuItem("Edit Data...");
                 editData.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        JTabbedPane tabs = new JTabbedPane();
                         BookInfoPanel info = new BookInfoPanel(
                             book.getName(),
                             book.getAuthor(),
@@ -1022,7 +1045,38 @@ public class AudiobookRecorder extends JFrame {
                             book.getComment(),
                             book.getACX()
                         );
-                        int r = JOptionPane.showConfirmDialog(AudiobookRecorder.this, info, "Edit Book", JOptionPane.OK_CANCEL_OPTION);
+                        tabs.add("Data", info);
+
+                        JPanel effects = new JPanel();
+                        effects.setLayout(new GridBagLayout());
+                        GridBagConstraints c = new GridBagConstraints();
+                        c.gridx = 0;
+                        c.gridy = 0;
+
+                        effects.add(new JLabel("Ethereal Iterations:"), c);
+                        c.gridx = 1;
+                        JSpinner ethIt = new JSpinner(new SteppedNumericSpinnerModel(1, 10, 1, book.getInteger("effects.ethereal.iterations")));
+                        effects.add(ethIt, c);
+                        c.gridx = 0;
+                        c.gridy++;
+
+                        effects.add(new JLabel("Ethereal Attenuation:"), c);
+                        c.gridx = 1;
+                        JSpinner ethAt = new JSpinner(new SteppedNumericSpinnerModel(0, 100, 1, book.getInteger("effects.ethereal.attenuation")));
+                        effects.add(ethAt, c);
+                        c.gridx = 0;
+                        c.gridy++;
+
+                        effects.add(new JLabel("Ethereal Offset:"), c);
+                        c.gridx = 1;
+                        JSpinner ethOf = new JSpinner(new SteppedNumericSpinnerModel(0, 2000, 10, book.getInteger("effects.ethereal.offset")));
+                        effects.add(ethOf, c);
+                        c.gridx = 0;
+                        c.gridy++;
+
+                        tabs.add("Effects", effects);
+
+                        int r = JOptionPane.showConfirmDialog(AudiobookRecorder.this, tabs, "Edit Book", JOptionPane.OK_CANCEL_OPTION);
                         if (r != JOptionPane.OK_OPTION) return;
 
                         String tit = info.getTitle();
@@ -1030,6 +1084,10 @@ public class AudiobookRecorder extends JFrame {
                         String gen = info.getGenre();
                         String com = info.getComment();
                         String acx = info.getACX();
+
+                        book.set("effects.ethereal.iterations", (Integer)ethIt.getValue());
+                        book.set("effects.ethereal.attenuation", (Integer)ethAt.getValue());
+                        book.set("effects.ethereal.offset", (Integer)ethOf.getValue());
 
                         book.setAuthor(aut);
                         book.setGenre(gen);
@@ -1297,6 +1355,9 @@ public class AudiobookRecorder extends JFrame {
         File config = new File(bookRoot, "audiobook.abk");
         Properties prefs = new Properties();
 
+        prefs.setProperty("effects.ethereal.iterations", book.get("effects.ethereal.iterations"));
+        prefs.setProperty("effects.ethereal.offset", book.get("effects.ethereal.offset"));
+        prefs.setProperty("effects.ethereal.attenuation", book.get("effects.ethereal.attenuation"));
         
         prefs.setProperty("book.name", book.getName());
         prefs.setProperty("book.author", book.getAuthor());
@@ -1330,6 +1391,7 @@ public class AudiobookRecorder extends JFrame {
                 prefs.setProperty(String.format("%s.sentence.%08d.end-offset", keybase, i), Integer.toString(snt.getEndOffset()));
                 prefs.setProperty(String.format("%s.sentence.%08d.locked", keybase, i), snt.isLocked() ? "true" : "false");
                 prefs.setProperty(String.format("%s.sentence.%08d.attention", keybase, i), snt.getAttentionFlag() ? "true" : "false");
+                prefs.setProperty(String.format("%s.sentence.%08d.ethereal", keybase, i), snt.getEthereal() ? "true" : "false");
                 i++;
             }
         }
@@ -1379,7 +1441,7 @@ public class AudiobookRecorder extends JFrame {
 
     public void buildBook(Properties prefs) {
 
-        book = new Book(prefs.getProperty("book.name"));
+        book = new Book(prefs, prefs.getProperty("book.name"));
 
         book.setAuthor(prefs.getProperty("book.author"));
         book.setGenre(prefs.getProperty("book.genre"));
@@ -1439,6 +1501,7 @@ public class AudiobookRecorder extends JFrame {
                     postSentenceGap.setValue(s.getPostGap());
                     locked.setSelected(s.isLocked());
                     attention.setSelected(s.getAttentionFlag());
+                    ethereal.setSelected(s.getEthereal());
 
                     postSentenceGap.setEnabled(!s.isLocked());
                     reprocessAudioFFT.setEnabled(!s.isLocked());
@@ -1449,6 +1512,7 @@ public class AudiobookRecorder extends JFrame {
                     postSentenceGap.setValue(0);
                     locked.setSelected(false);
                     attention.setSelected(false);
+                    ethereal.setSelected(false);
                 }
             }
         });
@@ -1488,6 +1552,7 @@ public class AudiobookRecorder extends JFrame {
             s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.end-offset", i))));
             s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.locked", i))));
             s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.attention", i))));
+            s.setEthereal(Utils.s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.ethereal", i))));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
@@ -1507,6 +1572,7 @@ public class AudiobookRecorder extends JFrame {
             s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.open.sentence.%08d.end-offset", i))));
             s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.locked", i))));
             s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.attention", i))));
+            s.setEthereal(Utils.s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.ethereal", i))));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
@@ -1531,7 +1597,8 @@ public class AudiobookRecorder extends JFrame {
                 s.setStartOffset(Utils.s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.start-offset", cno, i))));
                 s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.end-offset", cno, i))));
                 s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.locked", cno, i))));
-            s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.attention", cno, i))));
+                s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.attention", cno, i))));
+                s.setEthereal(Utils.s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.ethereal", cno, i))));
                 bookTreeModel.insertNodeInto(s, c, c.getChildCount());
             }
         }
@@ -1552,6 +1619,7 @@ public class AudiobookRecorder extends JFrame {
             s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.close.sentence.%08d.end-offset", i))));
             s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.locked", i))));
             s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.attention", i))));
+            s.setEthereal(Utils.s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.ethereal", i))));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 

@@ -69,6 +69,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     
     RecordingThread recordingThread;
 
+    boolean effectEthereal = false;
+
     static class RecordingThread implements Runnable {
 
         boolean running = false;
@@ -594,12 +596,77 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                     bytesToRead--;
                 }
             }
+
+            data = postProcessData(data);
                 
             return data;
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
+    }
+
+    byte[] postProcessData(byte[] data) {
+        if (effectEthereal) {
+            AudioFormat format = getAudioFormat();
+            int frameSize = format.getFrameSize();
+            int channels = format.getChannels();
+            int bytesPerChannel = frameSize / channels;
+
+            int frames = data.length / frameSize;
+
+            int byteNo = 0;
+
+            double fpms = (double)format.getFrameRate() / 1000d;
+            double doubleOffset = fpms * (double) AudiobookRecorder.window.book.getInteger("effects.ethereal.offset");
+            int offset = (int)doubleOffset;
+            double attenuation = 1d - ((double)AudiobookRecorder.window.book.getInteger("effects.ethereal.attenuation") / 100d);
+
+            int copies = AudiobookRecorder.window.book.getInteger("effects.ethereal.iterations");
+
+            byte[] out = new byte[data.length];
+
+            for (int i = 0; i < frames; i++) {
+                if (channels == 1) {
+                    int l = data[i * frameSize] >= 0 ? data[i * frameSize] : 256 + data[i * frameSize];
+                    int h = data[(i * frameSize) + 1] >= 0 ? data[(i * frameSize) + 1] : 256 + data[(i * frameSize) + 1];
+                    
+                    int sample = (h << 8) | l;
+                    if ((sample & 0x8000) == 0x8000) sample |= 0xFFFF0000;
+
+                    double sampleDouble = (double)sample;
+
+                    int used = 0;
+                    for (int j = 0; j < copies; j++) {
+                        if (i + (j * offset) < frames) {
+                            used++;
+                            int lx = data[(i + (j * offset)) * frameSize] >= 0 ? data[(i + (j * offset)) * frameSize] : 256 + data[(i + (j * offset)) * frameSize];
+                            int hx = data[((i + (j * offset)) * frameSize) + 1] >= 0 ? data[((i + (j * offset)) * frameSize) + 1] : 256 + data[((i + (j * offset)) * frameSize) + 1];
+                            int futureSample = (hx << 8) | lx;
+                            if ((futureSample & 0x8000) == 0x8000) futureSample |= 0xFFFF0000;
+                            double futureDouble = (double)futureSample;
+                            for (int k = 0; k < copies; k++) {
+                                futureDouble *= attenuation;
+                            }
+                            sampleDouble  = mix(sampleDouble, futureDouble);
+                        }
+                    }
+                    sample = (int)sampleDouble;
+                    if (sample > 32767) sample = 32767;
+                    if (sample < -32768) sample = -32768;
+                    out[i * frameSize] = (byte)(sample & 0xFF); 
+                    out[(i * frameSize) + 1] = (byte)((sample & 0xFF00) >> 8);
+    
+                } else {
+                    return data;
+                }
+            }
+
+            return out;
+            
+        } else {
+            return data;
+        }
     }
 
     public void recognise() {
@@ -834,4 +901,29 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             ex.printStackTrace();
         }
     }
+
+    public void setEthereal(boolean e) {
+        effectEthereal = e;
+    }
+
+    public boolean getEthereal() {
+        return effectEthereal;
+    }
+
+    public double mix(double a, double b) {
+        double z;
+        double fa, fb, fz;
+        fa = a + 32768d;
+        fb = b + 32768d;
+
+        if (fa < 32768d && fb < 32768d) {
+            fz = (fa * fb) / 32768d;
+        } else {
+            fz = (2d * (fa + fb)) - ((fa * fb) / 32768d) - 65536d;
+        }
+
+        z = fz - 32768d;
+        return z;
+    }
+
 }

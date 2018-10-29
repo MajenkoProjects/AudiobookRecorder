@@ -29,8 +29,12 @@ public class Book extends DefaultMutableTreeNode {
 
     float[] eqChannels = new float[31];
 
-    public Book(String bookname) {
+    Properties prefs;
+
+    public Book(Properties p, String bookname) {
         super(bookname);
+
+        prefs = p;
         name = bookname;
         equaliser = new Equaliser();
         AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name);
@@ -163,5 +167,23 @@ public class Book extends DefaultMutableTreeNode {
 
     public AudioFormat getAudioFormat() {
         return new AudioFormat(getSampleRate(), getResolution(), getChannels(), true, false);
+    }
+
+    public String get(String key) {
+        if (prefs.getProperty(key) == null) { return Options.get(key); }
+        return prefs.getProperty(key);
+    }
+
+    public Integer getInteger(String key) {
+        if (prefs.getProperty(key) == null) { return Options.getInteger(key); }
+        return Utils.s2i(prefs.getProperty(key));
+    }
+
+    public void set(String key, String value) {
+        prefs.setProperty(key, value);
+    }
+
+    public void set(String key, Integer value) {
+        prefs.setProperty(key, "" + value);
     }
 }
