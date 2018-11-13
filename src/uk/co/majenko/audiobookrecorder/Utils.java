@@ -47,6 +47,14 @@ public class Utils {
         return 0.0f;
     }
 
+    public static double s2d(String s) {
+        try {
+            return Double.parseDouble(s);
+        } catch (Exception e) {
+        }
+        return 0.0d;
+    }
+
     public static void browse(String url) {
         if (Desktop.isDesktopSupported()) {
             try {

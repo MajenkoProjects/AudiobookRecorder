@@ -75,12 +75,14 @@ public class AudiobookRecorder extends JFrame {
     JScrollBar sampleScroll;
 
     JSpinner postSentenceGap;
+    JSpinner gainPercent;
     JCheckBox locked;
     JCheckBox attention;
     JCheckBox ethereal;
 
     JButtonSpacePlay reprocessAudioFFT;
     JButtonSpacePlay reprocessAudioPeak;
+    JButtonSpacePlay normalizeAudio;
 
     Thread playingThread = null;
 
@@ -363,6 +365,7 @@ public class AudiobookRecorder extends JFrame {
                     sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
                     sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
                     postSentenceGap.setValue(selectedSentence.getPostGap());
+                    gainPercent.setValue((int)(selectedSentence.getGain() * 100d));
                 }
             }
         });
@@ -375,12 +378,23 @@ public class AudiobookRecorder extends JFrame {
                     sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
                     sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
                     postSentenceGap.setValue(selectedSentence.getPostGap());
+                    gainPercent.setValue((int)(selectedSentence.getGain() * 100d));
                 }
             }
         });
 
+        normalizeAudio = new JButtonSpacePlay(Icons.normalize, "Normalize audio", new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (selectedSentence != null) {
+                    selectedSentence.normalize();
+                    sampleWaveform.setData(selectedSentence.getAudioData());
+                }
+            }
+        });
+    
+
         postSentenceGap = new JSpinner(new SteppedNumericSpinnerModel(0, 5000, 100, 0));
-        postSentenceGap.setPreferredSize(new Dimension(75, 20));
+        postSentenceGap.setPreferredSize(new Dimension(50, 20));
 
         postSentenceGap.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
@@ -391,6 +405,18 @@ public class AudiobookRecorder extends JFrame {
             }
         });
 
+        gainPercent = new JSpinner(new SteppedNumericSpinnerModel(0, 500, 1, 100));
+        gainPercent.setPreferredSize(new Dimension(50, 20));
+
+        gainPercent.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                JSpinner ob = (JSpinner)e.getSource();
+                if (selectedSentence != null) {
+                    selectedSentence.setGain((Integer)ob.getValue() / 100d);
+                    sampleWaveform.setData(selectedSentence.getAudioData());
+                }
+            }
+        });
 
         JToolBar controlsTop = new JToolBar(JToolBar.HORIZONTAL);
         JToolBar controlsLeft = new JToolBar(JToolBar.VERTICAL);
@@ -402,6 +428,7 @@ public class AudiobookRecorder extends JFrame {
 
         controlsLeft.add(reprocessAudioFFT);
         controlsLeft.add(reprocessAudioPeak);
+        controlsLeft.add(normalizeAudio);
 
         locked = new JCheckBox("Phrase locked");
         locked.setFocusable(false);
@@ -469,6 +496,11 @@ public class AudiobookRecorder extends JFrame {
         controlsTop.add(new JLabel("Post gap:"));
         controlsTop.add(postSentenceGap);
         controlsTop.add(new JLabel("ms"));
+
+        controlsTop.add(new JLabel("Gain:"));
+        controlsTop.add(gainPercent);
+        controlsTop.add(new JLabel("%"));
+
         controlsTop.add(Box.createHorizontalGlue());
 
 
@@ -1013,7 +1045,19 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
 
+                JMenuObject normalizeAll = new JMenuObject("Normalize chapter", c, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter c = (Chapter)o.getObject();
+                        for (Enumeration s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = (Sentence)s.nextElement();
+                            snt.normalize();
+                        }
+                    }
+                });
+
                 menu.add(convertAll);
+                menu.add(normalizeAll);
                 menu.addSeparator();
                 menu.add(moveUp);
                 menu.add(moveDown);
@@ -1392,6 +1436,7 @@ public class AudiobookRecorder extends JFrame {
                 prefs.setProperty(String.format("%s.sentence.%08d.locked", keybase, i), snt.isLocked() ? "true" : "false");
                 prefs.setProperty(String.format("%s.sentence.%08d.attention", keybase, i), snt.getAttentionFlag() ? "true" : "false");
                 prefs.setProperty(String.format("%s.sentence.%08d.ethereal", keybase, i), snt.getEthereal() ? "true" : "false");
+                prefs.setProperty(String.format("%s.sentence.%08d.gain", keybase, i), String.format("%.8f", snt.getGain()));
                 i++;
             }
         }
@@ -1499,6 +1544,7 @@ public class AudiobookRecorder extends JFrame {
                     s.updateCrossings();
                     sampleWaveform.setAltMarkers(s.getStartCrossing(), s.getEndCrossing());
                     postSentenceGap.setValue(s.getPostGap());
+                    gainPercent.setValue((int)(s.getGain() * 100d));
                     locked.setSelected(s.isLocked());
                     attention.setSelected(s.getAttentionFlag());
                     ethereal.setSelected(s.getEthereal());
@@ -1510,6 +1556,7 @@ public class AudiobookRecorder extends JFrame {
                     selectedSentence = null;
                     sampleWaveform.clearData();
                     postSentenceGap.setValue(0);
+                    gainPercent.setValue(100);
                     locked.setSelected(false);
                     attention.setSelected(false);
                     ethereal.setSelected(false);
@@ -1553,6 +1600,7 @@ public class AudiobookRecorder extends JFrame {
             s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.locked", i))));
             s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.attention", i))));
             s.setEthereal(Utils.s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.ethereal", i))));
+            s.setGain(Utils.s2d(prefs.getProperty(String.format("chapter.audition.sentence.%08d.gain", i))));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
@@ -1573,6 +1621,7 @@ public class AudiobookRecorder extends JFrame {
             s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.locked", i))));
             s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.attention", i))));
             s.setEthereal(Utils.s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.ethereal", i))));
+            s.setGain(Utils.s2d(prefs.getProperty(String.format("chapter.open.sentence.%08d.gain", i))));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
@@ -1599,6 +1648,7 @@ public class AudiobookRecorder extends JFrame {
                 s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.locked", cno, i))));
                 s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.attention", cno, i))));
                 s.setEthereal(Utils.s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.ethereal", cno, i))));
+                s.setGain(Utils.s2d(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.gain", cno, i))));
                 bookTreeModel.insertNodeInto(s, c, c.getChildCount());
             }
         }
@@ -1620,6 +1670,7 @@ public class AudiobookRecorder extends JFrame {
             s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.locked", i))));
             s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.attention", i))));
             s.setEthereal(Utils.s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.ethereal", i))));
+            s.setGain(Utils.s2d(prefs.getProperty(String.format("chapter.close.sentence.%08d.gain", i))));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
@@ -1688,13 +1739,13 @@ public class AudiobookRecorder extends JFrame {
     }
 
     public int getNoiseFloorDB() {
-	int nf = getNoiseFloor();
-	if (nf == 0) return 0;
-	double r = nf / 32767d;
-	double l10 = Math.log10(r);
-	double db = 20d * l10;
+        int nf = getNoiseFloor();
+        if (nf == 0) return 0;
+        double r = nf / 32767d;
+        double l10 = Math.log10(r);
+        double db = 20d * l10;
 
-	return (int)db;
+        return (int)db;
     }
 
     public void recordRoomNoise() {

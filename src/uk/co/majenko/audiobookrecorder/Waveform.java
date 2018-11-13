@@ -105,12 +105,26 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
                 if (hcnt > 0) have /= hcnt;
                 if (lcnt > 0) lave /= lcnt;
 
+                boolean clip = false;
+
+                if (lmax > 32000) { // -3dB == 23198?
+                    clip = true;
+                }
+
+                if (hmax > 32000) { // -3dB
+                    clip = true;
+                }
+
                 hmax /= scale;
                 lmax /= scale;
                 have /= scale;
                 lave /= scale;
 
-                g.setColor(new Color(0, 20, 200));
+                if (clip) {
+                    g.setColor(new Color(200, 20, 0));
+                } else {
+                    g.setColor(new Color(0, 20, 200));
+                }
                 g.drawLine(n, h/2 + lmax, n, h/2 - hmax);
                 g.setColor(new Color(0, 100, 255));
                 g.drawLine(n, h/2 + (int)lave, n, h/2 - (int)have);

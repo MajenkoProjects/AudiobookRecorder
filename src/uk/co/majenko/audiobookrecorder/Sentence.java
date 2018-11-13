@@ -47,6 +47,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     boolean inSample;
     boolean attention = false;
 
+    double gain = 1.0d;
+
     String havenJobId = "";
 
     // 0: Not processed
@@ -422,6 +424,10 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public int[] getAudioDataS16LE(AudioInputStream s, AudioFormat format) throws IOException {
+        return getAudioDataS16LE(s, format, true);
+    }
+
+    public int[] getAudioDataS16LE(AudioInputStream s, AudioFormat format, boolean amplify) throws IOException {
         long len = s.getFrameLength();
         int frameSize = format.getFrameSize();
         int chans = format.getChannels();
@@ -441,7 +447,12 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             } else {
                 sample = (frame[1] << 8) | frame[0];
             }
-            samples[(int)fno] = sample;
+            if (amplify) {
+                double amped = (double)sample * gain;
+                samples[(int)fno] = (int)amped;
+            } else {
+                samples[(int)fno] = sample;
+            }
         }
 
         return samples;
@@ -474,6 +485,28 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         }
         return null;
     }
+
+    public int[] getUnprocessedAudioData() {
+        File f = getFile();
+        try {
+            AudioInputStream s = AudioSystem.getAudioInputStream(f);
+            AudioFormat format = getAudioFormat();
+
+            int[] samples = null;
+
+            switch (format.getSampleSizeInBits()) {
+                case 16:
+                    samples = getAudioDataS16LE(s, format, false);
+                    break;
+            }
+
+            s.close();
+            return samples;
+        } catch (Exception e) {
+        }
+        return null;
+    }
+
 
     public int getStartCrossing() {
         return crossStartOffset;
@@ -606,67 +639,108 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         return null;
     }
 
-    byte[] postProcessData(byte[] data) {
-        if (effectEthereal) {
-            AudioFormat format = getAudioFormat();
-            int frameSize = format.getFrameSize();
-            int channels = format.getChannels();
-            int bytesPerChannel = frameSize / channels;
+    byte[] adjustGain(byte[] data) {
+        AudioFormat format = getAudioFormat();
+        int frameSize = format.getFrameSize();
+        int channels = format.getChannels();
+        int bytesPerChannel = frameSize / channels;
 
-            int frames = data.length / frameSize;
+        int frames = data.length / frameSize;
 
-            int byteNo = 0;
+        int byteNo = 0;
 
-            double fpms = (double)format.getFrameRate() / 1000d;
-            double doubleOffset = fpms * (double) AudiobookRecorder.window.book.getInteger("effects.ethereal.offset");
-            int offset = (int)doubleOffset;
-            double attenuation = 1d - ((double)AudiobookRecorder.window.book.getInteger("effects.ethereal.attenuation") / 100d);
+        byte[] out = new byte[data.length];
 
-            int copies = AudiobookRecorder.window.book.getInteger("effects.ethereal.iterations");
+        for (int i = 0; i < frames; i++) {
+            if (channels == 1) {
+                int l = data[i * frameSize] >= 0 ? data[i * frameSize] : 256 + data[i * frameSize];
+                int h = data[(i * frameSize) + 1] >= 0 ? data[(i * frameSize) + 1] : 256 + data[(i * frameSize) + 1];
 
-            byte[] out = new byte[data.length];
+                int sample = (h << 8) | l;
+                if ((sample & 0x8000) == 0x8000) sample |= 0xFFFF0000;
 
-            for (int i = 0; i < frames; i++) {
-                if (channels == 1) {
-                    int l = data[i * frameSize] >= 0 ? data[i * frameSize] : 256 + data[i * frameSize];
-                    int h = data[(i * frameSize) + 1] >= 0 ? data[(i * frameSize) + 1] : 256 + data[(i * frameSize) + 1];
-                    
-                    int sample = (h << 8) | l;
-                    if ((sample & 0x8000) == 0x8000) sample |= 0xFFFF0000;
+                double sampleDouble = (double)sample;
+                sampleDouble *= gain;
+                sample = (int)sampleDouble;
 
-                    double sampleDouble = (double)sample;
+                if (sample > 32767) sample = 32767;
+                if (sample < -32768) sample = -32768;
+                out[i * frameSize] = (byte)(sample & 0xFF);
+                out[(i * frameSize) + 1] = (byte)((sample & 0xFF00) >> 8);
 
-                    int used = 0;
-                    for (int j = 0; j < copies; j++) {
-                        if (i + (j * offset) < frames) {
-                            used++;
-                            int lx = data[(i + (j * offset)) * frameSize] >= 0 ? data[(i + (j * offset)) * frameSize] : 256 + data[(i + (j * offset)) * frameSize];
-                            int hx = data[((i + (j * offset)) * frameSize) + 1] >= 0 ? data[((i + (j * offset)) * frameSize) + 1] : 256 + data[((i + (j * offset)) * frameSize) + 1];
-                            int futureSample = (hx << 8) | lx;
-                            if ((futureSample & 0x8000) == 0x8000) futureSample |= 0xFFFF0000;
-                            double futureDouble = (double)futureSample;
-                            for (int k = 0; k < copies; k++) {
-                                futureDouble *= attenuation;
-                            }
-                            sampleDouble  = mix(sampleDouble, futureDouble);
-                        }
-                    }
-                    sample = (int)sampleDouble;
-                    if (sample > 32767) sample = 32767;
-                    if (sample < -32768) sample = -32768;
-                    out[i * frameSize] = (byte)(sample & 0xFF); 
-                    out[(i * frameSize) + 1] = (byte)((sample & 0xFF00) >> 8);
-    
-                } else {
-                    return data;
-                }
+            } else {
+                return data;
             }
-
-            return out;
-            
-        } else {
-            return data;
         }
+
+        return out;
+    }
+
+    byte[] postProcessData(byte[] data) {
+        data = adjustGain(data);
+
+        if (effectEthereal) {
+            data = processEtherealEffect(data);
+        }
+        return data;
+    }
+
+    byte[] processEtherealEffect(byte[] data) {
+        AudioFormat format = getAudioFormat();
+        int frameSize = format.getFrameSize();
+        int channels = format.getChannels();
+        int bytesPerChannel = frameSize / channels;
+
+        int frames = data.length / frameSize;
+
+        int byteNo = 0;
+
+        double fpms = (double)format.getFrameRate() / 1000d;
+        double doubleOffset = fpms * (double) AudiobookRecorder.window.book.getInteger("effects.ethereal.offset");
+        int offset = (int)doubleOffset;
+        double attenuation = 1d - ((double)AudiobookRecorder.window.book.getInteger("effects.ethereal.attenuation") / 100d);
+
+        int copies = AudiobookRecorder.window.book.getInteger("effects.ethereal.iterations");
+
+        byte[] out = new byte[data.length];
+
+        for (int i = 0; i < frames; i++) {
+            if (channels == 1) {
+                int l = data[i * frameSize] >= 0 ? data[i * frameSize] : 256 + data[i * frameSize];
+                int h = data[(i * frameSize) + 1] >= 0 ? data[(i * frameSize) + 1] : 256 + data[(i * frameSize) + 1];
+                
+                int sample = (h << 8) | l;
+                if ((sample & 0x8000) == 0x8000) sample |= 0xFFFF0000;
+
+                double sampleDouble = (double)sample;
+
+                int used = 0;
+                for (int j = 0; j < copies; j++) {
+                    if (i + (j * offset) < frames) {
+                        used++;
+                        int lx = data[(i + (j * offset)) * frameSize] >= 0 ? data[(i + (j * offset)) * frameSize] : 256 + data[(i + (j * offset)) * frameSize];
+                        int hx = data[((i + (j * offset)) * frameSize) + 1] >= 0 ? data[((i + (j * offset)) * frameSize) + 1] : 256 + data[((i + (j * offset)) * frameSize) + 1];
+                        int futureSample = (hx << 8) | lx;
+                        if ((futureSample & 0x8000) == 0x8000) futureSample |= 0xFFFF0000;
+                        double futureDouble = (double)futureSample;
+                        for (int k = 0; k < copies; k++) {
+                            futureDouble *= attenuation;
+                        }
+                        sampleDouble  = mix(sampleDouble, futureDouble);
+                    }
+                }
+                sample = (int)sampleDouble;
+                if (sample > 32767) sample = 32767;
+                if (sample < -32768) sample = -32768;
+                out[i * frameSize] = (byte)(sample & 0xFF); 
+                out[(i * frameSize) + 1] = (byte)((sample & 0xFF00) >> 8);
+
+            } else {
+                return data;
+            }
+        }
+
+        return out;
     }
 
     public void recognise() {
@@ -691,7 +765,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public void clearCache() {
         storedAudioData = null;
-        System.gc();
+//        System.gc();
     }
 
     public boolean lockedInCache() {
@@ -924,6 +998,46 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
         z = fz - 32768d;
         return z;
+    }
+
+   public int getPeakValue() {
+        int[] samples = getUnprocessedAudioData();
+        if (samples == null) {
+            return 0;
+        }
+        int ms = 0;
+        for (int i = 0; i < samples.length; i++) {
+            if (Math.abs(samples[i]) > ms) {
+                ms = Math.abs(samples[i]);
+            }
+        }
+        return ms;
+    }
+
+    public int getHeadroom() {
+        int nf = getPeakValue();
+        if (nf == 0) return 0;
+        double r = nf / 32767d;
+        double l10 = Math.log10(r);
+        double db = 20d * l10;
+
+        return (int)db;
+    }
+
+    public void setGain(double g) {
+        if (g <= 0.0001d) g = 1.0d;
+        if (g == gain) return;
+        gain = g;
+        clearCache();
+    }
+
+    public double getGain() {
+        return gain;
+    }
+
+    public void normalize() {
+        int max = getPeakValue();
+        setGain(23192d / max);
     }
 
 }
