@@ -25,7 +25,7 @@ public class Book extends DefaultMutableTreeNode {
 
     ImageIcon icon;
 
-    public Equaliser equaliser;
+    public Equaliser[] equaliser = new Equaliser[2];
 
     float[] eqChannels = new float[31];
 
@@ -36,7 +36,8 @@ public class Book extends DefaultMutableTreeNode {
 
         prefs = p;
         name = bookname;
-        equaliser = new Equaliser();
+        equaliser[0] = new Equaliser("Default");
+        equaliser[1] = new Equaliser("Phone");
         AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name);
     }
 

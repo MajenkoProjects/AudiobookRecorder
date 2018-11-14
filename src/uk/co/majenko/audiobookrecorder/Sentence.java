@@ -47,6 +47,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     boolean inSample;
     boolean attention = false;
 
+    int eqProfile = 0;
+
     double gain = 1.0d;
 
     String havenJobId = "";
@@ -571,7 +573,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             EqualizerInputStream eq = new EqualizerInputStream(s, 31);
             AudioFormat format = getAudioFormat();
             IIRControls controls = eq.getControls();
-            AudiobookRecorder.window.book.equaliser.apply(controls, format.getChannels());
+            AudiobookRecorder.window.book.equaliser[eqProfile].apply(controls, format.getChannels());
 
             int frameSize = format.getFrameSize();
 
@@ -609,7 +611,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
             AudioFormat format = getAudioFormat();
             IIRControls controls = eq.getControls();
-            AudiobookRecorder.window.book.equaliser.apply(controls, format.getChannels());
+            AudiobookRecorder.window.book.equaliser[eqProfile].apply(controls, format.getChannels());
 
             int frameSize = format.getFrameSize();
             int length = crossEndOffset - crossStartOffset;
@@ -1036,8 +1038,19 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public void normalize() {
+        if (locked) return;
         int max = getPeakValue();
-        setGain(23192d / max);
+        double d = 23192d / max;
+        if (d > 1.1d) d = 1.1d;
+        setGain(d);
+    }
+
+    public int getEQProfile() {
+        return eqProfile;
+    }
+
+    public void setEQProfile(int e) {
+        eqProfile = e;
     }
 
 }

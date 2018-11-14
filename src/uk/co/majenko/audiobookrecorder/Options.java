@@ -47,28 +47,6 @@ public class Options extends JDialog {
     static HashMap<String, String> defaultPrefs;
     static Preferences prefs = null;
 
-    static class KVPair implements Comparable {
-        public String key;
-        public String value;
-
-        public KVPair(String k, String v) {
-            key = k;
-            value = v;
-        }
-
-        public String toString() {
-            return value;
-        }
-
-        public int compareTo(Object o) {
-            if (o instanceof KVPair) {
-                KVPair ko = (KVPair)o;
-                return key.compareTo(ko.key);
-            }
-            return 0;
-        }
-    }
-
     class JButtonObject extends JButton {
         Object object;
         public JButtonObject(String s, Object o) {
@@ -312,7 +290,7 @@ public class Options extends JDialog {
 
         addSeparator(optionsPanel);
         tabs.add("Options", new JScrollPane(optionsPanel));
-        equaliser = new Equaliser();
+        equaliser = new Equaliser("Default");
         for (int i = 0; i < 31; i++) {
             equaliser.setChannel(i, Options.getFloat("audio.eq." + i));
         }
@@ -387,8 +365,8 @@ public class Options extends JDialog {
         setVisible(true);
     }
 
-    static KVPair[] getRecordingMixerList() {
-        TreeSet<KVPair> list = new TreeSet<KVPair>();
+    static KVPair<String, String>[] getRecordingMixerList() {
+        TreeSet<KVPair<String, String>> list = new TreeSet<KVPair<String, String>>();
 
         AudioFormat stereoFormat = new AudioFormat(44100f, 16, 2, true, false);
         AudioFormat monoFormat = new AudioFormat(44100f, 16, 1, true, false);
@@ -415,7 +393,7 @@ public class Options extends JDialog {
             }
 
             if (supported) {
-                KVPair p = new KVPair(i.getName(), i.getName()); //i.getDescription());
+                KVPair<String, String> p = new KVPair<String, String>(i.getName(), i.getName()); //i.getDescription());
                 list.add(p);
             }
         }
@@ -424,7 +402,7 @@ public class Options extends JDialog {
     }
 
     static KVPair[] getPlaybackMixerList() {
-        TreeSet<KVPair> list = new TreeSet<KVPair>();
+        TreeSet<KVPair<String, String>> list = new TreeSet<KVPair<String, String>>();
 
         AudioFormat stereoFormat = new AudioFormat(44100f, 16, 2, true, false);
         AudioFormat monoFormat = new AudioFormat(44100f, 16, 1, true, false);
@@ -452,7 +430,7 @@ public class Options extends JDialog {
 
 
             if (supported) {
-                KVPair p = new KVPair(i.getName(), i.getName()); //i.getDescription());
+                KVPair<String, String> p = new KVPair<String, String>(i.getName(), i.getName()); //i.getDescription());
                 list.add(p);
             }
         }
@@ -462,16 +440,16 @@ public class Options extends JDialog {
 
     static KVPair[] getChannelCountList() {
         KVPair[] l = new KVPair[2];
-        l[0] = new KVPair("1", "Mono");
-        l[1] = new KVPair("2", "Stereo");
+        l[0] = new KVPair<String, String>("1", "Mono");
+        l[1] = new KVPair<String, String>("2", "Stereo");
         return l;
     }
 
     static KVPair[] getSampleRateList() {
         KVPair[] l = new KVPair[3];
-        l[0] = new KVPair("44100", "44100");
-        l[1] = new KVPair("48000", "48000");
-        l[2] = new KVPair("96000", "96000");
+        l[0] = new KVPair<String, String>("44100", "44100");
+        l[1] = new KVPair<String, String>("48000", "48000");
+        l[2] = new KVPair<String, String>("96000", "96000");
         return l;
     }
 
@@ -483,7 +461,7 @@ public class Options extends JDialog {
         KVPair[] playbackMixers = getPlaybackMixerList();
 
         if (recordingMixers.length > 0) {
-            defaultPrefs.put("audio.recording.device", recordingMixers[0].key);
+            defaultPrefs.put("audio.recording.device", (String)recordingMixers[0].key);
         } else {
             defaultPrefs.put("audio.recording.device", "");
         }
@@ -492,7 +470,7 @@ public class Options extends JDialog {
         defaultPrefs.put("audio.recording.resolution", "16");
         defaultPrefs.put("audio.recording.trim", "peak");
         if (playbackMixers.length > 0) {
-            defaultPrefs.put("audio.playback.device", playbackMixers[0].key);
+            defaultPrefs.put("audio.playback.device", (String)playbackMixers[0].key);
         } else {
             defaultPrefs.put("audio.playback.device", "");
         }
@@ -702,23 +680,23 @@ public class Options extends JDialog {
 
     public static KVPair[] getBitrates() {
         KVPair[] pairs = new KVPair[4];
-        pairs[0] = new KVPair("128000", "128kbps");
-        pairs[1] = new KVPair("192000", "192kbps");
-        pairs[2] = new KVPair("256000", "256kbps");
-        pairs[3] = new KVPair("320000", "320kbps");
+        pairs[0] = new KVPair<String, String>("128000", "128kbps");
+        pairs[1] = new KVPair<String, String>("192000", "192kbps");
+        pairs[2] = new KVPair<String, String>("256000", "256kbps");
+        pairs[3] = new KVPair<String, String>("320000", "320kbps");
         return pairs;
     }
 
     public static KVPair[] getResolutionList() {
         KVPair[] pairs = new KVPair[1];
-        pairs[0] = new KVPair("16", "16 Bit");
+        pairs[0] = new KVPair<String, String>("16", "16 Bit");
         return pairs;
     }
 
     public static KVPair[] getTrimMethods() {
         KVPair[] pairs = new KVPair[2];
-        pairs[0] = new KVPair("peak", "Peak Amplitude");
-        pairs[1] = new KVPair("fft", "FFT Analysis");
+        pairs[0] = new KVPair<String, String>("peak", "Peak Amplitude");
+        pairs[1] = new KVPair<String, String>("fft", "FFT Analysis");
         return pairs;
     }
 }

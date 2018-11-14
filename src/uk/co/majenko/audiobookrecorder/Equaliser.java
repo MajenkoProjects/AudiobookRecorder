@@ -14,6 +14,7 @@ import davaguine.jeq.core.IIRControls;
 public class Equaliser extends JPanel {
 
     EqualiserChannel channels[];
+    String name;
 
     static final double[] frequencies = {
         20d, 25d, 31.5d, 40d, 50d, 63d, 80d, 100d, 125d, 160d, 200d,
@@ -22,8 +23,10 @@ public class Equaliser extends JPanel {
         20000d
     };
 
-    public Equaliser() {
+    public Equaliser(String n) {
         super();
+
+        name = n;
 
         channels = new EqualiserChannel[31];
 
@@ -95,5 +98,9 @@ public class Equaliser extends JPanel {
                 c.setBandDbValue(i, 1, channels[i].getValue());
             }
         }
+    }
+
+    public String getName() {
+        return name;
     }
 }
