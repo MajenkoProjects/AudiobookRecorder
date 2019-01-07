@@ -1083,6 +1083,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             } catch (Exception e) { 
             }
             clearCache();
+            AudiobookRecorder.window.updateWaveform();
         }
     }
 
@@ -1090,6 +1091,131 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         ExternalEditor ed = new ExternalEditor(this);
         Thread t = new Thread(ed);
         t.start();
+    }
+
+    public void backup() throws IOException {
+        File whereto = getFile().getParentFile();
+        String name = getFile().getName();
+
+        int backupNumber = -1;
+        for (int i = 1; i < 999999; i++) {
+
+            String fn = String.format("backup-%08d-%s", i, name);
+            File testFile = new File(whereto, fn);
+            if (!testFile.exists()) {
+                backupNumber = i;
+                break;
+            }
+        }
+        if (backupNumber == -1) {
+            System.err.println("Out of backup space!");
+            return;
+        }
+
+        String fn = String.format("backup-%08d-%s", backupNumber, getFile().getName());
+        File bak = new File(getFile().getParentFile(), fn);
+        Files.copy(getFile().toPath(), bak.toPath());
+    }
+
+    class ExternalProcessor implements Runnable {
+        Sentence sentence;
+        int number;
+        
+        public ExternalProcessor(Sentence s, int num) {
+            sentence = s;
+            number = num;
+        }
+
+        public void run() {
+            String command = Options.get("editor.processor." + number + ".command");
+            if (command == null) return;
+            if (command.equals("")) return;
+
+            String[] parts = command.split("::");
+        
+            ArrayList<String> args = new ArrayList<String>();
+
+            try {
+                backup();
+            } catch (Exception e) {
+                e.printStackTrace();
+                return;
+            }
+
+            File out = new File(getFile().getParentFile(), "proc-" + getFile().getName());
+
+            for (String part : parts) {
+                if (part.equals("%f")) {
+                    args.add(getFile().getAbsolutePath());
+                } else if (part.equals("%o")) {
+                    args.add(out.getAbsolutePath());
+                } else {
+                    args.add(part);
+                }
+            }
+
+            try {
+                ProcessBuilder process = new ProcessBuilder(args);
+                Process proc = process.start();
+                proc.waitFor();
+            } catch (Exception e) {
+            }
+
+            if (out.exists()) {
+                try {
+                    File in = getFile();
+                    in.delete();
+                    Files.copy(out.toPath(), in.toPath());
+                    out.delete();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            clearCache();
+            AudiobookRecorder.window.updateWaveform();
+        }
+    }
+
+    public void runExternalProcessor(int num) {
+        ExternalProcessor ed = new ExternalProcessor(this, num);
+        Thread t = new Thread(ed);
+        t.start();
+    }
+
+    public void undo() {
+        File whereto = getFile().getParentFile();
+        String name = getFile().getName();
+
+        int backupNumber = -1;
+        for (int i = 1; i < 999999; i++) {
+            String fn = String.format("backup-%08d-%s", i, name);
+            File testFile = new File(whereto, fn);
+            if (testFile.exists()) {
+                backupNumber = i;
+            } else {
+                break;
+            }
+        }
+
+        if (backupNumber == -1) {
+            return;
+        }
+
+        String fn = String.format("backup-%08d-%s", backupNumber, getFile().getName());
+        File bak = new File(getFile().getParentFile(), fn);
+
+        try {
+            File in = getFile();
+            in.delete();
+            Files.copy(bak.toPath(), in.toPath());
+            bak.delete();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        clearCache();
+        AudiobookRecorder.window.updateWaveform();
     }
 
 }

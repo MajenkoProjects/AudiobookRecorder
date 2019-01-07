@@ -46,6 +46,8 @@ public class Options extends JDialog {
 
     JTextArea startupScript;
 
+    ArrayList<JTextField[]> processorList;
+
     static HashMap<String, String> defaultPrefs;
     static Preferences prefs = null;
 
@@ -84,6 +86,24 @@ public class Options extends JDialog {
         return o;
     }
 
+    void addTwoLabel(JPanel panel, String label1, String label2) {
+        JLabel l1 = new JLabel(label1);
+        constraint.gridx = 0;
+        constraint.gridwidth = 1;
+        constraint.gridheight = 1;
+        constraint.anchor = GridBagConstraints.LINE_START;
+        panel.add(l1, constraint);
+
+        JLabel l2 = new JLabel(label2);
+        constraint.gridx = 1;
+        constraint.gridwidth = 1;
+        constraint.gridheight = 1;
+        constraint.anchor = GridBagConstraints.LINE_START;
+        panel.add(l2, constraint);
+
+        constraint.gridy++;
+    }
+        
     JTextField addTextField(JPanel panel, String label, String def) {
         JLabel l = new JLabel(label);
         constraint.gridx = 0;
@@ -103,6 +123,22 @@ public class Options extends JDialog {
         constraint.gridy++;
         return a;
     }
+
+    JTextField[] addTwoField(JPanel panel, String def1, String def2) {
+        JTextField a = new JTextField(def1);
+        constraint.gridx = 0;
+        constraint.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(a, constraint);
+
+        JTextField b = new JTextField(def2);
+        constraint.gridx = 1;
+        panel.add(b, constraint);
+        constraint.fill = GridBagConstraints.NONE;
+
+        constraint.gridy++;
+        return new JTextField[] { a, b };
+    }
+
         
 
     JTextField addFilePath(JPanel panel, String label, String path, boolean dironly) {
@@ -323,6 +359,39 @@ public class Options extends JDialog {
 
         tabs.add("Effects", effects);
 
+
+        JPanel processors = new JPanel();
+        processors.setLayout(new BorderLayout());
+        JPanel processorListPanel = new JPanel();
+
+        JScrollPane psp = new JScrollPane(processorListPanel);
+
+        processors.add(psp, BorderLayout.CENTER);
+        processorListPanel.setLayout(new GridBagLayout());
+
+        constraint.gridx = 0;
+        constraint.gridy = 0;
+        constraint.gridwidth = 1;
+        constraint.gridheight = 1;
+
+        addTwoLabel(processorListPanel, "Name", "Command");
+
+        processorList = new ArrayList<JTextField[]>();
+
+        for (int i = 0; i < 999; i++) {
+            String name = get("editor.processor." + i + ".name");
+            String command = get("editor.processor." + i + ".command");
+            if (name == null || command == null) break;
+            if (name.equals("") || command.equals("")) break;
+            JTextField[] f = addTwoField(processorListPanel, name, command);
+            processorList.add(f);
+        }
+
+        JTextField[] f = addTwoField(processorListPanel, "", "");
+        processorList.add(f);
+
+        tabs.add("Processors", processors);
+        
 
 
 
@@ -655,6 +724,18 @@ public class Options extends JDialog {
         }
 
         set("scripts.startup", startupScript.getText());
+
+        int procNo = 0;
+        for (JTextField[] proc : processorList) {
+            String name = proc[0].getText();
+            String command = proc[1].getText();
+            if (name.equals("") || command.equals("")) {
+                continue;
+            }
+            set("editor.processor." + procNo + ".name", name);
+            set("editor.processor." + procNo + ".command", command);
+            procNo++;
+        }
 
         savePreferences();
     }

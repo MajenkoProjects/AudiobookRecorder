@@ -903,6 +903,33 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
 
+                JMenu external = new JMenu("Run external processor");
+
+                for (int i = 0; i < 999; i++) {
+                    String name = Options.get("editor.processor." + i + ".name");
+                    if (name == null) break;
+                    if (name.equals("")) break;
+                    JMenuObject ob = new JMenuObject(name, s, new ActionListener() {
+                        public void actionPerformed(ActionEvent e) {
+                            JMenuObject o = (JMenuObject)e.getSource();
+                            Sentence s = (Sentence)o.getObject();
+                            s.runExternalProcessor(Utils.s2i(o.getActionCommand()));
+                        }
+                    });
+                    ob.setActionCommand(Integer.toString(i));
+                    external.add(ob);
+                }
+
+                JMenuObject undo = new JMenuObject("Undo", s, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Sentence s = (Sentence)o.getObject();
+                        s.undo();
+                    }
+                });
+
+                menu.add(undo);
+                menu.addSeparator();
                 menu.add(rec);
                 menu.addSeparator();
                 menu.add(moveUp);
@@ -910,6 +937,7 @@ public class AudiobookRecorder extends JFrame {
                 menu.add(moveMenu);
                 menu.addSeparator();
                 menu.add(edit);
+                menu.add(external);
                 menu.add(ins);
                 menu.add(del);
                 menu.addSeparator();
@@ -922,6 +950,17 @@ public class AudiobookRecorder extends JFrame {
                 bookTree.setSelectionPath(new TreePath(c.getPath()));
 
                 JPopupMenu menu = new JPopupMenu();
+
+                JMenuObject undo = new JMenuObject("Undo all", c, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter c = (Chapter)o.getObject();
+                        for (Enumeration s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = (Sentence)s.nextElement();
+                            snt.undo();
+                        }
+                    }
+                });
 
                 JMenuObject peak = new JMenuObject("Auto-trim all (Peak)", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
@@ -1094,6 +1133,27 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
 
+                JMenu external = new JMenu("Run external processor");
+
+                for (int i = 0; i < 999; i++) {
+                    String name = Options.get("editor.processor." + i + ".name");
+                    if (name == null) break;
+                    if (name.equals("")) break;
+                    JMenuObject ob = new JMenuObject(name, c, new ActionListener() {
+                        public void actionPerformed(ActionEvent e) {
+                            JMenuObject o = (JMenuObject)e.getSource();
+                            Chapter c = (Chapter)o.getObject();
+                            for (Enumeration s = c.children(); s.hasMoreElements();) {
+                                Sentence snt = (Sentence)s.nextElement();
+                                snt.runExternalProcessor(Utils.s2i(o.getActionCommand()));
+                            }
+                        }
+                    });
+                    ob.setActionCommand(Integer.toString(i));
+                    external.add(ob);
+                }
+
+
                 menu.add(convertAll);
                 menu.add(normalizeAll);
                 menu.addSeparator();
@@ -1111,6 +1171,8 @@ public class AudiobookRecorder extends JFrame {
                 menu.add(exportChapter);
                 menu.addSeparator();
                 menu.add(deleteChapter);
+                menu.addSeparator();
+                menu.add(external);
 
                 menu.show(bookTree, e.getX(), e.getY());
             } else if (node instanceof Book) {
@@ -1211,6 +1273,13 @@ public class AudiobookRecorder extends JFrame {
         Sentence s = (Sentence)selectedNode;
 
         if (s.isLocked()) return;
+
+        try {
+            s.backup();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
 
         if (s.startRecording()) {
             recording = (Sentence)selectedNode;
@@ -2443,6 +2512,12 @@ public class AudiobookRecorder extends JFrame {
                     e.printStackTrace();
                 }
             }
+        }
+    }
+
+    public void updateWaveform() {
+        if (selectedSentence != null) {
+            sampleWaveform.setData(selectedSentence.getAudioData());
         }
     }
 }

@@ -44,6 +44,7 @@ public class ProgressDialog extends JDialog implements EncoderProgressListener {
         pack();
 
         setSize(new Dimension(300, 100));
+        setResizable(false);
         
 //        setVisible(true);
     }
