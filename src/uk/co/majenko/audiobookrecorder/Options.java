@@ -40,6 +40,8 @@ public class Options extends JDialog {
 
     JTextField havenApiKey;
 
+    JTextField externalEditor;
+
     Equaliser equaliser;
 
     JTextArea startupScript;
@@ -285,6 +287,10 @@ public class Options extends JDialog {
         havenApiKey = addTextField(optionsPanel, "Haven OnDemand API Key", get("process.haven.apikey"));
 
         addSeparator(optionsPanel);
+        
+        externalEditor = addTextField(optionsPanel, "External Editor Command", get("editor.external"));
+
+        addSeparator(optionsPanel);
 
         cacheSize = addSpinner(optionsPanel, "Cache size:", 0, 5000, 1, getInteger("cache.size"), "");
 
@@ -491,6 +497,8 @@ public class Options extends JDialog {
         defaultPrefs.put("process.sphinx", "false");
         defaultPrefs.put("process.haven.apikey", "");
 
+        defaultPrefs.put("editor.external", "");
+
         defaultPrefs.put("cache.size", "100");
 
         defaultPrefs.put("audio.eq.0", "0.00");
@@ -635,6 +643,7 @@ public class Options extends JDialog {
         set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
         set("process.sphinx", enableParsing.isSelected());
         set("process.haven.apikey", havenApiKey.getText());
+        set("editor.external", externalEditor.getText());
         set("cache.size", cacheSize.getValue());
 
         set("effects.ethereal.offset", etherealOffset.getValue());

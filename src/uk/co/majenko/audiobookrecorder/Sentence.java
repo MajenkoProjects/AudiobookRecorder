@@ -1053,4 +1053,43 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         eqProfile = e;
     }
 
+    class ExternalEditor implements Runnable {
+        Sentence sentence;
+        ExternalEditor(Sentence s) {
+            sentence = s;
+        }
+
+        public void run() {
+            String command = Options.get("editor.external");
+            if (command == null) return;
+            if (command.equals("")) return;
+
+            String[] parts = command.split("::");
+
+            ArrayList<String> args = new ArrayList<String>();
+
+            for (String part : parts) {
+                if (part.equals("%f")) {
+                    args.add(getFile().getAbsolutePath());
+                } else {
+                    args.add(part);
+                }
+            }
+
+            try {
+                ProcessBuilder process = new ProcessBuilder(args);
+                Process proc = process.start();
+                proc.waitFor();
+            } catch (Exception e) { 
+            }
+            clearCache();
+        }
+    }
+
+    public void openInExternalEditor() {
+        ExternalEditor ed = new ExternalEditor(this);
+        Thread t = new Thread(ed);
+        t.start();
+    }
+
 }

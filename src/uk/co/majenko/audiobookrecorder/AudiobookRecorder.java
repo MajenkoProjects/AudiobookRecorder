@@ -891,7 +891,17 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
 
-
+                JMenuObject edit = new JMenuObject("Open in external editor", s, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        try {
+                            JMenuObject o = (JMenuObject)e.getSource();
+                            Sentence s = (Sentence)o.getObject();
+                            s.openInExternalEditor();
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                });
 
                 menu.add(rec);
                 menu.addSeparator();
@@ -899,6 +909,7 @@ public class AudiobookRecorder extends JFrame {
                 menu.add(moveDown);
                 menu.add(moveMenu);
                 menu.addSeparator();
+                menu.add(edit);
                 menu.add(ins);
                 menu.add(del);
                 menu.addSeparator();
@@ -1545,9 +1556,9 @@ public class AudiobookRecorder extends JFrame {
         for (int e = 0; e < book.equaliser.length; e++) {
             for (int i = 0; i < 31; i++) {
                 if (prefs.getProperty(String.format("audio.eq.profiles.%d.%d", e, i)) == null) {
-                    book.equaliser[e].setChannel(i, Options.getFloat(String.format("audio.eq.profiles.%d.%d", e, i)));
+                    book.equaliser[e].setChannel(i, Options.getFloat("audio.eq." + i));
                 } else {
-                    book.equaliser[e].setChannel(i, Utils.s2f(prefs.getProperty("audio.eq." + i)));
+                    book.equaliser[e].setChannel(i, Utils.s2f(prefs.getProperty(String.format("audio.eq.profiles.%d.%d", e, i))));
                 }
             }
         }
