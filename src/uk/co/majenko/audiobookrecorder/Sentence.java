@@ -1178,6 +1178,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public void runExternalProcessor(int num) {
+        if (isLocked()) return;
         ExternalProcessor ed = new ExternalProcessor(this, num);
         Thread t = new Thread(ed);
         t.start();

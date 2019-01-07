@@ -1145,7 +1145,9 @@ public class AudiobookRecorder extends JFrame {
                             Chapter c = (Chapter)o.getObject();
                             for (Enumeration s = c.children(); s.hasMoreElements();) {
                                 Sentence snt = (Sentence)s.nextElement();
-                                snt.runExternalProcessor(Utils.s2i(o.getActionCommand()));
+                                if (!snt.isLocked()) {
+                                    snt.runExternalProcessor(Utils.s2i(o.getActionCommand()));
+                                }
                             }
                         }
                     });
