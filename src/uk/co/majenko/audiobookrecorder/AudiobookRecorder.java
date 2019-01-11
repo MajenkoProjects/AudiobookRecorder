@@ -20,6 +20,10 @@ import javax.imageio.*;
 
 public class AudiobookRecorder extends JFrame {
 
+    // Settings - tweakable
+
+    public static final int PLAYBACK_CHUNK_SIZE = 256; // Was 1024
+
     static Properties config = new Properties();
 
     MainToolBar toolBar;
@@ -1417,6 +1421,13 @@ public class AudiobookRecorder extends JFrame {
 
         Chapter c = (Chapter)selectedNode;
 
+        DefaultMutableTreeNode lastLeaf = c.getLastLeaf();
+
+        if (lastLeaf instanceof Sentence) {
+            Sentence lastSentence = (Sentence)lastLeaf;
+            lastSentence.setPostGap(Options.getInteger("catenation.post-sentence"));
+        }
+
         Sentence s = new Sentence();
         bookTreeModel.insertNodeInto(s, c, c.getChildCount());
 
@@ -1908,10 +1919,10 @@ public class AudiobookRecorder extends JFrame {
 
                     bookTree.scrollPathToVisible(new TreePath(s.getPath()));
                     data = s.getRawAudioData();
-                    for (int pos = 0; pos < data.length; pos += 1024) {
+                    for (int pos = 0; pos < data.length; pos += PLAYBACK_CHUNK_SIZE) {
                         sampleWaveform.setPlayMarker(pos / format.getFrameSize());
                         int l = data.length - pos;
-                        if (l > 1024) l = 1024;
+                        if (l > PLAYBACK_CHUNK_SIZE) l = PLAYBACK_CHUNK_SIZE;
                         play.write(data, pos, l);
                     }
 
@@ -2012,10 +2023,10 @@ public class AudiobookRecorder extends JFrame {
                             play.write(data, 0, data.length);
                         }
                         data = s.getRawAudioData();
-                        for (int pos = 0; pos < data.length; pos += 1024) {
+                        for (int pos = 0; pos < data.length; pos += PLAYBACK_CHUNK_SIZE) {
                             sampleWaveform.setPlayMarker(pos / format.getFrameSize());
                             int l = data.length - pos;
-                            if (l > 1024) l = 1024;
+                            if (l > PLAYBACK_CHUNK_SIZE) l = PLAYBACK_CHUNK_SIZE;
                             play.write(data, pos, l);
                         }
 
