@@ -86,9 +86,9 @@ public class MainToolBar extends JToolBar {
         add(stopPlaying);
 
         addSeparator();
-        eq = new JButtonSpacePlay(Icons.eq, "Equaliser", new ActionListener() {
+        eq = new JButtonSpacePlay(Icons.eq, "Reload Effects", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                root.showEqualiser();
+                root.loadEffects();
             }
         });
 

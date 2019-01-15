@@ -8,12 +8,15 @@ import java.awt.event.*;
 import java.util.*;
 import java.util.prefs.*;
 import java.io.*;
+import javax.swing.tree.*;
 
 public class Options extends JDialog {
 
     JTabbedPane tabs;
 
     GridBagConstraints constraint;
+
+    public static ArrayList<EffectGroup> effectChains;
 
     JComboBox<KVPair> mixerList;
     JComboBox<KVPair> playbackList;
@@ -41,8 +44,6 @@ public class Options extends JDialog {
     JTextField havenApiKey;
 
     JTextField externalEditor;
-
-    Equaliser equaliser;
 
     JTextArea startupScript;
 
@@ -332,11 +333,23 @@ public class Options extends JDialog {
 
         addSeparator(optionsPanel);
         tabs.add("Options", new JScrollPane(optionsPanel));
-        equaliser = new Equaliser("Default");
-        for (int i = 0; i < 31; i++) {
-            equaliser.setChannel(i, Options.getFloat("audio.eq." + i));
-        }
-        tabs.add("Default EQ", new JScrollPane(equaliser));
+
+        JPanel effectChains = new JPanel();
+        effectChains.setLayout(new BorderLayout());
+
+        JPanel effectDetails = new JPanel() {
+            public Dimension getPreferredSize() {
+                return new Dimension(200, 400);
+            }
+        };
+
+        DefaultTreeModel m = new DefaultTreeModel(new DefaultMutableTreeNode("Effect Chains"));
+
+        JTree effectChainTree = new JTree(m);
+        effectChains.add(effectChainTree, BorderLayout.CENTER);
+        effectChains.add(effectDetails, BorderLayout.EAST);
+
+        tabs.add("Effects Chains", new JScrollPane(effectChains));
 
         JPanel startScript = new JPanel();
         startScript.setLayout(new BorderLayout());
@@ -440,6 +453,7 @@ public class Options extends JDialog {
         setVisible(true);
     }
 
+    @SuppressWarnings("unchecked")
     static KVPair<String, String>[] getRecordingMixerList() {
         TreeSet<KVPair<String, String>> list = new TreeSet<KVPair<String, String>>();
 
@@ -570,38 +584,6 @@ public class Options extends JDialog {
 
         defaultPrefs.put("cache.size", "100");
 
-        defaultPrefs.put("audio.eq.0", "0.00");
-        defaultPrefs.put("audio.eq.1", "0.00");
-        defaultPrefs.put("audio.eq.2", "0.00");
-        defaultPrefs.put("audio.eq.3", "0.00");
-        defaultPrefs.put("audio.eq.4", "0.00");
-        defaultPrefs.put("audio.eq.5", "0.00");
-        defaultPrefs.put("audio.eq.6", "0.00");
-        defaultPrefs.put("audio.eq.7", "0.00");
-        defaultPrefs.put("audio.eq.8", "0.00");
-        defaultPrefs.put("audio.eq.9", "0.00");
-        defaultPrefs.put("audio.eq.10", "0.00");
-        defaultPrefs.put("audio.eq.11", "0.00");
-        defaultPrefs.put("audio.eq.12", "0.00");
-        defaultPrefs.put("audio.eq.13", "0.00");
-        defaultPrefs.put("audio.eq.14", "0.00");
-        defaultPrefs.put("audio.eq.15", "0.00");
-        defaultPrefs.put("audio.eq.16", "0.00");
-        defaultPrefs.put("audio.eq.17", "0.00");
-        defaultPrefs.put("audio.eq.18", "0.00");
-        defaultPrefs.put("audio.eq.19", "-1.00");
-        defaultPrefs.put("audio.eq.20", "-2.00");
-        defaultPrefs.put("audio.eq.21", "-3.00");
-        defaultPrefs.put("audio.eq.22", "-4.00");
-        defaultPrefs.put("audio.eq.23", "-5.00");
-        defaultPrefs.put("audio.eq.24", "-6.00");
-        defaultPrefs.put("audio.eq.25", "-7.00");
-        defaultPrefs.put("audio.eq.26", "-8.00");
-        defaultPrefs.put("audio.eq.27", "-9.00");
-        defaultPrefs.put("audio.eq.28", "-10.00");
-        defaultPrefs.put("audio.eq.29", "-11.00");
-        defaultPrefs.put("audio.eq.30", "-12.00");
-
         defaultPrefs.put("scripts.startup", "");
 
         defaultPrefs.put("effects.ethereal.offset", "50");
@@ -639,6 +621,14 @@ public class Options extends JDialog {
         return 0;
     }
 
+    public static Double getDouble(String key) {
+        try {
+            Double f = Double.parseDouble(get(key));
+            return f;
+        } catch (Exception e) {
+        }
+        return 0.0d;
+    }
     public static Float getFloat(String key) {
         try {
             Float f = Float.parseFloat(get(key));
@@ -719,10 +709,6 @@ public class Options extends JDialog {
         set("effects.ethereal.iterations", etherealIterations.getValue());
         set("effects.ethereal.attenuation", etherealAttenuation.getValue());
 
-        for (int i = 0; i < 31; i++) {
-            set("audio.eq." + i, equaliser.getChannel(i));
-        }
-
         set("scripts.startup", startupScript.getText());
 
         int procNo = 0;
@@ -778,8 +764,9 @@ public class Options extends JDialog {
     }
 
     public static KVPair[] getResolutionList() {
-        KVPair[] pairs = new KVPair[1];
+        KVPair[] pairs = new KVPair[2];
         pairs[0] = new KVPair<String, String>("16", "16 Bit");
+        pairs[1] = new KVPair<String, String>("24", "24 Bit");
         return pairs;
     }
 
@@ -788,5 +775,53 @@ public class Options extends JDialog {
         pairs[0] = new KVPair<String, String>("peak", "Peak Amplitude");
         pairs[1] = new KVPair<String, String>("fft", "FFT Analysis");
         return pairs;
+    }
+
+
+    public static void createEffectChains() {
+        effectChains = new ArrayList<EffectGroup>();
+
+        for (int i = 0; i < 999999; i++) {
+            if (get("effects." + i + ".name") == null) {
+                EffectGroup e = new EffectGroup(get("effects." + i + ".name"));
+                for (int j = 0; i < 999999; j++) {
+                    String type = get("effects." + i + ".children." + j + ".type");
+                    if (type == null) break;
+
+                    if (type.equals("biquad")) {
+                        int bqt = getInteger("effects." + i + ".children." + j + ".filtertype");
+                        double fc = getDouble("effects." + i + ".children." + j + ".fc");
+                        double q = getDouble("effects." + i + ".children." + j + ".q");
+                        double gain = getDouble("effects." + i + ".children." + j + ".gain");
+                        Biquad b = new Biquad(bqt, fc, q, gain);
+                        e.addEffect(b);
+                        continue;
+                    } 
+
+                    if (type.equals("amplifier")) {
+                        double gain = getDouble("effects." + i + ".children." + j + ".gain");
+                        Amplifier a = new Amplifier(gain);
+                        e.addEffect(a);
+                        continue;
+                    }
+
+                    if (type.equals("delayline")) {
+                        DelayLine l = new DelayLine();
+                        for (int c = 0; c < 999999; c++) {
+                            if (get("effects." + i + ".children." + j + ".lines." + c + ".samples") == null) break;
+                            int samples = getInteger("effects." + i + ".children." + j + ".lines." + c + ".samples");
+                            double gain = getDouble("effects." + i + ".children." + j + ".lines." + c + ".gain");
+                            l.addDelayLine(samples, gain);
+                        }
+                        e.addEffect(l);
+                        continue;
+                    }
+
+
+                }
+                effectChains.add(e);
+                break;
+            }
+        }
     }
 }

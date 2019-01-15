@@ -9,8 +9,6 @@ import java.io.*;
 import java.nio.file.*;
 import javax.swing.tree.*;
 import javax.sound.sampled.*;
-import davaguine.jeq.spi.EqualizerInputStream;
-import davaguine.jeq.core.IIRControls;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -47,7 +45,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     boolean inSample;
     boolean attention = false;
 
-    int eqProfile = 0;
+    String effectChain = null;
 
     double gain = 1.0d;
 
@@ -69,7 +67,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     AudioFormat storedFormat = null;
     double storedLength = -1d;
 
-    int[] storedAudioData = null;
+    double[] audioData = null;
     
     RecordingThread recordingThread;
 
@@ -89,6 +87,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             tempFile = tf;
             wavFile = wf;
             format = af;
+System.err.println(format);
         }
 
         public void run() {
@@ -163,7 +162,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         }
 
 
-        recordingThread = new RecordingThread(getTempFile(), getFile(), AudiobookRecorder.window.book.getAudioFormat());
+        recordingThread = new RecordingThread(getTempFile(), getFile(), Options.getAudioFormat());
 
         Thread rc = new Thread(recordingThread);
         rc.setDaemon(true);
@@ -181,7 +180,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             }
         }
 
-        storedAudioData = null;
+        audioData = null;
         storedFormat = null;
         storedLength = -1;
 
@@ -205,7 +204,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         double[] real = new double[FFTBuckets];
         double[] imag = new double[FFTBuckets];
 
-        int[] samples = getAudioData();
+        double[] samples = getProcessedAudioData();
         int slices = (samples.length / FFTBuckets) + 1;
 
         double[][] out = new double[slices][];
@@ -215,7 +214,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         for (int i = 0; i < samples.length; i += FFTBuckets) {
             for (int j = 0; j < FFTBuckets; j++) {
                 if (i + j < samples.length) {
-                    real[j] = samples[i+j] / 32768d;
+                    real[j] = samples[i+j];
                     imag[j] = 0;
                 } else {
                     real[j] = 0;
@@ -234,7 +233,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     public void autoTrimSampleFFT() {
         crossStartOffset = -1;
         crossEndOffset = -1;
-        int[] samples = getAudioData();
+        double[] samples = getProcessedAudioData();
         if (samples == null) return;
 
         int blocks = samples.length / 4096 + 1;
@@ -248,7 +247,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
             for (int j = 0; j < 4096; j++) {
                 if (i + j < samples.length) {
-                    real[j] = samples[i+j] / 32768d;
+                    real[j] = samples[i+j];
                     imag[j] = 0;
                 } else {
                     real[j] = 0;
@@ -316,9 +315,9 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     public void autoTrimSamplePeak() {
         crossStartOffset = -1;
         crossEndOffset = -1;
-        int[] samples = getAudioData();
+        double[] samples = getProcessedAudioData();
         if (samples == null) return;
-        int noiseFloor = AudiobookRecorder.window.getNoiseFloor();
+        double noiseFloor = AudiobookRecorder.window.getNoiseFloor();
 
         // Find start
         for (int i = 0; i < samples.length; i++) {
@@ -425,91 +424,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         }
     }
 
-    public int[] getAudioDataS16LE(AudioInputStream s, AudioFormat format) throws IOException {
-        return getAudioDataS16LE(s, format, true);
-    }
-
-    public int[] getAudioDataS16LE(AudioInputStream s, AudioFormat format, boolean amplify) throws IOException {
-        long len = s.getFrameLength();
-        int frameSize = format.getFrameSize();
-        int chans = format.getChannels();
-        int bytes = frameSize / chans;
-
-        byte[] frame = new byte[frameSize];
-        int[] samples = new int[(int)len];
-
-        for (long fno = 0; fno < len; fno++) {
-
-            s.read(frame);
-            int sample = 0;
-            if (chans == 2) { // Stereo
-                int left = (frame[1] << 8) | frame[0];
-                int right = (frame[3] << 8) | frame[2];
-                sample = (left + right) / 2;
-            } else {
-                sample = (frame[1] << 8) | frame[0];
-            }
-            if (amplify) {
-                double amped = (double)sample * gain;
-                samples[(int)fno] = (int)amped;
-            } else {
-                samples[(int)fno] = sample;
-            }
-        }
-
-        return samples;
-    }
-
-    public int[] getAudioData() {
-        if (storedAudioData != null) {
-            return storedAudioData;
-        }
-        File f = getFile();
-        try {
-            AudioInputStream s = AudioSystem.getAudioInputStream(f);
-            AudioFormat format = getAudioFormat();
-
-            int[] samples = null;
-
-            switch (format.getSampleSizeInBits()) {
-                case 16:
-                    samples = getAudioDataS16LE(s, format);
-                    break;
-            }
-
-
-            s.close();
-            sampleSize = samples.length;
-            storedAudioData = samples;
-            CacheManager.addToCache(this);
-            return samples;
-        } catch (Exception e) {
-        }
-        return null;
-    }
-
-    public int[] getUnprocessedAudioData() {
-        File f = getFile();
-        try {
-            AudioInputStream s = AudioSystem.getAudioInputStream(f);
-            AudioFormat format = getAudioFormat();
-
-            int[] samples = null;
-
-            switch (format.getSampleSizeInBits()) {
-                case 16:
-                    samples = getAudioDataS16LE(s, format, false);
-                    break;
-            }
-
-            s.close();
-            return samples;
-        } catch (Exception e) {
-        }
-        return null;
-    }
-
-
     public int getStartCrossing() {
         return crossStartOffset;
     }
@@ -559,31 +473,9 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public int getSampleSize() {
         if (sampleSize == -1) {
-            getAudioData();
+            loadFile();
         }
         return sampleSize;
-    }
-
-    // Open the audio file as an AudioInputStream and automatically
-    // skip the first startOffset frames.
-    public EqualizerInputStream getAudioStream() {
-        File f = getFile();
-        try {
-            AudioInputStream s = AudioSystem.getAudioInputStream(f);
-            EqualizerInputStream eq = new EqualizerInputStream(s, 31);
-            AudioFormat format = getAudioFormat();
-            IIRControls controls = eq.getControls();
-            AudiobookRecorder.window.book.equaliser[eqProfile].apply(controls, format.getChannels());
-
-            int frameSize = format.getFrameSize();
-
-            eq.skip(frameSize * startOffset);
-             
-            return eq;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     public AudioFormat getAudioFormat() {
@@ -599,150 +491,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             e.printStackTrace();
         }
         return null;
-    }
-    
-    public byte[] getRawAudioData() {
-        File f = getFile();
-        try {
-            updateCrossings();
-            AudioInputStream s = AudioSystem.getAudioInputStream(f);
-            EqualizerInputStream eq = new EqualizerInputStream(s, 31);
-
-
-            AudioFormat format = getAudioFormat();
-            IIRControls controls = eq.getControls();
-            AudiobookRecorder.window.book.equaliser[eqProfile].apply(controls, format.getChannels());
-
-            int frameSize = format.getFrameSize();
-            int length = crossEndOffset - crossStartOffset;
-
-            int bytesToRead = length * frameSize;
-            byte[] data = new byte[bytesToRead];
-            byte[] buf = new byte[65536];
-
-            int pos = 0;
-
-            eq.skip(crossStartOffset * frameSize);
-
-            while (bytesToRead > 0) {
-                int r = eq.read(buf, 0, bytesToRead > 65536 ? 65536 : bytesToRead);
-                for (int i = 0; i < r; i++) {
-                    data[pos++] = buf[i];
-                    bytesToRead--;
-                }
-            }
-
-            data = postProcessData(data);
-                
-            return data;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    byte[] adjustGain(byte[] data) {
-        AudioFormat format = getAudioFormat();
-        int frameSize = format.getFrameSize();
-        int channels = format.getChannels();
-        int bytesPerChannel = frameSize / channels;
-
-        int frames = data.length / frameSize;
-
-        int byteNo = 0;
-
-        byte[] out = new byte[data.length];
-
-        for (int i = 0; i < frames; i++) {
-            if (channels == 1) {
-                int l = data[i * frameSize] >= 0 ? data[i * frameSize] : 256 + data[i * frameSize];
-                int h = data[(i * frameSize) + 1] >= 0 ? data[(i * frameSize) + 1] : 256 + data[(i * frameSize) + 1];
-
-                int sample = (h << 8) | l;
-                if ((sample & 0x8000) == 0x8000) sample |= 0xFFFF0000;
-
-                double sampleDouble = (double)sample;
-                sampleDouble *= gain;
-                sample = (int)sampleDouble;
-
-                if (sample > 32767) sample = 32767;
-                if (sample < -32768) sample = -32768;
-                out[i * frameSize] = (byte)(sample & 0xFF);
-                out[(i * frameSize) + 1] = (byte)((sample & 0xFF00) >> 8);
-
-            } else {
-                return data;
-            }
-        }
-
-        return out;
-    }
-
-    byte[] postProcessData(byte[] data) {
-        data = adjustGain(data);
-
-        if (effectEthereal) {
-            data = processEtherealEffect(data);
-        }
-        return data;
-    }
-
-    byte[] processEtherealEffect(byte[] data) {
-        AudioFormat format = getAudioFormat();
-        int frameSize = format.getFrameSize();
-        int channels = format.getChannels();
-        int bytesPerChannel = frameSize / channels;
-
-        int frames = data.length / frameSize;
-
-        int byteNo = 0;
-
-        double fpms = (double)format.getFrameRate() / 1000d;
-        double doubleOffset = fpms * (double) AudiobookRecorder.window.book.getInteger("effects.ethereal.offset");
-        int offset = (int)doubleOffset;
-        double attenuation = 1d - ((double)AudiobookRecorder.window.book.getInteger("effects.ethereal.attenuation") / 100d);
-
-        int copies = AudiobookRecorder.window.book.getInteger("effects.ethereal.iterations");
-
-        byte[] out = new byte[data.length];
-
-        for (int i = 0; i < frames; i++) {
-            if (channels == 1) {
-                int l = data[i * frameSize] >= 0 ? data[i * frameSize] : 256 + data[i * frameSize];
-                int h = data[(i * frameSize) + 1] >= 0 ? data[(i * frameSize) + 1] : 256 + data[(i * frameSize) + 1];
-                
-                int sample = (h << 8) | l;
-                if ((sample & 0x8000) == 0x8000) sample |= 0xFFFF0000;
-
-                double sampleDouble = (double)sample;
-
-                int used = 0;
-                for (int j = 0; j < copies; j++) {
-                    if (i + (j * offset) < frames) {
-                        used++;
-                        int lx = data[(i + (j * offset)) * frameSize] >= 0 ? data[(i + (j * offset)) * frameSize] : 256 + data[(i + (j * offset)) * frameSize];
-                        int hx = data[((i + (j * offset)) * frameSize) + 1] >= 0 ? data[((i + (j * offset)) * frameSize) + 1] : 256 + data[((i + (j * offset)) * frameSize) + 1];
-                        int futureSample = (hx << 8) | lx;
-                        if ((futureSample & 0x8000) == 0x8000) futureSample |= 0xFFFF0000;
-                        double futureDouble = (double)futureSample;
-                        for (int k = 0; k < copies; k++) {
-                            futureDouble *= attenuation;
-                        }
-                        sampleDouble  = mix(sampleDouble, futureDouble);
-                    }
-                }
-                sample = (int)sampleDouble;
-                if (sample > 32767) sample = 32767;
-                if (sample < -32768) sample = -32768;
-                out[i * frameSize] = (byte)(sample & 0xFF); 
-                out[(i * frameSize) + 1] = (byte)((sample & 0xFF00) >> 8);
-
-            } else {
-                return data;
-            }
-        }
-
-        return out;
     }
 
     public void recognise() {
@@ -766,8 +514,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public void clearCache() {
-        storedAudioData = null;
-//        System.gc();
+        audioData = null;
     }
 
     public boolean lockedInCache() {
@@ -775,7 +522,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public int findNearestZeroCrossing(int pos, int range) {
-        int[] data = getAudioData();
+        double[] data = getProcessedAudioData();
         if (data == null) return 0;
         if (data.length == 0) return 0;
 
@@ -785,8 +532,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         int backwards = pos;
         int forwards = pos;
 
-        int backwardsPrev = data[backwards];
-        int forwardsPrev = data[forwards];
+        double backwardsPrev = data[backwards];
+        double forwardsPrev = data[forwards];
 
         while (backwards > 0 || forwards < data.length-2) {
 
@@ -864,6 +611,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         havenStatus = i;
     }
 
+    @SuppressWarnings("deprecation")
     public boolean postHavenData() {
         String apiKey = Options.get("process.haven.apikey");
         if (apiKey == null || apiKey.equals("")) return false;
@@ -978,36 +726,15 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         }
     }
 
-    public void setEthereal(boolean e) {
-        effectEthereal = e;
-    }
-
-    public boolean getEthereal() {
-        return effectEthereal;
-    }
-
-    public double mix(double a, double b) {
-        double z;
-        double fa, fb, fz;
-        fa = a + 32768d;
-        fb = b + 32768d;
-
-        if (fa < 32768d && fb < 32768d) {
-            fz = (fa * fb) / 32768d;
-        } else {
-            fz = (2d * (fa + fb)) - ((fa * fb) / 32768d) - 65536d;
-        }
-
-        z = fz - 32768d;
-        return z;
-    }
-
-   public int getPeakValue() {
-        int[] samples = getUnprocessedAudioData();
+    public double getPeakValue() {
+        double oldGain = gain;
+        gain = 1.0d;
+        double[] samples = getProcessedAudioData();
+        gain = oldGain;
         if (samples == null) {
             return 0;
         }
-        int ms = 0;
+        double ms = 0;
         for (int i = 0; i < samples.length; i++) {
             if (Math.abs(samples[i]) > ms) {
                 ms = Math.abs(samples[i]);
@@ -1017,9 +744,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public int getHeadroom() {
-        int nf = getPeakValue();
-        if (nf == 0) return 0;
-        double r = nf / 32767d;
+        double r = getPeakValue();
+        if (r == 0) return 0;
         double l10 = Math.log10(r);
         double db = 20d * l10;
 
@@ -1039,18 +765,10 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public void normalize() {
         if (locked) return;
-        int max = getPeakValue();
-        double d = 23192d / max;
-        if (d > 1.1d) d = 1.1d;
+        double max = getPeakValue();
+        double d = 0.708 / max;
+        if (d > 1d) d = 1d;
         setGain(d);
-    }
-
-    public int getEQProfile() {
-        return eqProfile;
-    }
-
-    public void setEQProfile(int e) {
-        eqProfile = e;
     }
 
     class ExternalEditor implements Runnable {
@@ -1219,4 +937,186 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         AudiobookRecorder.window.updateWaveform();
     }
 
+    public double[] getDoubleDataS16LE(AudioInputStream s, AudioFormat format) throws IOException {
+        long len = s.getFrameLength();
+        int frameSize = format.getFrameSize();
+        int chans = format.getChannels();
+        int bytes = frameSize / chans;
+
+        byte[] frame = new byte[frameSize];
+        double[] samples = new double[(int)len];
+
+        for (long fno = 0; fno < len; fno++) {
+
+            s.read(frame);
+            int sample = 0;
+            if (chans == 2) { // Stereo
+                int ll = frame[0] >= 0 ? frame[0] : 256 + frame[0];
+                int lh = frame[1] >= 0 ? frame[1] : 256 + frame[1];
+                int rl = frame[2] >= 0 ? frame[2] : 256 + frame[2];
+                int rh = frame[3] >= 0 ? frame[3] : 256 + frame[3];
+                int left = (lh << 8) | ll;
+                int right = (rh << 8) | rl;
+                if ((left & 0x8000) == 0x8000) left |= 0xFFFF0000;
+                if ((right & 0x8000) == 0x8000) right |= 0xFFFF0000;
+                sample = (left + right) / 2;
+            } else {
+                int l = frame[0] >= 0 ? frame[0] : 256 + frame[0];
+                int h = frame[1] >= 0 ? frame[1] : 256 + frame[1];
+                sample = (h << 8) | l;
+                if ((sample & 0x8000) == 0x8000) sample |= 0xFFFF0000;
+            }
+            samples[(int)fno] = (double)sample / 32768d;
+        }
+
+        return samples;
+    }
+
+    public double[] getDoubleDataS24LE(AudioInputStream s, AudioFormat format) throws IOException {
+        long len = s.getFrameLength();
+        int frameSize = format.getFrameSize();
+        int chans = format.getChannels();
+        int bytes = frameSize / chans;
+
+        byte[] frame = new byte[frameSize];
+        double[] samples = new double[(int)len];
+
+        for (long fno = 0; fno < len; fno++) {
+
+            s.read(frame);
+            int sample = 0;
+            if (chans == 2) { // Stereo
+                int ll = frame[0] >= 0 ? frame[0] : 256 + frame[0];
+                int lm = frame[1] >= 0 ? frame[1] : 256 + frame[1];
+                int lh = frame[2] >= 0 ? frame[2] : 256 + frame[2];
+                int rl = frame[3] >= 0 ? frame[3] : 256 + frame[3];
+                int rm = frame[4] >= 0 ? frame[4] : 256 + frame[4];
+                int rh = frame[5] >= 0 ? frame[5] : 256 + frame[5];
+                int left = (lh << 16) | (lm << 8) | ll;
+                int right = (rh << 16) | (rm << 8) | rl;
+                if ((left & 0x800000) == 0x800000) left |= 0xFF000000;
+                if ((right & 0x800000) == 0x800000) right |= 0xFF000000;
+                sample = (left + right) / 2;
+            } else {
+                int l = frame[0] >= 0 ? frame[0] : 256 + frame[0];
+                int m = frame[1] >= 0 ? frame[1] : 256 + frame[1];
+                int h = frame[2] >= 0 ? frame[2] : 256 + frame[2];
+                sample = (h << 16) | (m << 8) | l;
+                if ((sample & 0x800000) == 0x800000) sample |= 0xFF000000;
+            }
+            samples[(int)fno] = (double)sample / 8388608d;
+        }
+
+        return samples;
+    }
+
+
+
+    public void loadFile() {
+        if (audioData != null) return;
+
+        File f = getFile();
+        try {
+            AudioInputStream s = AudioSystem.getAudioInputStream(f);
+            AudioFormat format = getAudioFormat();
+
+            double[] samples = null;
+
+            switch (format.getSampleSizeInBits()) {
+                case 16:
+                    samples = getDoubleDataS16LE(s, format);
+                    break;
+                case 24:
+                    samples = getDoubleDataS24LE(s, format);
+                    break;
+            }
+
+            s.close();
+            sampleSize = samples.length;
+            audioData = samples;
+            CacheManager.addToCache(this);
+        } catch (Exception e) {
+        }
+    }
+
+    public double[] getProcessedAudioData() {
+        loadFile();
+        if (audioData == null) return null;
+        double[] samples = new double[audioData.length];
+        for (int i = 0; i < audioData.length; i++) {
+            samples[i] = audioData[i];
+        }
+        // Add processing in here.
+
+        if (effectChain == null) effectChain = AudiobookRecorder.window.defaultEffectChain;
+
+        Effect eff = AudiobookRecorder.window.effects.get(effectChain);
+        if (eff == null) {
+            effectChain = AudiobookRecorder.window.defaultEffectChain;
+            eff = AudiobookRecorder.window.effects.get(effectChain);
+        }
+
+        if (eff != null) {
+            eff.init(getAudioFormat().getFrameRate());
+            for (int i = 0; i < samples.length; i++) {
+                samples[i] = eff.process(samples[i]);
+            }
+        }
+        
+        // Cuts out the computer hum.
+//        Biquad bq = new Biquad(Biquad.Notch, 140d/44100d, 20.0d, -50);
+//        DelayLine dl = new DelayLine();
+//        dl.addDelayLine(2205, 0.8);
+//        dl.addDelayLine(4410, 0.4);
+//        dl.addDelayLine(6615, 0.2);
+
+        // Add final master gain stage
+        for (int i = 0; i < samples.length; i++) {
+            samples[i] = samples[i] * gain;
+        }
+        return samples;
+    }
+
+    public double[] getDoubleAudioData() {
+        return getProcessedAudioData();
+    }
+
+    public double[] getCroppedAudioData() {
+        double[] inSamples = getDoubleAudioData();
+        if (inSamples == null) return null;
+        updateCrossings();
+
+        int length = crossEndOffset - crossStartOffset;
+
+        double[] samples = new double[length];
+        for (int i = 0; i < length; i++) {
+            samples[i] = inSamples[crossStartOffset + i];
+        }
+        return samples;
+    }
+
+    public byte[] getPCMData() {
+        double[] croppedData = getCroppedAudioData();
+        if (croppedData == null) return null;
+        int length = croppedData.length;
+        byte[] pcmData = new byte[length * 2];
+        for (int i = 0; i < length; i++) {
+            double sd = croppedData[i] * 32768d;
+            int si = (int)sd;
+            if (si > 32767) si = 32767;
+            if (si < -32768) si = -32768;
+            pcmData[i * 2] = (byte)(si & 0xFF);
+            pcmData[(i * 2) + 1] = (byte)((si & 0xFF00) >> 8);
+        }
+        return pcmData;
+    }
+
+    public void setEffectChain(String key) {
+        effectChain = key;
+    }
+
+    public String getEffectChain() {
+        if (effectChain == null) return AudiobookRecorder.window.defaultEffectChain;
+        return effectChain;
+    }
 }

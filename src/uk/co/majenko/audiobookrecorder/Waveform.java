@@ -9,7 +9,7 @@ import javax.sound.sampled.*;
 
 public class Waveform extends JPanel implements MouseListener, MouseMotionListener {
 
-    int[] samples = null;
+    double[] samples = null;
 
     int leftMarker = 0;
     int rightMarker = 0;
@@ -67,7 +67,7 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
             g.drawLine(x, h/4*3, x, h/4*3);
         }
 
-        int scale = 32768/(h/2);
+        double scale = (h/2);
 
         if (samples != null) {
 
@@ -81,15 +81,15 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
 
             for (int n = 0; n < w; n++) {
                 int hcnt = 0;
-                long have = 0;
-                int hmax = 0;
+                double have = 0;
+                double hmax = 0;
 
                 int lcnt = 0;
-                int lave = 0;
-                int lmax = 0;
+                double lave = 0;
+                double lmax = 0;
 
                 for (int o = 0; o < step; o++) {
-                    int sample = samples[offset + (n * step) + o];
+                    double sample = samples[offset + (n * step) + o];
                     if (sample >= 0) {
                         have += sample;
                         hcnt++;
@@ -107,27 +107,27 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
 
                 boolean clip = false;
 
-                if (lmax > 32000) { // -3dB == 23198?
+                if (lmax > 0.708) { // -3dB == 23198?
                     clip = true;
                 }
 
-                if (hmax > 32000) { // -3dB
+                if (hmax > 0.708) { // -3dB
                     clip = true;
                 }
 
-                hmax /= scale;
-                lmax /= scale;
-                have /= scale;
-                lave /= scale;
+                hmax *= scale;
+                lmax *= scale;
+                have *= scale;
+                lave *= scale;
 
                 if (clip) {
                     g.setColor(new Color(200, 20, 0));
                 } else {
                     g.setColor(new Color(0, 20, 200));
                 }
-                g.drawLine(n, h/2 + lmax, n, h/2 - hmax);
+                g.drawLine(n, (int)(h/2 + lmax), n, (int)(h/2 - hmax));
                 g.setColor(new Color(0, 100, 255));
-                g.drawLine(n, h/2 + (int)lave, n, h/2 - (int)have);
+                g.drawLine(n, (int)(h/2 + lave), n, (int)(h/2 - have));
             }
 
             g.setColor(new Color(255, 0, 0, 32));
@@ -186,7 +186,7 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
         repaint();
     }
 
-    public void setData(int[] s) {
+    public void setData(double[] s) {
         samples = s;
         playMarker = 0;
         repaint();

@@ -121,7 +121,8 @@ public class Chapter extends DefaultMutableTreeNode {
         attributes.setAudioAttributes(audioAttributes);
 
 
-        AudioFormat format = AudiobookRecorder.window.roomNoise.getAudioFormat();
+        AudioFormat sampleformat = AudiobookRecorder.window.roomNoise.getAudioFormat();
+        AudioFormat format = new AudioFormat(sampleformat.getSampleRate(), 16, 1, true, false);
         byte[] data;
 
         int fullLength = 0;
@@ -149,7 +150,7 @@ public class Chapter extends DefaultMutableTreeNode {
             kidno++;
             if (exportDialog != null) exportDialog.setProgress(kidno * 1000 / kids);
             Sentence snt = (Sentence)s.nextElement();
-            data = snt.getRawAudioData();
+            data = snt.getPCMData();
 
             fullLength += data.length;
             fos.write(data);
@@ -213,5 +214,23 @@ public class Chapter extends DefaultMutableTreeNode {
         }
         return totalTime;
     }
+
+    public ArrayList<String> getUsedEffects() {
+
+        ArrayList<String> out = new ArrayList<String>();
+
+        for (Enumeration o = children(); o.hasMoreElements();) {
+            Object ob = (Object)o.nextElement();
+            if (ob instanceof Sentence) {
+                Sentence s = (Sentence)ob;
+                String ec = s.getEffectChain();
+                if (out.indexOf(ec) == -1) {
+                    out.add(ec);
+                }
+            }
+        }
+        return out;
+    }
+
 
 }

@@ -17,6 +17,9 @@ import java.nio.file.Files;
 import java.util.zip.*;
 import javax.swing.filechooser.*;
 import javax.imageio.*;
+import org.w3c.dom.*;
+import javax.xml.parsers.*;
+import java.io.*;
 
 public class AudiobookRecorder extends JFrame {
 
@@ -25,6 +28,9 @@ public class AudiobookRecorder extends JFrame {
     public static final int PLAYBACK_CHUNK_SIZE = 256; // Was 1024
 
     static Properties config = new Properties();
+    HashMap<String, EffectGroup> effects;
+
+    String defaultEffectChain = "none";
 
     MainToolBar toolBar;
 
@@ -82,13 +88,12 @@ public class AudiobookRecorder extends JFrame {
     JSpinner gainPercent;
     JCheckBox locked;
     JCheckBox attention;
-    JCheckBox ethereal;
 
     JButtonSpacePlay reprocessAudioFFT;
     JButtonSpacePlay reprocessAudioPeak;
     JButtonSpacePlay normalizeAudio;
 
-    JComboBox<String> eqProfile;
+    JComboBox<KVPair<String,String>> effectChain;
 
     Thread playingThread = null;
 
@@ -367,7 +372,7 @@ public class AudiobookRecorder extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 if (selectedSentence != null) {
                     selectedSentence.autoTrimSampleFFT();
-                    sampleWaveform.setData(selectedSentence.getAudioData());
+                    sampleWaveform.setData(selectedSentence.getDoubleAudioData());
                     sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
                     sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
                     postSentenceGap.setValue(selectedSentence.getPostGap());
@@ -380,7 +385,7 @@ public class AudiobookRecorder extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 if (selectedSentence != null) {
                     selectedSentence.autoTrimSamplePeak();
-                    sampleWaveform.setData(selectedSentence.getAudioData());
+                    sampleWaveform.setData(selectedSentence.getDoubleAudioData());
                     sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
                     sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
                     postSentenceGap.setValue(selectedSentence.getPostGap());
@@ -393,7 +398,7 @@ public class AudiobookRecorder extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 if (selectedSentence != null) {
                     selectedSentence.normalize();
-                    sampleWaveform.setData(selectedSentence.getAudioData());
+                    sampleWaveform.setData(selectedSentence.getDoubleAudioData());
                 }
             }
         });
@@ -419,7 +424,7 @@ public class AudiobookRecorder extends JFrame {
                 JSpinner ob = (JSpinner)e.getSource();
                 if (selectedSentence != null) {
                     selectedSentence.setGain((Integer)ob.getValue() / 100d);
-                    sampleWaveform.setData(selectedSentence.getAudioData());
+                    sampleWaveform.setData(selectedSentence.getDoubleAudioData());
                 }
             }
         });
@@ -484,27 +489,6 @@ public class AudiobookRecorder extends JFrame {
 
         controlsTop.add(attention);
 
-        ethereal = new JCheckBox("Ethereal voice");
-        ethereal.setFocusable(false);
-
-        ethereal.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                JCheckBox c = (JCheckBox)e.getSource();
-                if (c.isSelected()) {
-                    if (selectedSentence != null) {
-                        selectedSentence.setEthereal(true);
-                    }
-                } else {
-                    if (selectedSentence != null) {
-                        selectedSentence.setEthereal(false);
-                    }
-                }
-                bookTreeModel.reload(selectedSentence);
-            }
-        });
-
-        controlsTop.add(ethereal);
-
         controlsTop.add(Box.createHorizontalGlue());
         controlsTop.add(new JLabel("Post gap:"));
         controlsTop.add(postSentenceGap);
@@ -531,19 +515,18 @@ public class AudiobookRecorder extends JFrame {
         });
         controlsRight.add(zoomOut);
 
-        controlsBottom.add(new JLabel("EQ Profile: "));
+        controlsBottom.add(new JLabel("Effects Chain: "));
 
-        String[] profiles = new String[2];
-        profiles[0] = "Default";
-        profiles[1] = "Phone";
+        effectChain = new JComboBox<KVPair<String, String>>();
+        controlsBottom.add(effectChain);
 
-        eqProfile = new JComboBox<String>(profiles);
-        controlsBottom.add(eqProfile);
-
-        eqProfile.addActionListener(new ActionListener() {
+        effectChain.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedSentence != null) {
-                    selectedSentence.setEQProfile(eqProfile.getSelectedIndex());
+                    int i = effectChain.getSelectedIndex();
+                    KVPair<String, String> p = effectChain.getItemAt(i);
+                    selectedSentence.setEffectChain(p.getKey());
+                    updateWaveform();
                 }
             }
         });
@@ -1197,34 +1180,32 @@ public class AudiobookRecorder extends JFrame {
                         );
                         tabs.add("Data", info);
 
-                        JPanel effects = new JPanel();
-                        effects.setLayout(new GridBagLayout());
+                        JPanel effectsPanel = new JPanel();
+                        effectsPanel.setLayout(new GridBagLayout());
                         GridBagConstraints c = new GridBagConstraints();
                         c.gridx = 0;
                         c.gridy = 0;
 
-                        effects.add(new JLabel("Ethereal Iterations:"), c);
+                        effectsPanel.add(new JLabel("Default Effect:"), c);
                         c.gridx = 1;
-                        JSpinner ethIt = new JSpinner(new SteppedNumericSpinnerModel(1, 10, 1, book.getInteger("effects.ethereal.iterations")));
-                        effects.add(ethIt, c);
-                        c.gridx = 0;
-                        c.gridy++;
 
-                        effects.add(new JLabel("Ethereal Attenuation:"), c);
-                        c.gridx = 1;
-                        JSpinner ethAt = new JSpinner(new SteppedNumericSpinnerModel(0, 100, 1, book.getInteger("effects.ethereal.attenuation")));
-                        effects.add(ethAt, c);
-                        c.gridx = 0;
-                        c.gridy++;
+                        JComboBox<KVPair<String, String>> defEff = new JComboBox<KVPair<String, String>>();
+                        int selEff = -1;
+                        int i = 0;
+                        for (String k : effects.keySet()) {
+                            if (k.equals(defaultEffectChain)) {
+                                selEff = i;
+                            }
+                            KVPair<String, String> p = new KVPair<String, String>(k, effects.get(k).toString());
+                            defEff.addItem(p);
+                            i++;
+                        }
 
-                        effects.add(new JLabel("Ethereal Offset:"), c);
-                        c.gridx = 1;
-                        JSpinner ethOf = new JSpinner(new SteppedNumericSpinnerModel(0, 2000, 10, book.getInteger("effects.ethereal.offset")));
-                        effects.add(ethOf, c);
-                        c.gridx = 0;
-                        c.gridy++;
+                        defEff.setSelectedIndex(selEff);
+                        
+                        effectsPanel.add(defEff, c);
 
-                        tabs.add("Effects", effects);
+                        tabs.add("Effects", effectsPanel);
 
                         int r = JOptionPane.showConfirmDialog(AudiobookRecorder.this, tabs, "Edit Book", JOptionPane.OK_CANCEL_OPTION);
                         if (r != JOptionPane.OK_OPTION) return;
@@ -1235,9 +1216,9 @@ public class AudiobookRecorder extends JFrame {
                         String com = info.getComment();
                         String acx = info.getACX();
 
-                        book.set("effects.ethereal.iterations", (Integer)ethIt.getValue());
-                        book.set("effects.ethereal.attenuation", (Integer)ethAt.getValue());
-                        book.set("effects.ethereal.offset", (Integer)ethOf.getValue());
+                        i = defEff.getSelectedIndex();
+                        KVPair<String, String> de = defEff.getItemAt(i);
+                        defaultEffectChain = de.getKey();
 
                         book.setAuthor(aut);
                         book.setGenre(gen);
@@ -1519,10 +1500,6 @@ public class AudiobookRecorder extends JFrame {
         File config = new File(bookRoot, "audiobook.abk");
         Properties prefs = new Properties();
 
-        prefs.setProperty("effects.ethereal.iterations", book.get("effects.ethereal.iterations"));
-        prefs.setProperty("effects.ethereal.offset", book.get("effects.ethereal.offset"));
-        prefs.setProperty("effects.ethereal.attenuation", book.get("effects.ethereal.attenuation"));
-        
         prefs.setProperty("book.name", book.getName());
         prefs.setProperty("book.author", book.getAuthor());
         prefs.setProperty("book.genre", book.getGenre());
@@ -1533,11 +1510,7 @@ public class AudiobookRecorder extends JFrame {
         prefs.setProperty("audio.recording.resolution", "" + book.getResolution());
         prefs.setProperty("audio.recording.channels", "" + book.getChannels());
 
-        for (int e = 0; e < book.equaliser.length; e++) {
-            for (int i = 0; i < 31; i++) {
-                prefs.setProperty(String.format("audio.eq.profiles.%d.%d", e, i), String.format("%.3f", book.equaliser[e].getChannel(i)));
-            }
-        }
+        prefs.setProperty("audio.effect.default", defaultEffectChain);
 
         for (Enumeration o = book.children(); o.hasMoreElements();) {
 
@@ -1557,9 +1530,8 @@ public class AudiobookRecorder extends JFrame {
                 prefs.setProperty(String.format("%s.sentence.%08d.end-offset", keybase, i), Integer.toString(snt.getEndOffset()));
                 prefs.setProperty(String.format("%s.sentence.%08d.locked", keybase, i), snt.isLocked() ? "true" : "false");
                 prefs.setProperty(String.format("%s.sentence.%08d.attention", keybase, i), snt.getAttentionFlag() ? "true" : "false");
-                prefs.setProperty(String.format("%s.sentence.%08d.ethereal", keybase, i), snt.getEthereal() ? "true" : "false");
                 prefs.setProperty(String.format("%s.sentence.%08d.gain", keybase, i), String.format("%.8f", snt.getGain()));
-                prefs.setProperty(String.format("%s.sentence.%08d.eqprofile", keybase, i), Integer.toString(snt.getEQProfile()));
+                prefs.setProperty(String.format("%s.sentence.%08d.effect", keybase, i), snt.getEffectChain());
                 i++;
             }
         }
@@ -1585,9 +1557,11 @@ public class AudiobookRecorder extends JFrame {
             FileInputStream fis = new FileInputStream(f);
             prefs.loadFromXML(fis);
 
+            File r = f.getParentFile();
+            loadEffects();
+
             buildBook(prefs);
 
-            File r = f.getParentFile();
             File cf = new File(r, "coverart.png");
             if (!cf.exists()) {
                 cf = new File(r, "coverart.jpg");
@@ -1616,6 +1590,11 @@ public class AudiobookRecorder extends JFrame {
         book.setComment(prefs.getProperty("book.comment"));
         book.setACX(prefs.getProperty("book.acx"));
 
+        defaultEffectChain = prefs.getProperty("audio.effect.default");
+        if (defaultEffectChain == null) {
+            defaultEffectChain = "none";
+        }
+
         int sr = Utils.s2i(prefs.getProperty("audio.recording.samplerate"));
         if (sr == 0) {
             sr = Options.getInteger("audio.recording.samplerate");
@@ -1633,17 +1612,6 @@ public class AudiobookRecorder extends JFrame {
             res = Options.getInteger("audio.recording.resolution");
         }
         book.setResolution(res);
-
-
-        for (int e = 0; e < book.equaliser.length; e++) {
-            for (int i = 0; i < 31; i++) {
-                if (prefs.getProperty(String.format("audio.eq.profiles.%d.%d", e, i)) == null) {
-                    book.equaliser[e].setChannel(i, Options.getFloat("audio.eq." + i));
-                } else {
-                    book.equaliser[e].setChannel(i, Utils.s2f(prefs.getProperty(String.format("audio.eq.profiles.%d.%d", e, i))));
-                }
-            }
-        }
 
         bookTreeModel = new DefaultTreeModel(book);
         bookTree = new JTree(bookTreeModel);
@@ -1664,7 +1632,7 @@ public class AudiobookRecorder extends JFrame {
                 if (n instanceof Sentence) {
                     Sentence s = (Sentence)n;
                     selectedSentence = s;
-                    sampleWaveform.setData(s.getAudioData());
+                    sampleWaveform.setData(s.getDoubleAudioData());
                     sampleWaveform.setMarkers(s.getStartOffset(), s.getEndOffset());
                     s.updateCrossings();
                     sampleWaveform.setAltMarkers(s.getStartCrossing(), s.getEndCrossing());
@@ -1672,8 +1640,8 @@ public class AudiobookRecorder extends JFrame {
                     gainPercent.setValue((int)(s.getGain() * 100d));
                     locked.setSelected(s.isLocked());
                     attention.setSelected(s.getAttentionFlag());
-                    ethereal.setSelected(s.getEthereal());
-                    eqProfile.setSelectedIndex(s.getEQProfile());
+
+                    setEffectChain(s.getEffectChain());
 
                     postSentenceGap.setEnabled(!s.isLocked());
                     gainPercent.setEnabled(!s.isLocked());
@@ -1684,10 +1652,8 @@ public class AudiobookRecorder extends JFrame {
                     sampleWaveform.clearData();
                     postSentenceGap.setValue(0);
                     gainPercent.setValue(100);
-                    eqProfile.setSelectedIndex(0);
                     locked.setSelected(false);
                     attention.setSelected(false);
-                    ethereal.setSelected(false);
                 }
             }
         });
@@ -1727,9 +1693,8 @@ public class AudiobookRecorder extends JFrame {
             s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.end-offset", i))));
             s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.locked", i))));
             s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.attention", i))));
-            s.setEthereal(Utils.s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.ethereal", i))));
             s.setGain(Utils.s2d(prefs.getProperty(String.format("chapter.audition.sentence.%08d.gain", i))));
-            s.setEQProfile(Utils.s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.eqprofile", i))));
+            s.setEffectChain(prefs.getProperty(String.format("chapter.audition.sentence.%08d.effect", i)));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
@@ -1749,9 +1714,8 @@ public class AudiobookRecorder extends JFrame {
             s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.open.sentence.%08d.end-offset", i))));
             s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.locked", i))));
             s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.attention", i))));
-            s.setEthereal(Utils.s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.ethereal", i))));
             s.setGain(Utils.s2d(prefs.getProperty(String.format("chapter.open.sentence.%08d.gain", i))));
-            s.setEQProfile(Utils.s2i(prefs.getProperty(String.format("chapter.open.sentence.%08d.eqprofile", i))));
+            s.setEffectChain(prefs.getProperty(String.format("chapter.open.sentence.%08d.effect", i)));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
@@ -1777,9 +1741,8 @@ public class AudiobookRecorder extends JFrame {
                 s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.end-offset", cno, i))));
                 s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.locked", cno, i))));
                 s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.attention", cno, i))));
-                s.setEthereal(Utils.s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.ethereal", cno, i))));
                 s.setGain(Utils.s2d(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.gain", cno, i))));
-                s.setEQProfile(Utils.s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.eqprofile", cno, i))));
+                s.setEffectChain(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.effect", cno, i)));
                 bookTreeModel.insertNodeInto(s, c, c.getChildCount());
             }
         }
@@ -1800,9 +1763,8 @@ public class AudiobookRecorder extends JFrame {
             s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.close.sentence.%08d.end-offset", i))));
             s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.locked", i))));
             s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.attention", i))));
-            s.setEthereal(Utils.s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.ethereal", i))));
             s.setGain(Utils.s2d(prefs.getProperty(String.format("chapter.close.sentence.%08d.gain", i))));
-            s.setEQProfile(Utils.s2i(prefs.getProperty(String.format("chapter.close.sentence.%08d.eqprofile", i))));
+            s.setEffectChain(prefs.getProperty(String.format("chapter.close.sentence.%08d.effect", i)));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
@@ -1852,28 +1814,27 @@ public class AudiobookRecorder extends JFrame {
         return bf;
     }
 
-    public int getNoiseFloor() { 
+    public double getNoiseFloor() { 
         if (roomNoise == null) return 0;
-        int[] samples = roomNoise.getAudioData();
+        double[] samples = roomNoise.getDoubleAudioData();
         if (samples == null) {
             return 0;
         }
-        int ms = 0;
+        double ms = 0;
         for (int i = 0; i < samples.length; i++) {
             if (Math.abs(samples[i]) > ms) {
                 ms = Math.abs(samples[i]);
             }
         }
 
-        ms *= 10;
-        ms /= 7;
+        ms *= 10d;
+        ms /= 7d;
         return ms;
     }
 
     public int getNoiseFloorDB() {
-        int nf = getNoiseFloor();
-        if (nf == 0) return 0;
-        double r = nf / 32767d;
+        double r = getNoiseFloor();
+        if (r == 0) return 0;
         double l10 = Math.log10(r);
         double db = 20d * l10;
 
@@ -1912,13 +1873,15 @@ public class AudiobookRecorder extends JFrame {
 
                 try {
 
-                    AudioFormat format = s.getAudioFormat();
+                    AudioFormat sampleformat = s.getAudioFormat();
+                    AudioFormat format = new AudioFormat(sampleformat.getSampleRate(), 16, 1, true, false);
+            
                     play = AudioSystem.getSourceDataLine(format, Options.getPlaybackMixer());
                     play.open(format);
                     play.start();
 
                     bookTree.scrollPathToVisible(new TreePath(s.getPath()));
-                    data = s.getRawAudioData();
+                    data = s.getPCMData();
                     for (int pos = 0; pos < data.length; pos += PLAYBACK_CHUNK_SIZE) {
                         sampleWaveform.setPlayMarker(pos / format.getFrameSize());
                         int l = data.length - pos;
@@ -2004,7 +1967,8 @@ public class AudiobookRecorder extends JFrame {
 
                 try {
 
-                    AudioFormat format = s.getAudioFormat();
+                    AudioFormat sampleformat = s.getAudioFormat();
+                    AudioFormat format = new AudioFormat(sampleformat.getSampleRate(), 16, 1, true, false);
                     play = AudioSystem.getSourceDataLine(format, Options.getPlaybackMixer());
                     play.open(format);
                     play.start();
@@ -2022,7 +1986,7 @@ public class AudiobookRecorder extends JFrame {
                             data = getRoomNoise(Utils.s2i(Options.get("catenation.pre-chapter")));
                             play.write(data, 0, data.length);
                         }
-                        data = s.getRawAudioData();
+                        data = s.getPCMData();
                         for (int pos = 0; pos < data.length; pos += PLAYBACK_CHUNK_SIZE) {
                             sampleWaveform.setPlayMarker(pos / format.getFrameSize());
                             int l = data.length - pos;
@@ -2091,7 +2055,7 @@ public class AudiobookRecorder extends JFrame {
         roomNoise.setStartOffset(start);
         roomNoise.setEndOffset(end);
 
-        byte[] data = roomNoise.getRawAudioData();
+        byte[] data = roomNoise.getPCMData();
 
         return data;
     }
@@ -2108,23 +2072,9 @@ public class AudiobookRecorder extends JFrame {
         JOptionPane.showMessageDialog(this, "You must record room noise\nbefore recording or playback", "Error", JOptionPane.ERROR_MESSAGE);
     }
 
-    public void showEqualiser() {
-        if (equaliserWindow == null) {
-            equaliserWindow = new JDialog();
-            equaliserWindow.setTitle("Equaliser");
-            JTabbedPane tabs = new JTabbedPane();
-            equaliserWindow.add(tabs);
-            for (int i = 0; i < book.equaliser.length; i++) {
-                tabs.add(book.equaliser[i].getName(), new JScrollPane(book.equaliser[i]));
-            }
-            equaliserWindow.pack();
-        }
-        equaliserWindow.setVisible(true);
-        equaliserWindow.setLocationRelativeTo(this);
-    }
-
     public boolean enableMicrophone() {
         AudioFormat format = Options.getAudioFormat();
+System.err.println(format);
 
         Mixer.Info mixer = Options.getRecordingMixer();
 
@@ -2375,6 +2325,33 @@ public class AudiobookRecorder extends JFrame {
                     }
                 }
 
+                // Now grab any used effects that aren't already part of the book folder
+                ArrayList<String> usedEffects = book.getUsedEffects();
+                for (String ef : usedEffects) {
+                    File inBook = new File(bookDir, ef + ".eff");
+                    if (!inBook.exists()) {
+                        File sys = new File(storageDir, "System");
+                        File sysFile = new File(sys, ef + ".eff");
+                        if (sysFile.exists()) {
+                            ZipEntry entry = new ZipEntry(name + "/" + ef + ".eff");
+                            entry.setSize(sysFile.length());
+                            entry.setTime(sysFile.lastModified());
+                            zos.putNextEntry(entry);
+
+                            FileInputStream fis = new FileInputStream(sysFile);
+                            byte[] buffer = new byte[1024];
+                            int bytesRead = 0;
+                            while ((bytesRead = fis.read(buffer, 0, 1024)) != -1) {
+                                zos.write(buffer, 0, bytesRead);
+                            }
+                            fis.close();
+                            zos.closeEntry();
+                            
+                        }
+                    }
+                }
+
+
                 zos.flush();
                 zos.close();
 
@@ -2530,7 +2507,194 @@ public class AudiobookRecorder extends JFrame {
 
     public void updateWaveform() {
         if (selectedSentence != null) {
-            sampleWaveform.setData(selectedSentence.getAudioData());
+            sampleWaveform.setData(selectedSentence.getDoubleAudioData());
+        }
+    }
+
+    public void loadEffects() {
+        effects = new HashMap<String,EffectGroup>();
+        loadEffectsFromFolder(new File(Options.get("path.storage"), "System"));
+        if (book != null) {
+            loadEffectsFromFolder(new File(Options.get("path.storage"), book.getName()));
+        }
+        updateEffectChains();
+    }
+
+    public void loadEffectsFromFolder(File dir) {
+        if (dir == null) return;
+        File[] files = dir.listFiles();
+        for (File f : files) {
+            if (f.getName().endsWith(".eff")) {
+                EffectGroup g = loadEffect(f);
+                if (g != null) {
+                    String fn = f.getName().replace(".eff","");
+                    effects.put(fn, g);
+                }
+            }
+        }
+    }
+
+    public EffectGroup loadEffect(File xml) {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document document = builder.parse(xml);
+
+            Element root = document.getDocumentElement();
+            if (root.getTagName().equals("effect")) {
+                EffectGroup g = loadEffectGroup(root);
+                return g;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public EffectGroup loadEffectGroup(Element root) {
+        EffectGroup group = new EffectGroup(root.getAttribute("name"));
+        NodeList kids = root.getChildNodes();
+        for (int i = 0; i < kids.getLength(); i++) {
+            Node kid = kids.item(i);
+            if (kid instanceof Element) {
+                Element e = (Element)kid;
+                if (e.getTagName().equals("biquad")) {
+                    Effect eff = (Effect)loadBiquad(e);
+                    if (eff != null) {
+                        group.addEffect(eff);
+                    }
+                } else if (e.getTagName().equals("delayline")) {
+                    Effect eff = (Effect)loadDelayLine(e);
+                    if (eff != null) {
+                        group.addEffect(eff);
+                    }
+                } else if (e.getTagName().equals("amplifier")) {
+                    Effect eff = (Effect)loadAmplifier(e);
+                    if (eff != null) {
+                        group.addEffect(eff);
+                    }
+                } else if (e.getTagName().equals("group")) {
+                    Effect eff = (Effect)loadEffectGroup(e);
+                    if (eff != null) {
+                        group.addEffect(eff);
+                    }
+                }
+            }
+        }
+        return group;
+    }
+
+    public Biquad loadBiquad(Element root) {
+        String type = root.getAttribute("type").toLowerCase();
+        Biquad bq = new Biquad();
+
+        if (type.equals("lowpass")) {
+            bq.setType(Biquad.Lowpass);
+        } else if (type.equals("highpass")) {
+            bq.setType(Biquad.Highpass);
+        } else if (type.equals("bandpass")) {
+            bq.setType(Biquad.Bandpass);
+        } else if (type.equals("notch")) {
+            bq.setType(Biquad.Notch);
+        }  else if (type.equals("peak")) {
+            bq.setType(Biquad.Peak);
+        } else if (type.equals("lowshelf")) {
+            bq.setType(Biquad.Lowshelf);
+        } else if (type.equals("highshelf")) {
+            bq.setType(Biquad.Highshelf);
+        } else {
+            System.err.println("Bad Biquad type: " + type);
+            return null;
+        }
+
+        bq.setQ(Utils.s2d(root.getAttribute("q")));
+        bq.setFc(Utils.s2d(root.getAttribute("fc")));
+        bq.setPeakGain(Utils.s2d(root.getAttribute("gain")));
+        return bq;
+    }
+
+    public DelayLine loadDelayLine(Element root) {
+        DelayLine line = new DelayLine();
+    
+        NodeList list = root.getChildNodes();
+
+        for (int i = 0; i < list.getLength(); i++) {
+            Node n = list.item(i);
+            if (n instanceof Element) {
+                Element e = (Element)n;
+                if (e.getTagName().equals("delay")) {
+                    int samples = Utils.s2i(e.getAttribute("samples"));
+                    double gain = Utils.s2d(e.getAttribute("gain"));
+                    DelayLineStore store = line.addDelayLine(samples, gain);
+
+                    NodeList inner = e.getChildNodes();
+                    for (int j = 0; j < inner.getLength(); j++) {
+                        Node in = inner.item(j);
+                        if (in instanceof Element) {
+                            Element ie = (Element)in;
+
+                            if (ie.getTagName().equals("biquad")) {
+                                Effect eff = (Effect)loadBiquad(ie);
+                                if (eff != null) {
+                                    store.addEffect(eff);
+                                }
+                            } else if (ie.getTagName().equals("delayline")) {
+                                Effect eff = (Effect)loadDelayLine(ie);
+                                if (eff != null) {
+                                    store.addEffect(eff);
+                                }
+                            } else if (ie.getTagName().equals("amplifier")) {
+                                Effect eff = (Effect)loadAmplifier(ie);
+                                if (eff != null) {
+                                    store.addEffect(eff);
+                                }
+                            } else if (ie.getTagName().equals("group")) {
+                                Effect eff = (Effect)loadEffectGroup(ie);
+                                if (eff != null) {
+                                    store.addEffect(eff);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return line;
+    }
+
+    public Amplifier loadAmplifier(Element root) {
+        Amplifier a = new Amplifier(Utils.s2d(root.getAttribute("gain")));
+        return a;
+    }
+
+    public void updateEffectChains() {
+        while (effectChain.getItemCount() > 0) {
+            effectChain.removeItemAt(0);
+        }
+        for (String k : effects.keySet()) {
+            Effect e = effects.get(k);
+            KVPair<String, String> p = new KVPair<String, String>(k, e.toString());
+            effectChain.addItem(p);
+        }
+    }
+
+    public void setEffectChain(String key) {
+        for (int i = 0; i < effectChain.getItemCount(); i++) {
+            KVPair<String, String> p = effectChain.getItemAt(i);
+            if (p.getKey().equals(key)) {
+                effectChain.setSelectedIndex(i);
+                updateWaveform();
+                return;
+            }
+        }
+
+        if (effects.get(defaultEffectChain) != null) {
+            setEffectChain(defaultEffectChain);
+            updateWaveform();
+        } else {
+            effectChain.setSelectedIndex(0);
+            updateWaveform();
         }
     }
 }

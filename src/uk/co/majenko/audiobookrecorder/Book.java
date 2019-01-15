@@ -8,7 +8,6 @@ import java.util.*;
 import java.io.*;
 import java.nio.file.*;
 import javax.swing.tree.*;
-import davaguine.jeq.core.IIRControls;
 import javax.sound.sampled.*;
 
 public class Book extends DefaultMutableTreeNode {
@@ -25,10 +24,6 @@ public class Book extends DefaultMutableTreeNode {
 
     ImageIcon icon;
 
-    public Equaliser[] equaliser = new Equaliser[2];
-
-    float[] eqChannels = new float[31];
-
     Properties prefs;
 
     public Book(Properties p, String bookname) {
@@ -36,8 +31,6 @@ public class Book extends DefaultMutableTreeNode {
 
         prefs = p;
         name = bookname;
-        equaliser[0] = new Equaliser("Default");
-        equaliser[1] = new Equaliser("Phone");
         AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name);
     }
 
@@ -187,4 +180,30 @@ public class Book extends DefaultMutableTreeNode {
     public void set(String key, Integer value) {
         prefs.setProperty(key, "" + value);
     }
+
+    public File getBookFolder() {
+        File dir = new File(Options.get("path.storage"), name);
+        return dir;
+    }
+
+    public ArrayList<String> getUsedEffects() {
+
+        ArrayList<String> out = new ArrayList<String>();
+
+        for (Enumeration o = children(); o.hasMoreElements();) {
+            Object ob = (Object)o.nextElement();
+            if (ob instanceof Chapter) {
+                Chapter c = (Chapter)ob;
+                ArrayList<String> effs = c.getUsedEffects();
+                for (String ef : effs) {
+                    if (out.indexOf(ef) == -1) {
+                        out.add(ef);
+                    }
+                }
+            }
+        }
+
+        return out;
+    }
+
 }

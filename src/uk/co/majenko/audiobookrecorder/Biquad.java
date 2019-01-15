@@ -1,6 +1,6 @@
 package uk.co.majenko.audiobookrecorder;
 
-//  Biquad.h
+//  Biquad.java
 //
 //  Created by Nigel Redmon on 11/24/12
 //  EarLevel Engineering: earlevel.com
@@ -18,38 +18,44 @@ package uk.co.majenko.audiobookrecorder;
 //  for your own purposes, free or commercial.
 //
 
-public class Biquad {
-    public static final int bq_type_lowpass = 0;
-    public static final int bq_type_highpass = 1;
-    public static final int bq_type_bandpass = 2;
-    public static final int bq_type_notch = 3;
-    public static final int bq_type_peak = 4;
-    public static final int bq_type_lowshelf = 5;
-    public static final int bq_type_highshelf = 6;
+import java.util.ArrayList;
+import javax.swing.tree.*;
+
+public class Biquad extends DefaultMutableTreeNode implements Effect {
+    public static final int Lowpass = 0;
+    public static final int Highpass = 1;
+    public static final int Bandpass = 2;
+    public static final int Notch = 3;
+    public static final int Peak = 4;
+    public static final int Lowshelf = 5;
+    public static final int Highshelf = 6;
 
     int type;
     double a0, a1, a2, b1, b2;
     double Fc, Q, peakGain;
     double z1, z2;
+    double sampleFrequency;
 
     public Biquad() {
-        type = bq_type_lowpass;
+        type = Lowpass;
         a0 = 1.0d;
         a1 = 0.0d;
         a2 = 0.0d;
         b1 = 0.0d;
         b2 = 0.0d;
-        Fc = 0.50d;
+        Fc = 440d;
         Q = 0.707d;
         peakGain = 0.0d;
         z1 = 0.0d;
         z2 = 0.0d;
+        sampleFrequency = 44100d;
     }
 
     public Biquad(int type, double Fc, double Q, double peakGainDB) {
         setBiquad(type, Fc, Q, peakGainDB);
         z1 = 0.0;
         z2 = 0.0;
+        sampleFrequency = 44100d;
     }
 
     public void setType(int typei) {
@@ -79,20 +85,27 @@ public class Biquad {
         setPeakGain(peakGainDB);
     }
 
-    public float process(float in) {
+    public double process(double in) {
         double out = in * a0 + z1;
         z1 = in * a1 + z2 - b1 * out;
         z2 = in * a2 - b2 * out;
-        return (float)out;
+        return out;
+    }
+    
+    public void init(double sf) {
+        sampleFrequency = sf;
+        z1 = 0d;
+        z2 = 0d;
+        calcBiquad();
     }
     
     void calcBiquad() {
 
         double norm;
         double V = Math.pow(10, Math.abs(peakGain) / 20.0);
-        double K = Math.tan(Math.PI * Fc);
+        double K = Math.tan(Math.PI * (Fc/sampleFrequency));
         switch (type) {
-            case bq_type_lowpass:
+            case Lowpass:
                 norm = 1d / (1d + K / Q + K * K);
                 a0 = K * K * norm;
                 a1 = 2d * a0;
@@ -101,7 +114,7 @@ public class Biquad {
                 b2 = (1d - K / Q + K * K) * norm;
                 break;
                 
-            case bq_type_highpass:
+            case Highpass:
                 norm = 1d / (1d + K / Q + K * K);
                 a0 = 1d * norm;
                 a1 = -2d * a0;
@@ -110,7 +123,7 @@ public class Biquad {
                 b2 = (1d - K / Q + K * K) * norm;
                 break;
                 
-            case bq_type_bandpass:
+            case Bandpass:
                 norm = 1d / (1d + K / Q + K * K);
                 a0 = K / Q * norm;
                 a1 = 0d;
@@ -119,7 +132,7 @@ public class Biquad {
                 b2 = (1d - K / Q + K * K) * norm;
                 break;
                 
-            case bq_type_notch:
+            case Notch:
                 norm = 1d / (1d + K / Q + K * K);
                 a0 = (1d + K * K) * norm;
                 a1 = 2d * (K * K - 1d) * norm;
@@ -128,7 +141,7 @@ public class Biquad {
                 b2 = (1d - K / Q + K * K) * norm;
                 break;
                 
-            case bq_type_peak:
+            case Peak:
                 if (peakGain >= 0d) {    // boost
                     norm = 1d / (1d + 1d/Q * K + K * K);
                     a0 = (1d + V/Q * K + K * K) * norm;
@@ -146,7 +159,7 @@ public class Biquad {
                     b2 = (1d - V/Q * K + K * K) * norm;
                 }
                 break;
-            case bq_type_lowshelf:
+            case Lowshelf:
                 if (peakGain >= 0) {    // boost
                     norm = 1d / (1 + Math.sqrt(2d) * K + K * K);
                     a0 = (1d + Math.sqrt(2d*V) * K + V * K * K) * norm;
@@ -164,7 +177,7 @@ public class Biquad {
                     b2 = (1d - Math.sqrt(2d*V) * K + V * K * K) * norm;
                 }
                 break;
-            case bq_type_highshelf:
+            case Highshelf:
                 if (peakGain >= 0d) {    // boost
                     norm = 1d / (1d + Math.sqrt(2d) * K + K * K);
                     a0 = (V + Math.sqrt(2d*V) * K + K * K) * norm;
@@ -185,5 +198,38 @@ public class Biquad {
         }
         
         return;
+    }
+
+    public String getName() {
+        String n = "Biquad Filter (";
+        switch (type) {
+            case Lowpass: n += "Lowpass"; break;
+            case Highpass: n += "Highpass"; break;
+            case Bandpass: n += "Bandpass"; break;
+            case Notch: n += "Notch"; break;
+            case Peak: n += "Peak"; break;
+            case Lowshelf: n += "Lowshelf"; break;
+            case Highshelf: n += "Highshelf"; break;
+        }
+        n += ", Fc=";
+        n += Fc;
+        n += ", Q=";
+        n += Q;
+        n += ", Gain=";
+        n += peakGain;
+        n += "dB)";
+        return n;
+    }
+
+    public ArrayList<Effect> getChildEffects() {
+        return null;
+    }
+
+    public String toString() {
+        return getName();
+    }
+
+    public void dump() {
+        System.out.println(toString());
     }
 }
