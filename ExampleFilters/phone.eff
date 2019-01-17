@@ -1,0 +1,9 @@
+<effect name="Telephone">
+    <biquad type="notch" fc="140" q="20" gain="-50" />
+    <biquad type="lowshelf" fc="400" q="10" gain="-20" />
+    <biquad type="highshelf" fc="8000" q="10" gain="-20" />
+    <delayline>
+        <delay samples="100" gain="0.5" />
+    </delayline>
+    <amplifier gain="1.4" />
+</effect>

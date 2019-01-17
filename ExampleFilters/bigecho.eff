@@ -1,0 +1,11 @@
+<effect name="Big Echo">
+    <biquad type="notch" fc="140" q="20" gain="-50" />
+    <delayline>
+        <delay samples="22000" gain="0.2" pan="-0.3">
+            <biquad type="highpass" fc="300" q="1" gain="0" />
+        </delay>
+        <delay samples="44000" gain="0.05" pan="0.3">
+            <biquad type="highpass" fc="600" q="1" gain="0" />
+        </delay>
+    </delayline>
+</effect>

@@ -1,0 +1,4 @@
+<effect name="Cut Computer Hum">
+    <biquad type="notch" fc="140" q="20" gain="-50" />
+    <biquad type="lowpass" fc="10000" q="1" gain="-10" />
+</effect>
