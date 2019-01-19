@@ -17,6 +17,10 @@ Currently implemented filters:
 
 Amplify (or attenuate) the sample by the given factor (1 = unity gain, 0 = silence, 2 = double, etc)
 
+    <lfo frequency="10" depth="0.2" />
+
+Modulate the audio with a low-frequency oscillator.  Specify the frequency and a factor of how much to modulate the audio signal.  You can also specify an optional `phase="..."` (specified in radians) as an initial phase offset for the modulation.
+
     <biquad type="..." fc="..." q="..." gain="..." />
 
 A Biquad filter of the given type with a center frequency `fc` in Hz, a Q `q` and gain in Decibals of `gain`. 
