@@ -19,9 +19,8 @@ package uk.co.majenko.audiobookrecorder;
 //
 
 import java.util.ArrayList;
-import javax.swing.tree.*;
 
-public class Biquad extends DefaultMutableTreeNode implements Effect {
+public class Biquad implements Effect {
     public static final int Lowpass = 0;
     public static final int Highpass = 1;
     public static final int Bandpass = 2;

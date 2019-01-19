@@ -87,7 +87,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             tempFile = tf;
             wavFile = wf;
             format = af;
-System.err.println(format);
         }
 
         public void run() {
@@ -271,14 +270,15 @@ System.err.println(format);
                 }
             }
             block++;
-            
         }
 
-        // Find first block with > 0 intensity and subtract one.
+        int limit = Options.getInteger("audio.recording.trim.fft");
+
+        // Find first block with > 1 intensity and subtract one.
 
         int start = 0;
         for (int i = 0; i < blocks; i++) {
-            if (intens[i] > 0) break;
+            if (intens[i] > limit) break;
             start = i;
         }
 
@@ -291,9 +291,9 @@ System.err.println(format);
         if (startOffset >= samples.length) startOffset = samples.length;
 
         int end = blocks - 1;
-        // And last block with > 0 intensity and add one.
+        // And last block with > 1 intensity and add one.
         for (int i = blocks-1; i >= 0; i--) {
-            if (intens[i] > 0) break;
+            if (intens[i] > limit) break;
             end = i;
         }
 
@@ -318,6 +318,7 @@ System.err.println(format);
         double[] samples = getProcessedAudioData();
         if (samples == null) return;
         double noiseFloor = AudiobookRecorder.window.getNoiseFloor();
+        noiseFloor *= 1.1;
 
         // Find start
         for (int i = 0; i < samples.length; i++) {

@@ -1,9 +1,8 @@
 package uk.co.majenko.audiobookrecorder;
 
 import java.util.ArrayList;
-import javax.swing.tree.*;
 
-public class DelayLine extends DefaultMutableTreeNode implements Effect {
+public class DelayLine implements Effect {
 
     ArrayList<DelayLineStore> delayLines;
 

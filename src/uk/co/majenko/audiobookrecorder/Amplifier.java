@@ -1,9 +1,8 @@
 package uk.co.majenko.audiobookrecorder;
 
 import java.util.ArrayList;
-import javax.swing.tree.*;
 
-public class Amplifier extends DefaultMutableTreeNode implements Effect {
+public class Amplifier implements Effect {
     double gain;
     public Amplifier() {
         gain = 1.0d;

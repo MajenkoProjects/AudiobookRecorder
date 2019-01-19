@@ -1,9 +1,8 @@
 package uk.co.majenko.audiobookrecorder;
 
 import java.util.ArrayList;
-import javax.swing.tree.*;
 
-public class EffectGroup extends DefaultMutableTreeNode implements Effect {
+public class EffectGroup implements Effect {
     String name;
     ArrayList<Effect> effects;
 

@@ -525,6 +525,7 @@ public class AudiobookRecorder extends JFrame {
                 if (selectedSentence != null) {
                     int i = effectChain.getSelectedIndex();
                     KVPair<String, String> p = effectChain.getItemAt(i);
+                    if (p == null) return;
                     selectedSentence.setEffectChain(p.getKey());
                     updateWaveform();
                 }
@@ -707,6 +708,7 @@ public class AudiobookRecorder extends JFrame {
         prefs.setProperty("chapter.close.pre-gap", Options.get("catenation.pre-chapter"));
         prefs.setProperty("chapter.close.post-gap", Options.get("catenation.post-chapter"));
 
+        loadEffects();
         buildBook(prefs);
 
         Options.set("path.last-book", book.getName());
@@ -1192,13 +1194,15 @@ public class AudiobookRecorder extends JFrame {
                         JComboBox<KVPair<String, String>> defEff = new JComboBox<KVPair<String, String>>();
                         int selEff = -1;
                         int i = 0;
-                        for (String k : effects.keySet()) {
-                            if (k.equals(defaultEffectChain)) {
-                                selEff = i;
+                        if (effects != null) {
+                            for (String k : effects.keySet()) {
+                                if (k.equals(defaultEffectChain)) {
+                                    selEff = i;
+                                }
+                                KVPair<String, String> p = new KVPair<String, String>(k, effects.get(k).toString());
+                                defEff.addItem(p);
+                                i++;
                             }
-                            KVPair<String, String> p = new KVPair<String, String>(k, effects.get(k).toString());
-                            defEff.addItem(p);
-                            i++;
                         }
 
                         defEff.setSelectedIndex(selEff);
@@ -2578,6 +2582,11 @@ System.err.println(format);
                     if (eff != null) {
                         group.addEffect(eff);
                     }
+                } else if (e.getTagName().equals("lfo")) {
+                    Effect eff = (Effect)loadLFO(e);
+                    if (eff != null) {
+                        group.addEffect(eff);
+                    }
                 }
             }
         }
@@ -2653,6 +2662,11 @@ System.err.println(format);
                                 if (eff != null) {
                                     store.addEffect(eff);
                                 }
+                            } else if (ie.getTagName().equals("lfo")) {
+                                Effect eff = (Effect)loadLFO(ie);
+                                if (eff != null) {
+                                    store.addEffect(eff);
+                                }
                             }
                         }
                     }
@@ -2668,7 +2682,16 @@ System.err.println(format);
         return a;
     }
 
+    public LFO loadLFO(Element root) {
+        double f = Utils.s2d(root.getAttribute("frequency"));
+        double d = Utils.s2d(root.getAttribute("depth"));
+        double p = Utils.s2d(root.getAttribute("phase"));
+        return new LFO(f, d, p);
+    }
+
     public void updateEffectChains() {
+        int sel = effectChain.getSelectedIndex();
+        KVPair<String, String> ent = effectChain.getItemAt(sel);
         while (effectChain.getItemCount() > 0) {
             effectChain.removeItemAt(0);
         }
@@ -2676,6 +2699,11 @@ System.err.println(format);
             Effect e = effects.get(k);
             KVPair<String, String> p = new KVPair<String, String>(k, e.toString());
             effectChain.addItem(p);
+        }
+        if (ent != null) {
+            setEffectChain(ent.getKey());
+        } else {
+            setEffectChain(defaultEffectChain);
         }
     }
 

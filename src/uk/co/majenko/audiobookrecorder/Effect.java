@@ -8,4 +8,5 @@ public interface Effect  {
     public ArrayList<Effect> getChildEffects();
     public void dump();
     public void init(double sr);
+    public String toString();
 }

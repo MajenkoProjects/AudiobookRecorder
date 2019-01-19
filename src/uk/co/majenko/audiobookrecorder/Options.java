@@ -37,6 +37,8 @@ public class Options extends JDialog {
     JCheckBox enableParsing;
     JSpinner cacheSize;
 
+    JSpinner fftThreshold;
+
     JSpinner etherealIterations;
     JSpinner etherealAttenuation;
     JSpinner etherealOffset;
@@ -295,6 +297,7 @@ public class Options extends JDialog {
         rateList = addDropdown(optionsPanel, "Sample rate:", getSampleRateList(), get("audio.recording.samplerate"));
         bitDepth = addDropdown(optionsPanel, "Sample resolution:", getResolutionList(), get("audio.recording.resolution"));
         trimMethod = addDropdown(optionsPanel, "Auto-trim method:", getTrimMethods(), get("audio.recording.trim"));
+        fftThreshold = addSpinner(optionsPanel, "FFT threshold:", 0, 100, 1, getInteger("audio.recording.trim.fft"), "");
 
         addSeparator(optionsPanel);
 
@@ -569,6 +572,8 @@ public class Options extends JDialog {
         defaultPrefs.put("catenation.post-sentence", "1000");
         defaultPrefs.put("catenation.short-sentence", "100");
         defaultPrefs.put("catenation.post-paragraph", "2000");
+
+        defaultPrefs.put("audio.recording.trim.fft", "10");
     
         defaultPrefs.put("path.storage", (new File(System.getProperty("user.home"), "Recordings")).toString());
         defaultPrefs.put("path.archive", (new File(new File(System.getProperty("user.home"), "Recordings"),"archive")).toString());
@@ -704,6 +709,7 @@ public class Options extends JDialog {
         set("process.haven.apikey", havenApiKey.getText());
         set("editor.external", externalEditor.getText());
         set("cache.size", cacheSize.getValue());
+        set("audio.recording.trim.fft", fftThreshold.getValue());
 
         set("effects.ethereal.offset", etherealOffset.getValue());
         set("effects.ethereal.iterations", etherealIterations.getValue());
