@@ -8,6 +8,7 @@ A system for easing the task of recording and editing audiobooks.
 * Zero editing
 * MP3 export
 * Chapter management
+* Audio effect chains (biquad, delay line, etc)
 
 Usage
 -----
@@ -52,16 +53,12 @@ edit the text of this ID to identify the recordings. You
 may, for instance, change it to have the same text as the
 audio contains.  
 
-To help with this CMU Sphinx (US EN dictionary) is bundled
-with the system and can be used to try and convert the 
+To help with this the Haven On-Demand online speech recognition
+service is integrated with the system and can be used to try and convert the 
 audio into text.  Right clicking on a recording brings
 up a menu which includes the option to try and convert
 the audio into text.  The detected text is then used to
 replace the current recording ID / text.
-
-It's far from perfect (especially for a British English
-speaker), but it can help you to navigate your way around
-a chapter.
 
 File layout
 -----------
