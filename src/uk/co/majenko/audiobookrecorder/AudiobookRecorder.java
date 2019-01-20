@@ -2587,6 +2587,11 @@ System.err.println(format);
                     if (eff != null) {
                         group.addEffect(eff);
                     }
+                } else if (e.getTagName().equals("agc")) {
+                    Effect eff = (Effect)loadAGC(e);
+                    if (eff != null) {
+                        group.addEffect(eff);
+                    }
                 }
             }
         }
@@ -2667,6 +2672,11 @@ System.err.println(format);
                                 if (eff != null) {
                                     store.addEffect(eff);
                                 }
+                            } else if (ie.getTagName().equals("agc")) {
+                                Effect eff = (Effect)loadAGC(ie);
+                                if (eff != null) {
+                                    store.addEffect(eff);
+                                }
                             }
                         }
                     }
@@ -2687,6 +2697,21 @@ System.err.println(format);
         double d = Utils.s2d(root.getAttribute("depth"));
         double p = Utils.s2d(root.getAttribute("phase"));
         return new LFO(f, d, p);
+    }
+
+    public AGC loadAGC(Element root) {
+        double ceiling = Utils.s2d(root.getAttribute("ceiling"));
+        double limit = Utils.s2d(root.getAttribute("limit"));
+        double attack = Utils.s2d(root.getAttribute("attack"));
+        double decay = Utils.s2d(root.getAttribute("decay"));
+        if (ceiling < 0.0001d) {
+            ceiling = 0.708d; // -3dB
+        }
+        if (limit < 0.0001d) {
+            limit = 1d; // No gain
+        }
+        AGC agc = new AGC(ceiling, attack, decay, limit);
+        return agc;
     }
 
     public void updateEffectChains() {

@@ -62,9 +62,12 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
             g.drawLine(x, 0, x, h);
         }
 
+        int h2 = h/2;
+        int db3 = (int) (h2 * 0.708);
+
         for (int x = 0; x < w; x += 4) {
-            g.drawLine(x, h/4, x, h/4);
-            g.drawLine(x, h/4*3, x, h/4*3);
+            g.drawLine(x, h2 + db3, x, h2 + db3);
+            g.drawLine(x, h2 - db3, x, h2 - db3);
         }
 
         double scale = (h/2);
