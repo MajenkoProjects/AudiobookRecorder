@@ -337,9 +337,6 @@ public class AudiobookRecorder extends JFrame {
             }
         });
 
-        sampleControl.add(sampleScroll, BorderLayout.SOUTH);
-        
-
         sampleWaveform.addMarkerDragListener(new MarkerDragListener() {
             public void leftMarkerMoved(MarkerDragEvent e) {
                 if (selectedSentence != null) {
@@ -519,6 +516,8 @@ public class AudiobookRecorder extends JFrame {
 
         effectChain = new JComboBox<KVPair<String, String>>();
         controlsBottom.add(effectChain);
+
+        controlsBottom.add(sampleScroll);
 
         effectChain.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
