@@ -70,6 +70,7 @@ public class DelayLineStore {
         for (Effect e : effects) {
             e.init(sf);
         }
+        purge();
     }
 
     public void dump() {

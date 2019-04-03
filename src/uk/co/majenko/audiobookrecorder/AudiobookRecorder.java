@@ -515,6 +515,7 @@ public class AudiobookRecorder extends JFrame {
         controlsBottom.add(new JLabel("Effects Chain: "));
 
         effectChain = new JComboBox<KVPair<String, String>>();
+        effectChain.setFocusable(false);
         controlsBottom.add(effectChain);
 
         controlsBottom.add(sampleScroll);
@@ -555,6 +556,9 @@ public class AudiobookRecorder extends JFrame {
         centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("T"), "startRecordNewPara");
         centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released T"), "stopRecord");
 
+        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("Y"), "startRecordNewSection");
+        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released Y"), "stopRecord");
+
         centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released D"), "deleteLast");
 
         centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("SPACE"), "startStopPlayback");
@@ -590,6 +594,16 @@ public class AudiobookRecorder extends JFrame {
                     return;
                 }
                 startRecordingNewParagraph();
+            }
+        });
+        centralPanel.getActionMap().put("startRecordNewSection", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                if (bookTree.isEditing()) return;
+                if (getNoiseFloor() == 0) {
+                    alertNoRoomNoise();
+                    return;
+                }
+                startRecordingNewSection();
             }
         });
         centralPanel.getActionMap().put("startRerecord", new AbstractAction() {
@@ -1361,6 +1375,55 @@ public class AudiobookRecorder extends JFrame {
         if (lastLeaf instanceof Sentence) {
             Sentence lastSentence = (Sentence)lastLeaf;
             lastSentence.setPostGap(Options.getInteger("catenation.post-paragraph"));
+        }
+
+        Sentence s = new Sentence();
+        bookTreeModel.insertNodeInto(s, c, c.getChildCount());
+
+        bookTree.expandPath(new TreePath(c.getPath()));
+        bookTree.setSelectionPath(new TreePath(s.getPath()));
+        bookTree.scrollPathToVisible(new TreePath(s.getPath()));
+
+        if (s.startRecording()) {
+            recording = s;
+            centralPanel.setFlash(true);
+        }
+    }
+
+    public void startRecordingNewSection() {
+
+        if (recording != null) return;
+        if (book == null) return;
+
+        if (microphone == null) {
+            JOptionPane.showMessageDialog(this, "Microphone not started. Start microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
+
+        if (selectedNode == null) {
+            selectedNode = book.getLastChapter();
+            bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
+        }
+
+        if (selectedNode instanceof Book) {
+            selectedNode = book.getLastChapter();
+            bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
+        }
+
+        if (selectedNode instanceof Sentence) {
+            selectedNode = (DefaultMutableTreeNode)selectedNode.getParent();
+            bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
+        }
+
+        Chapter c = (Chapter)selectedNode;
+
+        DefaultMutableTreeNode lastLeaf = c.getLastLeaf();
+
+        if (lastLeaf instanceof Sentence) {
+            Sentence lastSentence = (Sentence)lastLeaf;
+            lastSentence.setPostGap(Options.getInteger("catenation.post-section"));
         }
 
         Sentence s = new Sentence();

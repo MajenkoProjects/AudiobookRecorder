@@ -57,7 +57,6 @@ public class DelayLine implements Effect {
     public void init(double sf) {
         for (DelayLineStore s : delayLines) {
             s.init(sf);
-            s.purge();
         }
     }
 

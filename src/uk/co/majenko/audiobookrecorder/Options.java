@@ -31,6 +31,7 @@ public class Options extends JDialog {
     JSpinner postSentenceGap;
     JSpinner shortSentenceGap;
     JSpinner postParagraphGap;
+    JSpinner postSectionGap;
     JTextField ffmpegLocation;
     JComboBox<KVPair> bitRate;
     JComboBox<KVPair> exportRate;
@@ -313,6 +314,7 @@ public class Options extends JDialog {
         postSentenceGap = addSpinner(optionsPanel, "Default post-sentence gap:", 0, 5000, 100, getInteger("catenation.post-sentence"), "ms");
         shortSentenceGap = addSpinner(optionsPanel, "Short post-sentence gap:", 0, 5000, 100, getInteger("catenation.short-sentence"), "ms");
         postParagraphGap = addSpinner(optionsPanel, "Default post-paragraph gap:", 0, 5000, 100, getInteger("catenation.post-paragraph"), "ms");
+        postSectionGap = addSpinner(optionsPanel, "Default post-section gap:", 0, 5000, 100, getInteger("catenation.post-section"), "ms");
 
         addSeparator(optionsPanel);
 
@@ -572,6 +574,7 @@ public class Options extends JDialog {
         defaultPrefs.put("catenation.post-sentence", "1000");
         defaultPrefs.put("catenation.short-sentence", "100");
         defaultPrefs.put("catenation.post-paragraph", "2000");
+        defaultPrefs.put("catenation.post-section", "3000");
 
         defaultPrefs.put("audio.recording.trim.fft", "10");
     
@@ -703,6 +706,7 @@ public class Options extends JDialog {
         set("catenation.post-sentence", postSentenceGap.getValue());
         set("catenation.short-sentence", shortSentenceGap.getValue());
         set("catenation.post-paragraph", postParagraphGap.getValue());
+        set("catenation.post-section", postSectionGap.getValue());
         set("audio.export.bitrate", ((KVPair)bitRate.getSelectedItem()).key);
         set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
         set("process.sphinx", enableParsing.isSelected());
