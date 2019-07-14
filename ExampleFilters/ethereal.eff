@@ -2,20 +2,20 @@
     <biquad type="notch" fc="140" q="20" gain="-50" />
     <amplifier gain="0.1" />
     <delayline>
-        <delay samples="4000" gain="1.0" pan="-0.3">
+        <delay samples="2000" gain="1.0" pan="-0.3">
             <biquad type="highpass" fc="400" q="1" gain="0" />
         </delay>
-        <delay samples="8000" gain="1.5" pan="0.3">
-            <biquad type="highpass" fc="300" q="1" gain="0" />
+        <delay samples="4000" gain="1.1" pan="0.3">
+            <biquad type="highpass" fc="800" q="1" gain="0" />
         </delay>
-        <delay samples="12000" gain="2.0" pan="-0.5">
-            <biquad type="highpass" fc="200" q="1" gain="0" />
+        <delay samples="8000" gain="1.2" pan="-0.5">
+            <biquad type="highpass" fc="1000" q="1" gain="0" />
         </delay>
-        <delay samples="16000" gain="3.0" pan="0.5">
-            <biquad type="highpass" fc="100" q="1" gain="0" />
+        <delay samples="10000" gain="1.3" pan="0.5">
+            <biquad type="highpass" fc="1500" q="1" gain="0" />
         </delay>
-        <delay samples="20000" gain="15.0" pan="0" />
+        <delay samples="12000" gain="15.0" pan="0" />
     </delayline>
-    <biquad type="lowshelf" fc="1000" q="2.2" gain="-10" />
+    <biquad type="lowshelf" fc="2000" q="2.2" gain="-10" />
     <amplifier gain="1.5" />
 </effect>
