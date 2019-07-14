@@ -14,6 +14,7 @@ public class AGC implements Effect {
         attack = a;
         decay = d;
         limit = l;
+        gain = 1d;
     }
 
     public String getName() {

@@ -2654,6 +2654,11 @@ System.err.println(format);
                     if (eff != null) {
                         group.addEffect(eff);
                     }
+                } else if (e.getTagName().equals("clipping")) {
+                    Effect eff = (Effect)loadClipping(e);
+                    if (eff != null) {
+                        group.addEffect(eff);
+                    }
                 }
             }
         }
@@ -2739,6 +2744,11 @@ System.err.println(format);
                                 if (eff != null) {
                                     store.addEffect(eff);
                                 }
+                            } else if (ie.getTagName().equals("clipping")) {
+                                Effect eff = (Effect)loadClipping(ie);
+                                if (eff != null) {
+                                    store.addEffect(eff);
+                                }
                             }
                         }
                     }
@@ -2752,6 +2762,11 @@ System.err.println(format);
     public Amplifier loadAmplifier(Element root) {
         Amplifier a = new Amplifier(Utils.s2d(root.getAttribute("gain")));
         return a;
+    }
+
+    public Clipping loadClipping(Element root) {
+        Clipping c = new Clipping(Utils.s2d(root.getAttribute("clip")));
+        return c;
     }
 
     public LFO loadLFO(Element root) {
