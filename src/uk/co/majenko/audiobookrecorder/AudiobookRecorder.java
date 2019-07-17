@@ -2106,6 +2106,8 @@ public class AudiobookRecorder extends JFrame {
 
         if (roomNoise == null) return null;
 
+        roomNoise.setEffectChain(defaultEffectChain);
+
         int len = roomNoise.getSampleSize();
         if (len == 0) return null;
 

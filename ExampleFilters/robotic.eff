@@ -1,5 +1,7 @@
 <effect name="Robotic">
-    <biquad type="notch" fc="140" q="20" gain="-50" />
+    <biquad type="notch" fc="28" q="20" gain="-50" />
+    <biquad type="notch" fc="91" q="20" gain="-50" />
+    <biquad type="notch" fc="120" q="20" gain="-50" />
     <biquad type="lowshelf" fc="100" q="2" gain="-20" />
     <delayline>
         <delay samples="400" gain="1" pan="-0.3" />

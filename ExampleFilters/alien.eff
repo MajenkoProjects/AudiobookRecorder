@@ -1,5 +1,7 @@
 <effect name="Alien">
-    <biquad type="notch" fc="140" q="20" gain="-50" />
+    <biquad type="notch" fc="28" q="20" gain="-50" />
+    <biquad type="notch" fc="91" q="20" gain="-50" />
+    <biquad type="notch" fc="120" q="20" gain="-50" />
     <biquad type="lowpass" fc="10000" q="1" gain="-10" />
     <lfo frequency="100" depth="0.5" />
 </effect>

@@ -1,5 +1,7 @@
 <effect name="Radio">
-    <biquad type="notch" fc="140" q="20" gain="-50" />
+    <biquad type="notch" fc="28" q="20" gain="-50" />
+    <biquad type="notch" fc="91" q="20" gain="-50" />
+    <biquad type="notch" fc="120" q="20" gain="-50" />
     <amplifier gain="0.1" />
     <biquad type="peak" fc="1000" q="10" gain="45" />
     <lfo frequency="5000" depth="0.3" />
