@@ -101,9 +101,6 @@ public class AudiobookRecorder extends JFrame {
 
     SourceDataLine play = null;
 
-    public HavenQueue havenQueue = new HavenQueue();
-
-
     public TargetDataLine microphone = null;
     public AudioInputStream microphoneStream = null;
 
@@ -113,7 +110,6 @@ public class AudiobookRecorder extends JFrame {
         toolBar = new MainToolBar(this);
         toolBar.addSeparator();
         toolBar.add(Box.createHorizontalGlue());
-        toolBar.add(havenQueue);
         ob.add(toolBar, BorderLayout.NORTH); 
     }
 
@@ -815,7 +811,6 @@ public class AudiobookRecorder extends JFrame {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence s = (Sentence)o.getObject();
                         if (!s.isLocked()) {
-                            havenQueue.submit(s);
                         }
                     }
                 });
@@ -1128,7 +1123,6 @@ public class AudiobookRecorder extends JFrame {
                         for (Enumeration s = c.children(); s.hasMoreElements();) {
                             Sentence snt = (Sentence)s.nextElement();
                             if (snt.getId().equals(snt.getText())) {
-                                havenQueue.submit(snt);
                             }
                         }
                     }

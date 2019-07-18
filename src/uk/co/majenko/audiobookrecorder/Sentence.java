@@ -49,14 +49,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     double gain = 1.0d;
 
-    String havenJobId = "";
-
-    // 0: Not processed
-    // 1: Submitted
-    // 2: Procesisng finished
-    // 3: Processing failed
-    int havenStatus = 0;
-
     String overrideText = null;
 
     public void setOverrideText(String s) { overrideText = s; }
@@ -189,9 +181,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 autoTrimSamplePeak();
             } else if (tm.equals("fft")) {
                 autoTrimSampleFFT();
-            }
-            if (Options.getBoolean("process.haven.auto")) {
-                recognise();
             }
         }
 
@@ -495,7 +484,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public void recognise() {
-        AudiobookRecorder.window.havenQueue.submit(Sentence.this);
     }
 
     public void setLocked(boolean l) {
@@ -594,137 +582,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public boolean getAttentionFlag() {
         return attention;
-    }
-
-    public String getHavenJobId() {
-        return havenJobId;
-    }
-
-    public void setHavenJobId(String i) {
-        havenJobId = i;
-    }
-
-    public int getHavenStatus() {
-        return havenStatus;
-    }
-
-    public void setHavenStatus(int i) {
-        havenStatus = i;
-    }
-
-    @SuppressWarnings("deprecation")
-    public boolean postHavenData() {
-        String apiKey = Options.get("process.haven.apikey");
-        if (apiKey == null || apiKey.equals("")) return false;
-
-        CloseableHttpClient httpclient = HttpClients.createDefault();
-
-        setOverrideText("[submitting...]");
-        AudiobookRecorder.window.bookTreeModel.reload(this);
-
-        try {
-            HttpPost httppost = new HttpPost("https://api.havenondemand.com/1/api/async/recognizespeech/v2?apikey=" + apiKey);
-
-            FileBody bin = new FileBody(getFile());
-            StringBody language = new StringBody("en-GB");
-
-            HttpEntity reqEntity = MultipartEntityBuilder.create()
-                .addPart("language_model", language)
-                .addPart("file", bin)
-                .build();
-
-            httppost.setEntity(reqEntity);
-
-            CloseableHttpResponse response = httpclient.execute(httppost);
-            try {
-                if (response.getStatusLine().getStatusCode() != 200) {
-                    System.err.println("Error posting data: " + response.getStatusLine().getStatusCode());
-                    return false;
-                }
-
-                HttpEntity resEntity = response.getEntity();
-                if (resEntity != null) {
-                    JSONObject obj = new JSONObject(EntityUtils.toString(resEntity));
-                    havenJobId = obj.getString("jobID");
-                    System.err.println("Submitted new Haven OnDemand job #" + havenJobId);
-                    havenStatus = 1;
-                }
-                EntityUtils.consume(resEntity);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                return false;
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return false;
-        }
-
-
-    return true;
-// eddec91c-6018-4dcd-bd8d-5e96b23e334c --form "language_model=en-US" --form "file=@3e67460c-f298-4e2c-a412-d375d489e1b3.wav" 
-    }
-
-    public void processPendingHaven() {
-        if (havenStatus != 1) return;
-
-        
-        String apiKey = Options.get("process.haven.apikey");
-        if (apiKey == null || apiKey.equals("")) return;
-
-        CloseableHttpClient httpclient = HttpClients.createDefault();
-
-
-        try {
-            HttpPost httppost = new HttpPost("https://api.havenondemand.com/1/job/status/" + havenJobId + "?apikey=" + apiKey);
-
-            HttpEntity reqEntity = MultipartEntityBuilder.create().build();
-            httppost.setEntity(reqEntity);
-
-            CloseableHttpResponse response = httpclient.execute(httppost);
-            try {
-                if (response.getStatusLine().getStatusCode() != 200) {
-                    havenStatus = 3; 
-                    return;
-                }
-
-                HttpEntity resEntity = response.getEntity();
-                if (resEntity != null) {
-                    JSONObject obj = new JSONObject(EntityUtils.toString(resEntity));
-
-                    System.err.println(havenJobId + ": " + obj.getString("status"));
-
-                    if (obj.getString("status").equals("finished")) {
-                        havenStatus = 2;
-                        JSONArray textItems = obj.getJSONArray("actions").getJSONObject(0).getJSONObject("result").getJSONArray("items");
-
-                        StringBuilder out = new StringBuilder();
-
-                        for (int i = 0; i < textItems.length(); i++) {
-                            out.append(textItems.getJSONObject(i).getString("text"));
-                            out.append(" ");
-                        }
-                        String result = out.toString();
-                        setText(result.trim());
-                        AudiobookRecorder.window.bookTreeModel.reload(Sentence.this);
-                        System.err.println(result);
-                    } else if (obj.getString("status").equals("queued")) {
-                        havenStatus = 1;
-                        setOverrideText("[processing...]");
-                        AudiobookRecorder.window.bookTreeModel.reload(Sentence.this);
-                    } else {
-                        text = id;
-                        AudiobookRecorder.window.bookTreeModel.reload(Sentence.this);
-                        havenStatus = 3;
-                        return;
-                    }
-                }
-                EntityUtils.consume(resEntity);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
     }
 
     public double getPeakValue() {

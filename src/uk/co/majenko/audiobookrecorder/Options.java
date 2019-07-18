@@ -44,8 +44,6 @@ public class Options extends JDialog {
     JSpinner etherealAttenuation;
     JSpinner etherealOffset;
 
-    JTextField havenApiKey;
-
     JTextField externalEditor;
 
     JTextArea startupScript;
@@ -325,11 +323,6 @@ public class Options extends JDialog {
 
         addSeparator(optionsPanel);
 
-        enableParsing = addCheckBox(optionsPanel, "Enable automatic speech-to-text submission", getBoolean("process.haven.auto"));
-        havenApiKey = addTextField(optionsPanel, "Haven OnDemand API Key", get("process.haven.apikey"));
-
-        addSeparator(optionsPanel);
-        
         externalEditor = addTextField(optionsPanel, "External Editor Command", get("editor.external"));
 
         addSeparator(optionsPanel);
@@ -585,9 +578,6 @@ public class Options extends JDialog {
         defaultPrefs.put("audio.export.bitrate", "256000");
         defaultPrefs.put("audio.export.samplerate", "44100");
 
-        defaultPrefs.put("process.sphinx", "false");
-        defaultPrefs.put("process.haven.apikey", "");
-
         defaultPrefs.put("editor.external", "");
 
         defaultPrefs.put("cache.size", "100");
@@ -709,8 +699,6 @@ public class Options extends JDialog {
         set("catenation.post-section", postSectionGap.getValue());
         set("audio.export.bitrate", ((KVPair)bitRate.getSelectedItem()).key);
         set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
-        set("process.sphinx", enableParsing.isSelected());
-        set("process.haven.apikey", havenApiKey.getText());
         set("editor.external", externalEditor.getText());
         set("cache.size", cacheSize.getValue());
         set("audio.recording.trim.fft", fftThreshold.getValue());
