@@ -323,6 +323,10 @@ public class Options extends JDialog {
 
         addSeparator(optionsPanel);
 
+        enableParsing = addCheckBox(optionsPanel, "Enable automatic sphinx speech-to-text (**SLOW**)", getBoolean("process.sphinx"));
+    
+        addSeparator(optionsPanel);
+
         externalEditor = addTextField(optionsPanel, "External Editor Command", get("editor.external"));
 
         addSeparator(optionsPanel);
@@ -577,6 +581,7 @@ public class Options extends JDialog {
 
         defaultPrefs.put("audio.export.bitrate", "256000");
         defaultPrefs.put("audio.export.samplerate", "44100");
+        defaultPrefs.put("process.sphinx", "false");
 
         defaultPrefs.put("editor.external", "");
 
@@ -699,6 +704,7 @@ public class Options extends JDialog {
         set("catenation.post-section", postSectionGap.getValue());
         set("audio.export.bitrate", ((KVPair)bitRate.getSelectedItem()).key);
         set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
+        set("process.sphinx", enableParsing.isSelected());
         set("editor.external", externalEditor.getText());
         set("cache.size", cacheSize.getValue());
         set("audio.recording.trim.fft", fftThreshold.getValue());

@@ -20,6 +20,10 @@ import javax.imageio.*;
 import org.w3c.dom.*;
 import javax.xml.parsers.*;
 import java.io.*;
+import edu.cmu.sphinx.api.*;
+import edu.cmu.sphinx.decoder.adaptation.*;
+import edu.cmu.sphinx.result.*;
+import org.w3c.dom.Node;
 
 public class AudiobookRecorder extends JFrame {
 
@@ -104,7 +108,24 @@ public class AudiobookRecorder extends JFrame {
     public TargetDataLine microphone = null;
     public AudioInputStream microphoneStream = null;
 
+    public Configuration sphinxConfig;
+    public StreamSpeechRecognizer recognizer;
+
     public static AudiobookRecorder window;
+
+    void initSphinx() {
+        sphinxConfig = new Configuration();
+
+        sphinxConfig.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
+        sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
+        sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
+
+        try {
+            recognizer = new StreamSpeechRecognizer(sphinxConfig);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     void buildToolbar(Container ob) {
         toolBar = new MainToolBar(this);
@@ -790,6 +811,42 @@ public class AudiobookRecorder extends JFrame {
         }
     }
 
+    class BatchConversionThread implements Runnable {
+        Chapter chapter;
+
+        public BatchConversionThread(Chapter c) {
+            chapter = c;
+        }
+        public void run() {
+            try {
+                Configuration sphinxConfig = new Configuration();
+
+                sphinxConfig.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
+                sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
+                sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
+
+                sphinxConfig.setSampleRate((int)(book.getAudioFormat().getSampleRate() / 4f));
+
+                StreamSpeechRecognizer recognizer;
+
+                recognizer = new StreamSpeechRecognizer(sphinxConfig);
+
+
+                for (Enumeration s = chapter.children(); s.hasMoreElements();) {
+                    Sentence snt = (Sentence)s.nextElement();
+                    if (!snt.isLocked()) {
+                        if (snt.getId().equals(snt.getText())) {
+                            snt.doRecognition(recognizer);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
     @SuppressWarnings("unchecked")
     void treePopup(MouseEvent e) {
 
@@ -811,6 +868,7 @@ public class AudiobookRecorder extends JFrame {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence s = (Sentence)o.getObject();
                         if (!s.isLocked()) {
+                            s.recognise();
                         }
                     }
                 });
@@ -1120,11 +1178,9 @@ public class AudiobookRecorder extends JFrame {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter c = (Chapter)o.getObject();
-                        for (Enumeration s = c.children(); s.hasMoreElements();) {
-                            Sentence snt = (Sentence)s.nextElement();
-                            if (snt.getId().equals(snt.getText())) {
-                            }
-                        }
+                        BatchConversionThread r = new BatchConversionThread(c);
+                        Thread t = new Thread(r);
+                        t.start();
                     }
                 });
 

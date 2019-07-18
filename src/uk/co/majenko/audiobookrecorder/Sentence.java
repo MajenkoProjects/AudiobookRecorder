@@ -21,6 +21,10 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
+import edu.cmu.sphinx.api.*;
+import edu.cmu.sphinx.decoder.adaptation.*;
+import edu.cmu.sphinx.result.*;
+
 import org.json.*;
 
 import java.util.Timer;
@@ -182,8 +186,10 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             } else if (tm.equals("fft")) {
                 autoTrimSampleFFT();
             }
+            if (Options.getBoolean("process.sphinx")) {
+                recognise();
+            }
         }
-
     }
 
     public static final int FFTBuckets = 1024;
@@ -483,7 +489,58 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         return null;
     }
 
+    public void doRecognition(StreamSpeechRecognizer recognizer) {
+        try {
+            setText("[recognising...]");
+            AudiobookRecorder.window.bookTreeModel.reload(this);
+
+            byte[] inData = getPCMData();
+
+            ByteArrayInputStream bas = new ByteArrayInputStream(inData);
+            recognizer.startRecognition(bas);
+            SpeechResult result;
+            String res = "";
+            while ((result = recognizer.getResult()) != null) {
+                res += result.getHypothesis();
+                res += " ";
+System.err.println(res);
+            }
+            recognizer.stopRecognition();
+
+            setText(res);
+            AudiobookRecorder.window.bookTreeModel.reload(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void recognise() {
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Configuration sphinxConfig = new Configuration();
+
+                    sphinxConfig.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
+                    sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
+                    sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
+
+                    AudioInputStream s = AudioSystem.getAudioInputStream(getFile());
+                    AudioFormat format = getAudioFormat();
+
+                    sphinxConfig.setSampleRate((int)(format.getSampleRate()));
+
+                    StreamSpeechRecognizer recognizer;
+
+                    recognizer = new StreamSpeechRecognizer(sphinxConfig);
+
+                    doRecognition(recognizer);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        t.start();
     }
 
     public void setLocked(boolean l) {
