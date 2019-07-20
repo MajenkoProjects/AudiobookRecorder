@@ -31,6 +31,8 @@ public class AudiobookRecorder extends JFrame {
 
     public static final int PLAYBACK_CHUNK_SIZE = 256; // Was 1024
 
+    public static final String SPHINX_MODEL = "resource:/edu/cmu/sphinx/models/en-us/en-us";
+
     static Properties config = new Properties();
     HashMap<String, EffectGroup> effects;
 
@@ -71,8 +73,6 @@ public class AudiobookRecorder extends JFrame {
     JLabel statusLabel;
 
     JScrollPane mainScroll;
-
-    JDialog equaliserWindow = null;
 
     Book book = null;
 
@@ -116,7 +116,7 @@ public class AudiobookRecorder extends JFrame {
     void initSphinx() {
         sphinxConfig = new Configuration();
 
-        sphinxConfig.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
+        sphinxConfig.setAcousticModelPath(AudiobookRecorder.SPHINX_MODEL);
         sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
         sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
 
@@ -821,7 +821,7 @@ public class AudiobookRecorder extends JFrame {
             try {
                 Configuration sphinxConfig = new Configuration();
 
-                sphinxConfig.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
+                sphinxConfig.setAcousticModelPath(AudiobookRecorder.SPHINX_MODEL);
                 sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
                 sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
 
@@ -2114,6 +2114,16 @@ public class AudiobookRecorder extends JFrame {
                             play.write(data, 0, data.length);
                         }
                         data = s.getPCMData();
+                        DefaultMutableTreeNode next = s.getNextSibling();
+                        if (next != null) {
+                            Thread t = new Thread(new Runnable() {
+                                public void run() {
+                                    Sentence ns = (Sentence)next;
+                                    ns.loadFile(); // Cache it
+                                }
+                            });
+                            t.start();
+                        }
                         for (int pos = 0; pos < data.length; pos += PLAYBACK_CHUNK_SIZE) {
                             sampleWaveform.setPlayMarker(pos / format.getFrameSize());
                             int l = data.length - pos;
@@ -2121,7 +2131,6 @@ public class AudiobookRecorder extends JFrame {
                             play.write(data, pos, l);
                         }
 
-                        DefaultMutableTreeNode next = s.getNextSibling();
                         boolean last = false;
                         if (next == null) {
                             last = true;
@@ -2860,6 +2869,9 @@ System.err.println(format);
         while (effectChain.getItemCount() > 0) {
             effectChain.removeItemAt(0);
         }
+
+        KVPair<String, String> none = new KVPair<String, String>("none", "None"); 
+        effectChain.addItem(none);
         for (String k : effects.keySet()) {
             Effect e = effects.get(k);
             KVPair<String, String> p = new KVPair<String, String>(k, e.toString());
@@ -2889,5 +2901,9 @@ System.err.println(format);
             effectChain.setSelectedIndex(0);
             updateWaveform();
         }
+    }
+
+    public String getDefaultEffectsChain() {
+        return defaultEffectChain;
     }
 }

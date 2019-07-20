@@ -503,7 +503,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             while ((result = recognizer.getResult()) != null) {
                 res += result.getHypothesis();
                 res += " ";
-System.err.println(res);
             }
             recognizer.stopRecognition();
 
@@ -520,7 +519,7 @@ System.err.println(res);
                 try {
                     Configuration sphinxConfig = new Configuration();
 
-                    sphinxConfig.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
+                    sphinxConfig.setAcousticModelPath(AudiobookRecorder.SPHINX_MODEL);
                     sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
                     sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
 
@@ -925,8 +924,6 @@ System.err.println(res);
         return samples;
     }
 
-
-
     public void loadFile() {
         if (audioData != null) return;
 
@@ -963,28 +960,27 @@ System.err.println(res);
         }
         // Add processing in here.
 
-        if (effectChain == null) effectChain = AudiobookRecorder.window.defaultEffectChain;
 
-        Effect eff = AudiobookRecorder.window.effects.get(effectChain);
-        if (eff == null) {
-            effectChain = AudiobookRecorder.window.defaultEffectChain;
-            eff = AudiobookRecorder.window.effects.get(effectChain);
-        }
-
+        String def = AudiobookRecorder.window.getDefaultEffectsChain();
+        Effect eff = AudiobookRecorder.window.effects.get(def);
+    
         if (eff != null) {
             eff.init(getAudioFormat().getFrameRate());
             for (int i = 0; i < samples.length; i++) {
                 samples[i] = eff.process(samples[i]);
             }
         }
-        
-        // Cuts out the computer hum.
-//        Biquad bq = new Biquad(Biquad.Notch, 140d/44100d, 20.0d, -50);
-//        DelayLine dl = new DelayLine();
-//        dl.addDelayLine(2205, 0.8);
-//        dl.addDelayLine(4410, 0.4);
-//        dl.addDelayLine(6615, 0.2);
 
+        if (effectChain != null) {
+            eff = AudiobookRecorder.window.effects.get(effectChain);
+            if (eff != null) {
+                eff.init(getAudioFormat().getFrameRate());
+                for (int i = 0; i < samples.length; i++) {
+                    samples[i] = eff.process(samples[i]);
+                }
+            }
+        }
+        
         // Add final master gain stage
         for (int i = 0; i < samples.length; i++) {
             samples[i] = samples[i] * gain;
@@ -1031,7 +1027,7 @@ System.err.println(res);
     }
 
     public String getEffectChain() {
-        if (effectChain == null) return AudiobookRecorder.window.defaultEffectChain;
+        if (effectChain == null) return "none";
         return effectChain;
     }
 }
