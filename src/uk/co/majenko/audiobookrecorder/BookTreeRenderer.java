@@ -31,6 +31,12 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
                 icn.add(Overlays.important, OverlayIcon.TOP_RIGHT);
             } 
 
+            if (s.getEffectChain() != null) {
+                if (!s.getEffectChain().equals("none")) {
+                    icn.add(Overlays.filter, OverlayIcon.BOTTOM_RIGHT);
+                }
+            }
+
             ret.setIcon(icn);
 
         } else if (value instanceof Chapter) {

@@ -6,6 +6,8 @@ public class DelayLine implements Effect {
 
     ArrayList<DelayLineStore> delayLines;
 
+    boolean wetOnly = false;
+
     public DelayLine() {
         delayLines = new ArrayList<DelayLineStore>();
     }
@@ -18,6 +20,12 @@ public class DelayLine implements Effect {
         Sample[] savedSamples = new Sample[samples.length];
         for (int i = 0; i < samples.length; i++) {
             savedSamples[i] = new Sample(samples[i].left, samples[i].right);
+        }
+        if (wetOnly) {
+            for (int i = 0; i < samples.length; i++) {
+                samples[i].left = 0d;
+                samples[i].right = 0d;
+            }
         }
 
         for (DelayLineStore d : delayLines) {
@@ -62,6 +70,12 @@ public class DelayLine implements Effect {
         return out;
     }
 
+    public DelayLineStore addDelayLine(int samples, double gain, double pan) {
+        DelayLineStore s = new DelayLineStore(samples, gain, pan);
+        delayLines.add(s);
+        return s;
+    }
+
     public DelayLineStore addDelayLine(int samples, double gain) {
         DelayLineStore s = new DelayLineStore(samples, gain);
         delayLines.add(s);
@@ -87,5 +101,9 @@ public class DelayLine implements Effect {
         for (DelayLineStore s : delayLines) {
             s.init(sf);
         }
+    }
+
+    public void setWetOnly(boolean b) {
+        wetOnly = b;
     }
 }

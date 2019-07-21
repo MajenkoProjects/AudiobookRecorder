@@ -64,6 +64,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     double storedLength = -1d;
 
     Sample[] audioData = null;
+    Sample[] processedAudio = null;
     
     RecordingThread recordingThread;
 
@@ -391,7 +392,11 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public String toString() {
-        return text;
+        if (effectChain == null) return text;
+        if (effectChain.equals("none")) return text;
+        Effect e = AudiobookRecorder.window.effects.get(effectChain);
+        if (e == null) return text;
+        return text + " (" + e.toString() + ")";
     }
 
     public boolean isRecording() {
@@ -560,6 +565,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public void clearCache() {
         audioData = null;
+        processedAudio = null;
     }
 
     public boolean lockedInCache() {
@@ -669,8 +675,11 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     public void setGain(double g) {
         if (g <= 0.0001d) g = 1.0d;
         if (g == gain) return;
+
+        if (gain != g) {
+            clearCache();
+        }
         gain = g;
-        clearCache();
     }
 
     public double getGain() {
@@ -952,10 +961,12 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public Sample[] getProcessedAudioData() {
         loadFile();
+        if (processedAudio != null) return processedAudio;
+
         if (audioData == null) return null;
-        Sample[] samples = new Sample[audioData.length];
+        processedAudio = new Sample[audioData.length];
         for (int i = 0; i < audioData.length; i++) {
-            samples[i] = new Sample(audioData[i].left, audioData[i].right);
+            processedAudio[i] = new Sample(audioData[i].left, audioData[i].right);
         }
         // Add processing in here.
 
@@ -965,7 +976,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     
         if (eff != null) {
             eff.init(getAudioFormat().getFrameRate());
-            eff.process(samples);
+            eff.process(processedAudio);
         }
 
         if (effectChain != null) {
@@ -974,17 +985,17 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 eff = AudiobookRecorder.window.effects.get(effectChain);
                 if (eff != null) {
                     eff.init(getAudioFormat().getFrameRate());
-                    eff.process(samples);
+                    eff.process(processedAudio);
                 }
             }
         }
         
         // Add final master gain stage
-        for (int i = 0; i < samples.length; i++) {
-            samples[i].left = samples[i].left * gain;
-            samples[i].right = samples[i].right * gain;
+        for (int i = 0; i < processedAudio.length; i++) {
+            processedAudio[i].left = processedAudio[i].left * gain;
+            processedAudio[i].right = processedAudio[i].right * gain;
         }
-        return samples;
+        return processedAudio;
     }
 
     public Sample[] getDoubleAudioData() {
@@ -1028,6 +1039,9 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public void setEffectChain(String key) {
+        if ((effectChain != null) && (!effectChain.equals(key))) {
+            clearCache();
+        }
         effectChain = key;
     }
 

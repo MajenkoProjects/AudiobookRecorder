@@ -6,12 +6,21 @@ import java.util.ArrayList;
 public class DelayLineStore {
     double gain;
     int numSamples;
+    double pan;
 
     ArrayList<Effect> effects;
+
+    public DelayLineStore(int s, double g, double p) {
+        numSamples = s;
+        gain = g;
+        pan = p;
+        effects = new ArrayList<Effect>();
+    }
 
     public DelayLineStore(int s, double g) {
         numSamples = s;
         gain = g;
+        pan = 0d;
         effects = new ArrayList<Effect>();
     }
 
@@ -23,6 +32,14 @@ public class DelayLineStore {
         for (Sample sample : samples) {
             sample.left *= gain;
             sample.right *= gain;
+
+            if (pan < 0) {
+                double p = 1 + pan;
+                sample.right *= p;
+            } else {
+                double p = 1 - pan;
+                sample.left *= p;
+            }
         }
     }
 

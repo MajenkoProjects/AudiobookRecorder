@@ -34,7 +34,7 @@ public class AudiobookRecorder extends JFrame {
     public static final String SPHINX_MODEL = "resource:/edu/cmu/sphinx/models/en-us/en-us";
 
     static Properties config = new Properties();
-    HashMap<String, EffectGroup> effects;
+    TreeMap<String, EffectGroup> effects;
 
     String defaultEffectChain = "none";
 
@@ -748,7 +748,6 @@ public class AudiobookRecorder extends JFrame {
         prefs.setProperty("chapter.close.pre-gap", Options.get("catenation.pre-chapter"));
         prefs.setProperty("chapter.close.post-gap", Options.get("catenation.post-chapter"));
 
-        loadEffects();
         buildBook(prefs);
 
         Options.set("path.last-book", book.getName());
@@ -1684,7 +1683,6 @@ public class AudiobookRecorder extends JFrame {
             prefs.loadFromXML(fis);
 
             File r = f.getParentFile();
-            loadEffects();
 
             buildBook(prefs);
 
@@ -1715,6 +1713,8 @@ public class AudiobookRecorder extends JFrame {
         book.setGenre(prefs.getProperty("book.genre"));
         book.setComment(prefs.getProperty("book.comment"));
         book.setACX(prefs.getProperty("book.acx"));
+
+        loadEffects();
 
         defaultEffectChain = prefs.getProperty("audio.effect.default");
         if (defaultEffectChain == null) {
@@ -2119,7 +2119,7 @@ public class AudiobookRecorder extends JFrame {
                             Thread t = new Thread(new Runnable() {
                                 public void run() {
                                     Sentence ns = (Sentence)next;
-                                    ns.loadFile(); // Cache it
+                                    ns.getProcessedAudioData(); // Cache it
                                 }
                             });
                             t.start();
@@ -2649,7 +2649,7 @@ public class AudiobookRecorder extends JFrame {
     }
 
     public void loadEffects() {
-        effects = new HashMap<String,EffectGroup>();
+        effects = new TreeMap<String,EffectGroup>();
         loadEffectsFromFolder(new File(Options.get("path.storage"), "System"));
         if (book != null) {
             loadEffectsFromFolder(new File(Options.get("path.storage"), book.getName()));
@@ -2702,6 +2702,11 @@ public class AudiobookRecorder extends JFrame {
                     }
                 } else if (e.getTagName().equals("delayline")) {
                     Effect eff = (Effect)loadDelayLine(e);
+                    if (eff != null) {
+                        group.addEffect(eff);
+                    }
+                } else if (e.getTagName().equals("pan")) {
+                    Effect eff = (Effect)loadPan(e);
                     if (eff != null) {
                         group.addEffect(eff);
                     }
@@ -2769,6 +2774,9 @@ public class AudiobookRecorder extends JFrame {
         DelayLine line = new DelayLine();
     
         NodeList list = root.getChildNodes();
+        if (Utils.s2b(root.getAttribute("wetonly"))) {
+            line.setWetOnly(true);
+        }
 
         for (int i = 0; i < list.getLength(); i++) {
             Node n = list.item(i);
@@ -2777,7 +2785,9 @@ public class AudiobookRecorder extends JFrame {
                 if (e.getTagName().equals("delay")) {
                     int samples = Utils.s2i(e.getAttribute("samples"));
                     double gain = Utils.s2d(e.getAttribute("gain"));
-                    DelayLineStore store = line.addDelayLine(samples, gain);
+                    double pan = Utils.s2d(e.getAttribute("pan"));
+                    DelayLineStore store = line.addDelayLine(samples, gain, pan);
+
 
                     NodeList inner = e.getChildNodes();
                     for (int j = 0; j < inner.getLength(); j++) {
@@ -2792,6 +2802,11 @@ public class AudiobookRecorder extends JFrame {
                                 }
                             } else if (ie.getTagName().equals("delayline")) {
                                 Effect eff = (Effect)loadDelayLine(ie);
+                                if (eff != null) {
+                                    store.addEffect(eff);
+                                }
+                            } else if (ie.getTagName().equals("pan")) {
+                                Effect eff = (Effect)loadPan(ie);
                                 if (eff != null) {
                                     store.addEffect(eff);
                                 }
@@ -2833,6 +2848,11 @@ public class AudiobookRecorder extends JFrame {
     public Amplifier loadAmplifier(Element root) {
         Amplifier a = new Amplifier(Utils.s2d(root.getAttribute("gain")));
         return a;
+    }
+
+    public Pan loadPan(Element root) {
+        Pan p = new Pan(Utils.s2d(root.getAttribute("pan")));
+        return p;
     }
 
     public Clipping loadClipping(Element root) {
