@@ -9,7 +9,7 @@ import javax.sound.sampled.*;
 
 public class Waveform extends JPanel implements MouseListener, MouseMotionListener {
 
-    double[] samples = null;
+    Sample[] samples = null;
 
     int leftMarker = 0;
     int rightMarker = 0;
@@ -92,7 +92,7 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
                 double lmax = 0;
 
                 for (int o = 0; o < step; o++) {
-                    double sample = samples[offset + (n * step) + o];
+                    double sample = samples[offset + (n * step) + o].getMono();
                     if (sample >= 0) {
                         have += sample;
                         hcnt++;
@@ -189,7 +189,7 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
         repaint();
     }
 
-    public void setData(double[] s) {
+    public void setData(Sample[] s) {
         samples = s;
         playMarker = 0;
         repaint();

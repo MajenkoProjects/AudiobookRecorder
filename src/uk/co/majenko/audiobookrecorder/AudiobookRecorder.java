@@ -29,7 +29,7 @@ public class AudiobookRecorder extends JFrame {
 
     // Settings - tweakable
 
-    public static final int PLAYBACK_CHUNK_SIZE = 256; // Was 1024
+    public static final int PLAYBACK_CHUNK_SIZE = 16384;
 
     public static final String SPHINX_MODEL = "resource:/edu/cmu/sphinx/models/en-us/en-us";
 
@@ -1943,14 +1943,14 @@ public class AudiobookRecorder extends JFrame {
 
     public double getNoiseFloor() { 
         if (roomNoise == null) return 0;
-        double[] samples = roomNoise.getDoubleAudioData();
+        Sample[] samples = roomNoise.getDoubleAudioData();
         if (samples == null) {
             return 0;
         }
         double ms = 0;
         for (int i = 0; i < samples.length; i++) {
-            if (Math.abs(samples[i]) > ms) {
-                ms = Math.abs(samples[i]);
+            if (Math.abs(samples[i].getMono()) > ms) {
+                ms = Math.abs(samples[i].getMono());
             }
         }
 
@@ -1977,7 +1977,7 @@ public class AudiobookRecorder extends JFrame {
                 public void run() {
                     roomNoise.stopRecording();
                     centralPanel.setFlash(false);
-			statusLabel.setText("Noise floor: " + getNoiseFloorDB() + "dB");
+                    statusLabel.setText("Noise floor: " + getNoiseFloorDB() + "dB");
                 }
             }, 5000); // 5 seconds of recording
         }
@@ -2001,7 +2001,7 @@ public class AudiobookRecorder extends JFrame {
                 try {
 
                     AudioFormat sampleformat = s.getAudioFormat();
-                    AudioFormat format = new AudioFormat(sampleformat.getSampleRate(), 16, 1, true, false);
+                    AudioFormat format = new AudioFormat(sampleformat.getSampleRate(), 16, 2, true, false);
             
                     play = AudioSystem.getSourceDataLine(format, Options.getPlaybackMixer());
                     play.open(format);
@@ -2095,7 +2095,7 @@ public class AudiobookRecorder extends JFrame {
                 try {
 
                     AudioFormat sampleformat = s.getAudioFormat();
-                    AudioFormat format = new AudioFormat(sampleformat.getSampleRate(), 16, 1, true, false);
+                    AudioFormat format = new AudioFormat(sampleformat.getSampleRate(), 16, 2, true, false);
                     play = AudioSystem.getSourceDataLine(format, Options.getPlaybackMixer());
                     play.open(format);
                     play.start();

@@ -22,24 +22,25 @@ public class LFO implements Effect {
         phase = p;
     }
 
-    public double process(double sample) {
-        double v = Math.sin(phase);
-        phase += sampleStep;
-        if (phase > (Math.PI * 2d)) {
-            phase -= (Math.PI * 2d);
-        }
+    public void process(Sample[] samples) {
+        for (Sample sample : samples) {
+            double v = Math.sin(phase);
+            phase += sampleStep;
+            if (phase > (Math.PI * 2d)) {
+                phase -= (Math.PI * 2d);
+            }
 
 //        // Make it between 0 and 1.
 //        v = 1d + v;
 //        v /= 2d;
 
-        // Multiply it by the gain factor
-        v *= depth;
+            // Multiply it by the gain factor
+            v *= depth;
 
-        // Apply it to the sample
-        sample += (sample * v);
-
-        return sample;
+            // Apply it to the sample
+            sample.left += (sample.left * v);
+            sample.right += (sample.right * v);
+        }
     }
 
     public String getName() { return "Low Frequency Oscillator (" + frequency + " Hz, " + (depth * 100d) + "%)"; }

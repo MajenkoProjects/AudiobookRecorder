@@ -1,8 +1,8 @@
 package uk.co.majenko.audiobookrecorder;
 
 public class Sample {
-    double left;
-    double right;
+    public double left;
+    public double right;
 
     public Sample(double m) {
         left = m;

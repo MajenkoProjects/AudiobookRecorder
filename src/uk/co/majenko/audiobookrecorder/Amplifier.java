@@ -19,8 +19,11 @@ public class Amplifier implements Effect {
         return null;
     }
 
-    public double process(double sample) {
-        return sample * gain;
+    public void process(Sample[] samples) {
+        for (int i = 0; i < samples.length; i++) {
+            samples[i].left *= gain;
+            samples[i].right *= gain;
+        }
     }
 
     public double getGain() {

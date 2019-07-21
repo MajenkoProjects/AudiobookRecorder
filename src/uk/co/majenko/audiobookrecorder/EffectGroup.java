@@ -16,12 +16,10 @@ public class EffectGroup implements Effect {
         effects = new ArrayList<Effect>();
     }
 
-    public double process(double sample) {
-        double out = sample;
+    public void process(Sample[] samples) {
         for (Effect e : effects) {
-            out = e.process(out);
+            e.process(samples);
         }
-        return out;
     }
 
     public void setName(String n) {

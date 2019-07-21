@@ -25,27 +25,36 @@ public class AGC implements Effect {
         return getName();
     }
 
-    public double process(double sample) {
-        double absSample = Math.abs(sample) * gain;
+    public void process(Sample[] samples) {
+        gain = 1d;
+        for (int i = 0; i < samples.length; i++) {
+            double absSampleLeft = Math.abs(samples[i].left) * gain;
+            double absSampleRight = Math.abs(samples[i].right) * gain;
 
-        if (absSample > ceiling) {
-            gain -= attack;
-            if (gain < 0) gain = 0;
-        }
-        
-        if (absSample < ceiling) {
-            gain += decay;
-            if (gain > limit) {
-                gain = limit;
+            if (absSampleLeft > ceiling) {
+                gain -= attack;
+                if (gain < 0) gain = 0;
             }
+            
+            if (absSampleRight > ceiling) {
+                gain -= attack;
+                if (gain < 0) gain = 0;
+            }
+        
+            if ((absSampleLeft < ceiling) && (absSampleRight < ceiling)) {
+                gain += decay;
+                if (gain > limit) {
+                    gain = limit;
+                }
+            }
+
+            samples[i].left *= gain;
+            samples[i].right *= gain;
         }
-
-        sample *= gain;
-
-        return sample;
     }
 
     public void init(double sr) {
+        gain = 1d;
     }
 
     public void dump() {

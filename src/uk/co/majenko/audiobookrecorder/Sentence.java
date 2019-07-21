@@ -63,7 +63,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     AudioFormat storedFormat = null;
     double storedLength = -1d;
 
-    double[] audioData = null;
+    Sample[] audioData = null;
     
     RecordingThread recordingThread;
 
@@ -198,7 +198,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         double[] real = new double[FFTBuckets];
         double[] imag = new double[FFTBuckets];
 
-        double[] samples = getProcessedAudioData();
+        Sample[] samples = getProcessedAudioData();
         int slices = (samples.length / FFTBuckets) + 1;
 
         double[][] out = new double[slices][];
@@ -208,7 +208,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         for (int i = 0; i < samples.length; i += FFTBuckets) {
             for (int j = 0; j < FFTBuckets; j++) {
                 if (i + j < samples.length) {
-                    real[j] = samples[i+j];
+                    real[j] = samples[i+j].getMono();
                     imag[j] = 0;
                 } else {
                     real[j] = 0;
@@ -227,7 +227,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     public void autoTrimSampleFFT() {
         crossStartOffset = -1;
         crossEndOffset = -1;
-        double[] samples = getProcessedAudioData();
+        Sample[] samples = getProcessedAudioData();
         if (samples == null) return;
 
         int blocks = samples.length / 4096 + 1;
@@ -241,7 +241,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
             for (int j = 0; j < 4096; j++) {
                 if (i + j < samples.length) {
-                    real[j] = samples[i+j];
+                    real[j] = samples[i+j].getMono();
                     imag[j] = 0;
                 } else {
                     real[j] = 0;
@@ -310,7 +310,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     public void autoTrimSamplePeak() {
         crossStartOffset = -1;
         crossEndOffset = -1;
-        double[] samples = getProcessedAudioData();
+        Sample[] samples = getProcessedAudioData();
         if (samples == null) return;
         double noiseFloor = AudiobookRecorder.window.getNoiseFloor();
         noiseFloor *= 1.1;
@@ -318,7 +318,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         // Find start
         for (int i = 0; i < samples.length; i++) {
             startOffset = i;
-            if (Math.abs(samples[i]) > noiseFloor) {
+            if (Math.abs(samples[i].getMono()) > noiseFloor) {
                 startOffset --;
                 if (startOffset < 0) startOffset = 0;
                 break;
@@ -333,7 +333,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
         for (int i = samples.length-1; i >= 0; i--) {
             endOffset = i;
-            if (Math.abs(samples[i]) > noiseFloor) {
+            if (Math.abs(samples[i].getMono()) > noiseFloor) {
                 endOffset ++;
                 if (endOffset >= samples.length-1) endOffset = samples.length-1;
                 break;
@@ -567,7 +567,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public int findNearestZeroCrossing(int pos, int range) {
-        double[] data = getProcessedAudioData();
+        Sample[] data = getProcessedAudioData();
         if (data == null) return 0;
         if (data.length == 0) return 0;
 
@@ -577,19 +577,19 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         int backwards = pos;
         int forwards = pos;
 
-        double backwardsPrev = data[backwards];
-        double forwardsPrev = data[forwards];
+        double backwardsPrev = data[backwards].getMono();
+        double forwardsPrev = data[forwards].getMono();
 
         while (backwards > 0 || forwards < data.length-2) {
 
             if (forwards < data.length-2) forwards++;
             if (backwards > 0) backwards--;
 
-            if (backwardsPrev >= 0 && data[backwards] < 0) { // Found one!
+            if (backwardsPrev >= 0 && data[backwards].getMono() < 0) { // Found one!
                 return backwards;
             }
 
-            if (forwardsPrev < 0 && data[forwards] >= 0) {
+            if (forwardsPrev < 0 && data[forwards].getMono() >= 0) {
                 return forwards;
             }
 
@@ -598,8 +598,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 return pos;
             }
 
-            backwardsPrev = data[backwards];
-            forwardsPrev = data[forwards];
+            backwardsPrev = data[backwards].getMono();
+            forwardsPrev = data[forwards].getMono();
         }
         return pos;
     }
@@ -643,15 +643,15 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     public double getPeakValue() {
         double oldGain = gain;
         gain = 1.0d;
-        double[] samples = getProcessedAudioData();
+        Sample[] samples = getProcessedAudioData();
         gain = oldGain;
         if (samples == null) {
             return 0;
         }
         double ms = 0;
         for (int i = 0; i < samples.length; i++) {
-            if (Math.abs(samples[i]) > ms) {
-                ms = Math.abs(samples[i]);
+            if (Math.abs(samples[i].getMono()) > ms) {
+                ms = Math.abs(samples[i].getMono());
             }
         }
         return ms;
@@ -851,19 +851,18 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         AudiobookRecorder.window.updateWaveform();
     }
 
-    public double[] getDoubleDataS16LE(AudioInputStream s, AudioFormat format) throws IOException {
+    public Sample[] getDoubleDataS16LE(AudioInputStream s, AudioFormat format) throws IOException {
         long len = s.getFrameLength();
         int frameSize = format.getFrameSize();
         int chans = format.getChannels();
         int bytes = frameSize / chans;
 
         byte[] frame = new byte[frameSize];
-        double[] samples = new double[(int)len];
+        Sample[] samples = new Sample[(int)len];
 
         for (long fno = 0; fno < len; fno++) {
 
             s.read(frame);
-            int sample = 0;
             if (chans == 2) { // Stereo
                 int ll = frame[0] >= 0 ? frame[0] : 256 + frame[0];
                 int lh = frame[1] >= 0 ? frame[1] : 256 + frame[1];
@@ -873,27 +872,27 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 int right = (rh << 8) | rl;
                 if ((left & 0x8000) == 0x8000) left |= 0xFFFF0000;
                 if ((right & 0x8000) == 0x8000) right |= 0xFFFF0000;
-                sample = (left + right) / 2;
+                samples[(int)fno] = new Sample((double)left / 32768d, (double)right / 32768d);
             } else {
                 int l = frame[0] >= 0 ? frame[0] : 256 + frame[0];
                 int h = frame[1] >= 0 ? frame[1] : 256 + frame[1];
-                sample = (h << 8) | l;
-                if ((sample & 0x8000) == 0x8000) sample |= 0xFFFF0000;
+                int mono = (h << 8) | l;
+                if ((mono & 0x8000) == 0x8000) mono |= 0xFFFF0000;
+                samples[(int)fno] = new Sample((double)mono / 32768d);
             }
-            samples[(int)fno] = (double)sample / 32768d;
         }
 
         return samples;
     }
 
-    public double[] getDoubleDataS24LE(AudioInputStream s, AudioFormat format) throws IOException {
+    public Sample[] getDoubleDataS24LE(AudioInputStream s, AudioFormat format) throws IOException {
         long len = s.getFrameLength();
         int frameSize = format.getFrameSize();
         int chans = format.getChannels();
         int bytes = frameSize / chans;
 
         byte[] frame = new byte[frameSize];
-        double[] samples = new double[(int)len];
+        Sample[] samples = new Sample[(int)len];
 
         for (long fno = 0; fno < len; fno++) {
 
@@ -910,15 +909,15 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 int right = (rh << 16) | (rm << 8) | rl;
                 if ((left & 0x800000) == 0x800000) left |= 0xFF000000;
                 if ((right & 0x800000) == 0x800000) right |= 0xFF000000;
-                sample = (left + right) / 2;
+                samples[(int)fno] = new Sample((double)left / 8388608d, (double)right / 8388608d);
             } else {
                 int l = frame[0] >= 0 ? frame[0] : 256 + frame[0];
                 int m = frame[1] >= 0 ? frame[1] : 256 + frame[1];
                 int h = frame[2] >= 0 ? frame[2] : 256 + frame[2];
-                sample = (h << 16) | (m << 8) | l;
-                if ((sample & 0x800000) == 0x800000) sample |= 0xFF000000;
+                int mono = (h << 16) | (m << 8) | l;
+                if ((mono & 0x800000) == 0x800000) mono |= 0xFF000000;
+                samples[(int)fno] = new Sample((double)mono / 8388608d);
             }
-            samples[(int)fno] = (double)sample / 8388608d;
         }
 
         return samples;
@@ -932,7 +931,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             AudioInputStream s = AudioSystem.getAudioInputStream(f);
             AudioFormat format = getAudioFormat();
 
-            double[] samples = null;
+            Sample[] samples = null;
 
             switch (format.getSampleSizeInBits()) {
                 case 16:
@@ -951,12 +950,12 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         }
     }
 
-    public double[] getProcessedAudioData() {
+    public Sample[] getProcessedAudioData() {
         loadFile();
         if (audioData == null) return null;
-        double[] samples = new double[audioData.length];
+        Sample[] samples = new Sample[audioData.length];
         for (int i = 0; i < audioData.length; i++) {
-            samples[i] = audioData[i];
+            samples[i] = new Sample(audioData[i].left, audioData[i].right);
         }
         // Add processing in here.
 
@@ -966,9 +965,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     
         if (eff != null) {
             eff.init(getAudioFormat().getFrameRate());
-            for (int i = 0; i < samples.length; i++) {
-                samples[i] = eff.process(samples[i]);
-            }
+            eff.process(samples);
         }
 
         if (effectChain != null) {
@@ -977,32 +974,31 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 eff = AudiobookRecorder.window.effects.get(effectChain);
                 if (eff != null) {
                     eff.init(getAudioFormat().getFrameRate());
-                    for (int i = 0; i < samples.length; i++) {
-                        samples[i] = eff.process(samples[i]);
-                    }
+                    eff.process(samples);
                 }
             }
         }
         
         // Add final master gain stage
         for (int i = 0; i < samples.length; i++) {
-            samples[i] = samples[i] * gain;
+            samples[i].left = samples[i].left * gain;
+            samples[i].right = samples[i].right * gain;
         }
         return samples;
     }
 
-    public double[] getDoubleAudioData() {
+    public Sample[] getDoubleAudioData() {
         return getProcessedAudioData();
     }
 
-    public double[] getCroppedAudioData() {
-        double[] inSamples = getDoubleAudioData();
+    public Sample[] getCroppedAudioData() {
+        Sample[] inSamples = getDoubleAudioData();
         if (inSamples == null) return null;
         updateCrossings();
 
         int length = crossEndOffset - crossStartOffset;
 
-        double[] samples = new double[length];
+        Sample[] samples = new Sample[length];
         for (int i = 0; i < length; i++) {
             samples[i] = inSamples[crossStartOffset + i];
         }
@@ -1010,17 +1006,23 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public byte[] getPCMData() {
-        double[] croppedData = getCroppedAudioData();
+        Sample[] croppedData = getCroppedAudioData();
         if (croppedData == null) return null;
         int length = croppedData.length;
-        byte[] pcmData = new byte[length * 2];
+        byte[] pcmData = new byte[length * 4];
         for (int i = 0; i < length; i++) {
-            double sd = croppedData[i] * 32768d;
+            double sd = croppedData[i].left * 32768d;
             int si = (int)sd;
             if (si > 32767) si = 32767;
             if (si < -32768) si = -32768;
-            pcmData[i * 2] = (byte)(si & 0xFF);
-            pcmData[(i * 2) + 1] = (byte)((si & 0xFF00) >> 8);
+            pcmData[i * 4] = (byte)(si & 0xFF);
+            pcmData[(i * 4) + 1] = (byte)((si & 0xFF00) >> 8);
+            sd = croppedData[i].right * 32768d;
+            si = (int)sd;
+            if (si > 32767) si = 32767;
+            if (si < -32768) si = -32768;
+            pcmData[(i * 4) + 2] = (byte)(si & 0xFF);
+            pcmData[(i * 4) + 3] = (byte)((si & 0xFF00) >> 8);
         }
         return pcmData;
     }

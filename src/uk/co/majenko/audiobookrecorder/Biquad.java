@@ -32,7 +32,8 @@ public class Biquad implements Effect {
     int type;
     double a0, a1, a2, b1, b2;
     double Fc, Q, peakGain;
-    double z1, z2;
+    double lz1, lz2;
+    double rz1, rz2;
     double sampleFrequency;
 
     public Biquad() {
@@ -45,15 +46,19 @@ public class Biquad implements Effect {
         Fc = 440d;
         Q = 0.707d;
         peakGain = 0.0d;
-        z1 = 0.0d;
-        z2 = 0.0d;
+        lz1 = 0.0d;
+        lz2 = 0.0d;
+        rz1 = 0.0d;
+        rz2 = 0.0d;
         sampleFrequency = 44100d;
     }
 
     public Biquad(int type, double Fc, double Q, double peakGainDB) {
         setBiquad(type, Fc, Q, peakGainDB);
-        z1 = 0.0;
-        z2 = 0.0;
+        lz1 = 0.0;
+        lz2 = 0.0;
+        rz1 = 0.0;
+        rz2 = 0.0;
         sampleFrequency = 44100d;
     }
 
@@ -84,17 +89,33 @@ public class Biquad implements Effect {
         setPeakGain(peakGainDB);
     }
 
-    public double process(double in) {
-        double out = in * a0 + z1;
-        z1 = in * a1 + z2 - b1 * out;
-        z2 = in * a2 - b2 * out;
-        return out;
+    public void process(Sample[] samples) {
+        lz1 = 0d;
+        lz2 = 0d;
+        rz1 = 0d;
+        rz2 = 0d;
+        for (Sample in : samples) {
+            double lout = in.left * a0 + lz1;
+
+            lz1 = in.left * a1 + lz2 - b1 * lout;
+            lz2 = in.left * a2 - b2 * lout;
+
+            double rout = in.right * a0 + rz1;
+
+            rz1 = in.right * a1 + rz2 - b1 * rout;
+            rz2 = in.right * a2 - b2 * rout;
+
+            in.left = lout;
+            in.right = rout;
+        }
     }
     
     public void init(double sf) {
         sampleFrequency = sf;
-        z1 = 0d;
-        z2 = 0d;
+        lz1 = 0d;
+        lz2 = 0d;
+        rz1 = 0d;
+        rz2 = 0d;
         calcBiquad();
     }
     
