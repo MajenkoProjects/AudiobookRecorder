@@ -2212,7 +2212,6 @@ public class AudiobookRecorder extends JFrame {
 
     public boolean enableMicrophone() {
         AudioFormat format = Options.getAudioFormat();
-System.err.println(format);
 
         Mixer.Info mixer = Options.getRecordingMixer();
 

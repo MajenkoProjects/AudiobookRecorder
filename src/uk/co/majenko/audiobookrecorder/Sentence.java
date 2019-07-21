@@ -972,11 +972,14 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         }
 
         if (effectChain != null) {
-            eff = AudiobookRecorder.window.effects.get(effectChain);
-            if (eff != null) {
-                eff.init(getAudioFormat().getFrameRate());
-                for (int i = 0; i < samples.length; i++) {
-                    samples[i] = eff.process(samples[i]);
+            // Don't double up the default chain
+            if (!effectChain.equals(def)) {
+                eff = AudiobookRecorder.window.effects.get(effectChain);
+                if (eff != null) {
+                    eff.init(getAudioFormat().getFrameRate());
+                    for (int i = 0; i < samples.length; i++) {
+                        samples[i] = eff.process(samples[i]);
+                    }
                 }
             }
         }
