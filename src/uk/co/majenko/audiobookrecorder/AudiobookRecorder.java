@@ -2715,6 +2715,11 @@ public class AudiobookRecorder extends JFrame {
                     if (eff != null) {
                         group.addEffect(eff);
                     }
+                } else if (e.getTagName().equals("chain")) {
+                    Effect eff = (Effect)loadChain(e);
+                    if (eff != null) {
+                        group.addEffect(eff);
+                    }
                 } else if (e.getTagName().equals("group")) {
                     Effect eff = (Effect)loadEffectGroup(e);
                     if (eff != null) {
@@ -2815,6 +2820,11 @@ public class AudiobookRecorder extends JFrame {
                                 if (eff != null) {
                                     store.addEffect(eff);
                                 }
+                            } else if (ie.getTagName().equals("chain")) {
+                                Effect eff = (Effect)loadChain(ie);
+                                if (eff != null) {
+                                    store.addEffect(eff);
+                                }
                             } else if (ie.getTagName().equals("group")) {
                                 Effect eff = (Effect)loadEffectGroup(ie);
                                 if (eff != null) {
@@ -2848,6 +2858,11 @@ public class AudiobookRecorder extends JFrame {
     public Amplifier loadAmplifier(Element root) {
         Amplifier a = new Amplifier(Utils.s2d(root.getAttribute("gain")));
         return a;
+    }
+
+    public Chain loadChain(Element root) {
+        Chain c = new Chain(root.getAttribute("src"));
+        return c;
     }
 
     public Pan loadPan(Element root) {
