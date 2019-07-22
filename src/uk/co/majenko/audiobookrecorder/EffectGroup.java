@@ -16,7 +16,7 @@ public class EffectGroup implements Effect {
         effects = new ArrayList<Effect>();
     }
 
-    public void process(Sample[] samples) {
+    public void process(double[][] samples) {
         for (Effect e : effects) {
             e.process(samples);
         }

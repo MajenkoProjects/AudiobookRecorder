@@ -92,6 +92,7 @@ public class AudiobookRecorder extends JFrame {
     JSpinner gainPercent;
     JCheckBox locked;
     JCheckBox attention;
+    JCheckBox rawAudio;
 
     JButtonSpacePlay reprocessAudioFFT;
     JButtonSpacePlay reprocessAudioPeak;
@@ -298,19 +299,20 @@ public class AudiobookRecorder extends JFrame {
         window = this;
 
         try {
-            String clsname = "com.jtattoo.plaf.hifi.HiFiLookAndFeel";
-            UIManager.setLookAndFeel(clsname);
 
-            Properties p = new Properties();
-            p.put("windowDecoration", "off");
-            p.put("logoString", "Audiobook");
-            p.put("textAntiAliasing", "on");
+//            String clsname = "com.jtattoo.plaf.hifi.HiFiLookAndFeel";
+//            UIManager.setLookAndFeel(clsname);
 
-            Class<?> cls = Class.forName(clsname);
-            Class[] cArg = new Class[1];
-            cArg[0] = Properties.class;
-            Method mth = cls.getMethod("setCurrentTheme", cArg);
-            mth.invoke(cls, p);
+//            Properties p = new Properties();
+//            p.put("windowDecoration", "off");
+//            p.put("logoString", "Audiobook");
+//            p.put("textAntiAliasing", "on");
+
+//            Class<?> cls = Class.forName(clsname);
+//            Class[] cArg = new Class[1];
+//            cArg[0] = Properties.class;
+//            Method mth = cls.getMethod("setCurrentTheme", cArg);
+//            mth.invoke(cls, p);
 
 
 
@@ -456,6 +458,11 @@ public class AudiobookRecorder extends JFrame {
         controlsLeft.add(reprocessAudioFFT);
         controlsLeft.add(reprocessAudioPeak);
         controlsLeft.add(normalizeAudio);
+
+        rawAudio = new JCheckBox("Raw Audio");
+        rawAudio.setFocusable(false);
+
+        controlsTop.add(rawAudio);
 
         locked = new JCheckBox("Phrase locked");
         locked.setFocusable(false);
@@ -1943,14 +1950,14 @@ public class AudiobookRecorder extends JFrame {
 
     public double getNoiseFloor() { 
         if (roomNoise == null) return 0;
-        Sample[] samples = roomNoise.getDoubleAudioData();
+        double[][] samples = roomNoise.getDoubleAudioData();
         if (samples == null) {
             return 0;
         }
         double ms = 0;
         for (int i = 0; i < samples.length; i++) {
-            if (Math.abs(samples[i].getMono()) > ms) {
-                ms = Math.abs(samples[i].getMono());
+            if (Math.abs((samples[i][Sentence.LEFT] + samples[i][Sentence.RIGHT]) / 2d) > ms) {
+                ms = Math.abs((samples[i][Sentence.LEFT] + samples[i][Sentence.RIGHT]) / 2d);
             }
         }
 
@@ -2115,15 +2122,15 @@ public class AudiobookRecorder extends JFrame {
                         }
                         data = s.getPCMData();
                         DefaultMutableTreeNode next = s.getNextSibling();
-                        if (next != null) {
-                            Thread t = new Thread(new Runnable() {
-                                public void run() {
-                                    Sentence ns = (Sentence)next;
-                                    ns.getProcessedAudioData(); // Cache it
-                                }
-                            });
-                            t.start();
-                        }
+//                        if (next != null) {
+//                            Thread t = new Thread(new Runnable() {
+//                                public void run() {
+//                                    Sentence ns = (Sentence)next;
+//                                    ns.getProcessedAudioData(); // Cache it
+//                                }
+//                            });
+//                            t.start();
+//                        }
                         for (int pos = 0; pos < data.length; pos += PLAYBACK_CHUNK_SIZE) {
                             sampleWaveform.setPlayMarker(pos / format.getFrameSize());
                             int l = data.length - pos;
@@ -2644,7 +2651,11 @@ public class AudiobookRecorder extends JFrame {
 
     public void updateWaveform() {
         if (selectedSentence != null) {
-            sampleWaveform.setData(selectedSentence.getDoubleAudioData());
+            if (rawAudio.isSelected()) {
+                sampleWaveform.setData(selectedSentence.getRawAudioData());
+            } else {
+                sampleWaveform.setData(selectedSentence.getDoubleAudioData());
+            }
         }
     }
 

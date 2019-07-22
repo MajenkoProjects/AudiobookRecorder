@@ -19,14 +19,14 @@ public class Pan implements Effect {
         return null;
     }
 
-    public void process(Sample[] samples) {
-        for (Sample sample : samples) {
+    public void process(double[][] samples) {
+        for (double[] sample : samples) {
             if (pan < 0) {
                 double p = 1 + pan;
-                sample.right *= p;
+                sample[Sentence.RIGHT] *= p;
             } else {
                 double p = 1 - pan;
-                sample.left *= p;
+                sample[Sentence.LEFT] *= p;
             }
         }
     }

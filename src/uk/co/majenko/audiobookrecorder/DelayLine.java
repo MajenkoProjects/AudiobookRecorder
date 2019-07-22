@@ -16,22 +16,28 @@ public class DelayLine implements Effect {
         return "Delay Line (" + delayLines.size() + " lines)";
     }
 
-    public void process(Sample[] samples) {
-        Sample[] savedSamples = new Sample[samples.length];
+    public void process(double[][] samples) {
+        double[][] savedSamples = new double[samples.length][2];
         for (int i = 0; i < samples.length; i++) {
-            savedSamples[i] = new Sample(samples[i].left, samples[i].right);
+            savedSamples[i][Sentence.LEFT] = samples[i][Sentence.LEFT];
+            savedSamples[i][Sentence.RIGHT] = samples[i][Sentence.RIGHT];
         }
         if (wetOnly) {
             for (int i = 0; i < samples.length; i++) {
-                samples[i].left = 0d;
-                samples[i].right = 0d;
+                samples[i][Sentence.LEFT] = 0d;
+                samples[i][Sentence.RIGHT] = 0d;
             }
         }
 
+        double[][] subSamples = new double[samples.length][2];
+        for (int i = 0; i < samples.length; i++) {
+            subSamples[i][Sentence.LEFT] = savedSamples[i][Sentence.LEFT];
+            subSamples[i][Sentence.RIGHT] = savedSamples[i][Sentence.RIGHT];
+        }
         for (DelayLineStore d : delayLines) {
-            Sample[] subSamples = new Sample[samples.length];
             for (int i = 0; i < samples.length; i++) {
-                subSamples[i] = new Sample(savedSamples[i].left, savedSamples[i].right);
+                subSamples[i][Sentence.LEFT] = savedSamples[i][Sentence.LEFT];
+                subSamples[i][Sentence.RIGHT] = savedSamples[i][Sentence.RIGHT];
             }
 
             d.process(subSamples);
@@ -40,31 +46,31 @@ public class DelayLine implements Effect {
                 int off = i + d.getSamples();
                 if ((off < samples.length) && (off > 0)) {
 
-                    Sample ns = mix(samples[off], subSamples[i]);
-                    samples[off].left = ns.left;
-                    samples[off].right = ns.right;
+                    double[] ns = mix(samples[off], subSamples[i]);
+                    samples[off][Sentence.LEFT] = ns[Sentence.LEFT];
+                    samples[off][Sentence.RIGHT] = ns[Sentence.RIGHT];
                 }
             }
         }
     }
 
-    Sample mix(Sample a, Sample b) {
-        Sample out = new Sample(0, 0);
+    double[] mix(double[] a, double[] b) {
+        double[] out = new double[2];
 
-        if ((a.left < 0) && (b.left < 0)) {
-            out.left = (a.left + b.left) - (a.left * b.left);
-        } else if ((a.left > 0) && (b.left > 0)) {
-            out.left = (a.left + b.left) - (a.left * b.left);
+        if ((a[Sentence.LEFT] < 0) && (b[Sentence.LEFT] < 0)) {
+            out[Sentence.LEFT] = (a[Sentence.LEFT] + b[Sentence.LEFT]) - (a[Sentence.LEFT] * b[Sentence.LEFT]);
+        } else if ((a[Sentence.LEFT] > 0) && (b[Sentence.LEFT] > 0)) {
+            out[Sentence.LEFT] = (a[Sentence.LEFT] + b[Sentence.LEFT]) - (a[Sentence.LEFT] * b[Sentence.LEFT]);
         } else {
-            out.left = a.left + b.left;
+            out[Sentence.LEFT] = a[Sentence.LEFT] + b[Sentence.LEFT];
         }
 
-        if ((a.right < 0) && (b.right < 0)) {
-            out.right = (a.right + b.right) - (a.right * b.right);
-        } else if ((a.right > 0) && (b.right > 0)) {
-            out.right = (a.right + b.right) - (a.right * b.right);
+        if ((a[Sentence.RIGHT] < 0) && (b[Sentence.RIGHT] < 0)) {
+            out[Sentence.RIGHT] = (a[Sentence.RIGHT] + b[Sentence.RIGHT]) - (a[Sentence.RIGHT] * b[Sentence.RIGHT]);
+        } else if ((a[Sentence.RIGHT] > 0) && (b[Sentence.RIGHT] > 0)) {
+            out[Sentence.RIGHT] = (a[Sentence.RIGHT] + b[Sentence.RIGHT]) - (a[Sentence.RIGHT] * b[Sentence.RIGHT]);
         } else {
-            out.right = a.right + b.right;
+            out[Sentence.RIGHT] = a[Sentence.RIGHT] + b[Sentence.RIGHT];
         }
 
         return out;

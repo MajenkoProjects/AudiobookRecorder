@@ -13,7 +13,7 @@ public class Chain implements Effect {
         target = null;
     }
 
-    public void process(Sample[] samples) {
+    public void process(double[][] samples) {
         if (target != null) {
             Effect t = AudiobookRecorder.window.effects.get(target);
             if (t != null) {

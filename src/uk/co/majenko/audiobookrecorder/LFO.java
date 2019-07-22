@@ -22,8 +22,8 @@ public class LFO implements Effect {
         phase = p;
     }
 
-    public void process(Sample[] samples) {
-        for (Sample sample : samples) {
+    public void process(double[][] samples) {
+        for (double[] sample : samples) {
             double v = Math.sin(phase);
             phase += sampleStep;
             if (phase > (Math.PI * 2d)) {
@@ -38,8 +38,8 @@ public class LFO implements Effect {
             v *= depth;
 
             // Apply it to the sample
-            sample.left += (sample.left * v);
-            sample.right += (sample.right * v);
+            sample[Sentence.LEFT] += (sample[Sentence.LEFT] * v);
+            sample[Sentence.RIGHT] += (sample[Sentence.RIGHT] * v);
         }
     }
 

@@ -122,7 +122,7 @@ public class Chapter extends DefaultMutableTreeNode {
 
 
         AudioFormat sampleformat = AudiobookRecorder.window.roomNoise.getAudioFormat();
-        AudioFormat format = new AudioFormat(sampleformat.getSampleRate(), 16, 1, true, false);
+        AudioFormat format = new AudioFormat(sampleformat.getSampleRate(), 16, 2, true, false);
         byte[] data;
 
         int fullLength = 0;

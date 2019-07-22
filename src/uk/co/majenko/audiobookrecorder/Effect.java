@@ -3,7 +3,7 @@ package uk.co.majenko.audiobookrecorder;
 import java.util.ArrayList;
 
 public interface Effect  {
-    public void process(Sample[] samples);
+    public void process(double[][] samples);
     public String getName();
     public ArrayList<Effect> getChildEffects();
     public void dump();

@@ -89,24 +89,24 @@ public class Biquad implements Effect {
         setPeakGain(peakGainDB);
     }
 
-    public void process(Sample[] samples) {
+    public void process(double[][] samples) {
         lz1 = 0d;
         lz2 = 0d;
         rz1 = 0d;
         rz2 = 0d;
-        for (Sample in : samples) {
-            double lout = in.left * a0 + lz1;
+        for (double[] in : samples) {
+            double lout = in[Sentence.LEFT] * a0 + lz1;
 
-            lz1 = in.left * a1 + lz2 - b1 * lout;
-            lz2 = in.left * a2 - b2 * lout;
+            lz1 = in[Sentence.LEFT] * a1 + lz2 - b1 * lout;
+            lz2 = in[Sentence.LEFT] * a2 - b2 * lout;
 
-            double rout = in.right * a0 + rz1;
+            double rout = in[Sentence.RIGHT] * a0 + rz1;
 
-            rz1 = in.right * a1 + rz2 - b1 * rout;
-            rz2 = in.right * a2 - b2 * rout;
+            rz1 = in[Sentence.RIGHT] * a1 + rz2 - b1 * rout;
+            rz2 = in[Sentence.RIGHT] * a2 - b2 * rout;
 
-            in.left = lout;
-            in.right = rout;
+            in[Sentence.LEFT] = lout;
+            in[Sentence.RIGHT] = rout;
         }
     }
     

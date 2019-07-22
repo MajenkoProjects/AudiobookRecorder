@@ -19,12 +19,12 @@ public class Clipping implements Effect {
         return null;
     }
 
-    public void process(Sample[] samples) {
-        for (Sample sample : samples) {
-            if (sample.left > clip) sample.left = clip;
-            if (sample.left < -clip) sample.left = -clip;
-            if (sample.right > clip) sample.right = clip;
-            if (sample.right < -clip) sample.right = -clip;
+    public void process(double[][] samples) {
+        for (double[] sample : samples) {
+            if (sample[Sentence.LEFT] > clip) sample[Sentence.LEFT] = clip;
+            if (sample[Sentence.LEFT] < -clip) sample[Sentence.LEFT] = -clip;
+            if (sample[Sentence.RIGHT] > clip) sample[Sentence.RIGHT] = clip;
+            if (sample[Sentence.RIGHT] < -clip) sample[Sentence.RIGHT] = -clip;
         }
     }
 

@@ -775,9 +775,10 @@ public class Options extends JDialog {
     }
 
     public static KVPair[] getTrimMethods() {
-        KVPair[] pairs = new KVPair[2];
-        pairs[0] = new KVPair<String, String>("peak", "Peak Amplitude");
-        pairs[1] = new KVPair<String, String>("fft", "FFT Analysis");
+        KVPair[] pairs = new KVPair[3];
+        pairs[0] = new KVPair<String, String>("none", "None");
+        pairs[1] = new KVPair<String, String>("peak", "Peak Amplitude");
+        pairs[2] = new KVPair<String, String>("fft", "FFT Analysis");
         return pairs;
     }
 

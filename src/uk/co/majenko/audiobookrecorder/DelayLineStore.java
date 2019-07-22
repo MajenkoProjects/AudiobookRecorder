@@ -24,21 +24,21 @@ public class DelayLineStore {
         effects = new ArrayList<Effect>();
     }
 
-    public void process(Sample[] samples) {
+    public void process(double[][] samples) {
         for (Effect e : effects) {
             e.process(samples);
         }
 
-        for (Sample sample : samples) {
-            sample.left *= gain;
-            sample.right *= gain;
+        for (double[] sample : samples) {
+            sample[Sentence.LEFT] *= gain;
+            sample[Sentence.RIGHT] *= gain;
 
             if (pan < 0) {
                 double p = 1 + pan;
-                sample.right *= p;
+                sample[Sentence.RIGHT] *= p;
             } else {
                 double p = 1 - pan;
-                sample.left *= p;
+                sample[Sentence.LEFT] *= p;
             }
         }
     }
