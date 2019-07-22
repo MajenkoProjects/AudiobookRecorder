@@ -300,21 +300,19 @@ public class AudiobookRecorder extends JFrame {
 
         try {
 
-//            String clsname = "com.jtattoo.plaf.hifi.HiFiLookAndFeel";
-//            UIManager.setLookAndFeel(clsname);
+            String clsname = "com.jtattoo.plaf.hifi.HiFiLookAndFeel";
+            UIManager.setLookAndFeel(clsname);
 
-//            Properties p = new Properties();
-//            p.put("windowDecoration", "off");
-//            p.put("logoString", "Audiobook");
-//            p.put("textAntiAliasing", "on");
+            Properties p = new Properties();
+            p.put("windowDecoration", "off");
+            p.put("logoString", "Audiobook");
+            p.put("textAntiAliasing", "on");
 
-//            Class<?> cls = Class.forName(clsname);
-//            Class[] cArg = new Class[1];
-//            cArg[0] = Properties.class;
-//            Method mth = cls.getMethod("setCurrentTheme", cArg);
-//            mth.invoke(cls, p);
-
-
+            Class<?> cls = Class.forName(clsname);
+            Class[] cArg = new Class[1];
+            cArg[0] = Properties.class;
+            Method mth = cls.getMethod("setCurrentTheme", cArg);
+            mth.invoke(cls, p);
 
         } catch (Exception e) {
             e.printStackTrace();
