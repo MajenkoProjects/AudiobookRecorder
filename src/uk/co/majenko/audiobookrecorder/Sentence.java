@@ -962,9 +962,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     synchronized public double[][] getProcessedAudioData() {
-long start = System.nanoTime();
         loadFile();
-long p1 = System.nanoTime();
         if (processedAudio != null) return processedAudio;
 
         if (audioData == null) return null;
@@ -975,7 +973,6 @@ long p1 = System.nanoTime();
         }
         // Add processing in here.
 
-long p2 = System.nanoTime();
 
         String def = AudiobookRecorder.window.getDefaultEffectsChain();
         Effect eff = AudiobookRecorder.window.effects.get(def);
@@ -985,7 +982,6 @@ long p2 = System.nanoTime();
             eff.process(processedAudio);
         }
 
-long p3 = System.nanoTime();
         if (effectChain != null) {
             // Don't double up the default chain
             if (!effectChain.equals(def)) {
@@ -997,19 +993,12 @@ long p3 = System.nanoTime();
             }
         }
         
-long p4 = System.nanoTime();
         // Add final master gain stage
         for (int i = 0; i < processedAudio.length; i++) {
             processedAudio[i][LEFT] *= gain;
             processedAudio[i][RIGHT] *= gain;
         }
-long p5 = System.nanoTime();
 
-System.err.println("Time to load file: " + (p1 - start));
-System.err.println("Time to clone data: " + (p2 - p1));
-System.err.println("Time to apply default effect: " + (p3 - p2));
-System.err.println("Time to apply selected effect: " + (p4 - p3));
-System.err.println("Time to set gain: " + (p5 - p4));
         return processedAudio;
     }
 
