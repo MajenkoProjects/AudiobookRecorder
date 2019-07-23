@@ -68,7 +68,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     double[][] audioData = null;
 
-//    double[][] processedAudio = null;
+    double[][] processedAudio = null;
 
     RecordingThread recordingThread;
 
@@ -181,7 +181,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         }
 
         audioData = null;
-//        processedAudio = null;
+        processedAudio = null;
         storedFormat = null;
         storedLength = -1;
 
@@ -558,7 +558,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public void clearCache() {
         audioData = null;
-//        processedAudio = null;
+        processedAudio = null;
     }
 
     public boolean lockedInCache() {
@@ -962,17 +962,20 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     synchronized public double[][] getProcessedAudioData() {
+long start = System.nanoTime();
         loadFile();
-//        if (processedAudio != null) return processedAudio;
+long p1 = System.nanoTime();
+        if (processedAudio != null) return processedAudio;
 
         if (audioData == null) return null;
-        double[][] processedAudio = new double[audioData.length][2];
+        processedAudio = new double[audioData.length][2];
         for (int i = 0; i < audioData.length; i++) {
             processedAudio[i][LEFT] = audioData[i][LEFT];
             processedAudio[i][RIGHT] = audioData[i][RIGHT];
         }
         // Add processing in here.
 
+long p2 = System.nanoTime();
 
         String def = AudiobookRecorder.window.getDefaultEffectsChain();
         Effect eff = AudiobookRecorder.window.effects.get(def);
@@ -982,6 +985,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             eff.process(processedAudio);
         }
 
+long p3 = System.nanoTime();
         if (effectChain != null) {
             // Don't double up the default chain
             if (!effectChain.equals(def)) {
@@ -993,11 +997,19 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             }
         }
         
+long p4 = System.nanoTime();
         // Add final master gain stage
         for (int i = 0; i < processedAudio.length; i++) {
             processedAudio[i][LEFT] *= gain;
             processedAudio[i][RIGHT] *= gain;
         }
+long p5 = System.nanoTime();
+
+System.err.println("Time to load file: " + (p1 - start));
+System.err.println("Time to clone data: " + (p2 - p1));
+System.err.println("Time to apply default effect: " + (p3 - p2));
+System.err.println("Time to apply selected effect: " + (p4 - p3));
+System.err.println("Time to set gain: " + (p5 - p4));
         return processedAudio;
     }
 

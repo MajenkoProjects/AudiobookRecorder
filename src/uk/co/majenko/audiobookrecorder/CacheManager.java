@@ -18,6 +18,8 @@ public class CacheManager {
         }
 
         cache.add(c);
+
+        System.gc();
     }
 
     public static void setCacheSize(int c) {

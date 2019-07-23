@@ -331,7 +331,7 @@ public class Options extends JDialog {
 
         addSeparator(optionsPanel);
 
-        cacheSize = addSpinner(optionsPanel, "Cache size:", 0, 5000, 1, getInteger("cache.size"), "");
+        cacheSize = addSpinner(optionsPanel, "Cache size:", 2, 100, 1, getInteger("cache.size"), "");
 
         addSeparator(optionsPanel);
         tabs.add("Options", new JScrollPane(optionsPanel));
