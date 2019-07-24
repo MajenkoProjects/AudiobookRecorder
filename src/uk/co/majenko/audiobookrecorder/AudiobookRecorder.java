@@ -2668,6 +2668,7 @@ public class AudiobookRecorder extends JFrame {
 
     public void loadEffectsFromFolder(File dir) {
         if (dir == null) return;
+	if (!dir.exists()) return;
         File[] files = dir.listFiles();
         for (File f : files) {
             if (f.getName().endsWith(".eff")) {
