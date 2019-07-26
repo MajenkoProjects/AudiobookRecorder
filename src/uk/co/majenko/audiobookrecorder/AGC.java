@@ -31,22 +31,22 @@ public class AGC implements Effect {
             double absSampleLeft = Math.abs(samples[i][Sentence.LEFT]) * gain;
             double absSampleRight = Math.abs(samples[i][Sentence.RIGHT]) * gain;
 
+            double factor = 0.0d;
+
             if (absSampleLeft > ceiling) {
-                gain -= attack;
-                if (gain < 0) gain = 0;
+                factor = -attack;
             }
             
             if (absSampleRight > ceiling) {
-                gain -= attack;
-                if (gain < 0) gain = 0;
+                factor = -attack;
             }
         
             if ((absSampleLeft < ceiling) && (absSampleRight < ceiling)) {
-                gain += decay;
-                if (gain > limit) {
-                    gain = limit;
-                }
+                factor = decay;
             }
+
+            gain += factor;
+            if (gain > limit) gain = limit;
 
             samples[i][Sentence.LEFT] *= gain;
             samples[i][Sentence.RIGHT] *= gain;
