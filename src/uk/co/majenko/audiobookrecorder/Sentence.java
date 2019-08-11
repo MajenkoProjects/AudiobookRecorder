@@ -94,7 +94,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             try {
                 running = true;
                 recording = true;
-                byte[] buf = new byte[AudiobookRecorder.window.microphone.getBufferSize()];
+                byte[] buf = new byte[1024]; //AudiobookRecorder.window.microphone.getBufferSize()];
                 FileOutputStream fos = new FileOutputStream(tempFile);
                 int len = 0;
                 AudiobookRecorder.window.microphone.flush();
@@ -155,24 +155,31 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public boolean startRecording() {
+        System.err.println("Starting record");
         if (AudiobookRecorder.window.microphone == null) {
             JOptionPane.showMessageDialog(AudiobookRecorder.window, "Microphone not started. Start the microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
 
+        System.err.println("Removing object from cache");
         CacheManager.removeFromCache(this);
 
+        System.err.println("Creating record thread");
         recordingThread = new RecordingThread(getTempFile(), getFile(), Options.getAudioFormat());
 
+        System.err.println("Starting record thread");
         Thread rc = new Thread(recordingThread);
         rc.setDaemon(true);
         rc.start();
+        System.err.println("Recording started");
 
         return true;
     }
 
     public void stopRecording() {
+        System.err.println("Stopping recording...");
         recordingThread.stopRecording();
+        System.err.println("Waiting for stop to complete...");
         while (recordingThread.isRunning()) {
             try {
                 Thread.sleep(10);
@@ -181,11 +188,14 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             }
         }
 
+        System.err.println("Removing object from cache...");
+
         CacheManager.removeFromCache(this);
 
         audioData = null;
         processedAudio = null;
 
+        System.err.println("Running trim and recognition...");
         if (!id.equals("room-noise")) {
             String tm = Options.get("audio.recording.trim");
             if (tm.equals("peak")) {
@@ -197,6 +207,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 recognise();
             }
         }
+        System.err.println("Recording stop complete");
     }
 
     public static final int FFTBuckets = 1024;

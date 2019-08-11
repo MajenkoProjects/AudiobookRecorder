@@ -1365,6 +1365,7 @@ public class AudiobookRecorder extends JFrame {
 
         if (s.startRecording()) {
             recording = (Sentence)selectedNode;
+            System.err.println("Starting flash");
             centralPanel.setFlash(true);
         }
     }
@@ -1414,6 +1415,7 @@ public class AudiobookRecorder extends JFrame {
 
         if (s.startRecording()) {
             recording = s;
+            System.err.println("Starting flash");
             centralPanel.setFlash(true);
         }
     }
@@ -1464,6 +1466,7 @@ public class AudiobookRecorder extends JFrame {
 
         if (s.startRecording()) {
             recording = s;
+            System.err.println("Starting flash");
             centralPanel.setFlash(true);
         }
     }
@@ -1513,6 +1516,7 @@ public class AudiobookRecorder extends JFrame {
 
         if (s.startRecording()) {
             recording = s;
+            System.err.println("Starting flash");
             centralPanel.setFlash(true);
         }
     }
@@ -1562,23 +1566,29 @@ public class AudiobookRecorder extends JFrame {
 
         if (s.startRecording()) {
             recording = s;
+            System.err.println("Starting flash");
             centralPanel.setFlash(true);
         }
     }
 
     public void stopRecording() {
+        System.err.println("Record stop requested");
         if (recording == null) return;
         recording.stopRecording();
 
+        System.err.println("Reloading model");
         bookTreeModel.reload(book);
 
         bookTree.expandPath(new TreePath(((DefaultMutableTreeNode)recording.getParent()).getPath()));
         bookTree.setSelectionPath(new TreePath(recording.getPath()));
         bookTree.scrollPathToVisible(new TreePath(recording.getPath()));
 
+        System.err.println("Stopping flash");
         centralPanel.setFlash(false);
         recording = null;
+        System.err.println("Saving book");
         saveBookStructure();
+        System.err.println("Stop request complete");
     }
 
     public void deleteLastRecording() {
