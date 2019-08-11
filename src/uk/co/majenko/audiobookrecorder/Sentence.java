@@ -160,6 +160,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             return false;
         }
 
+        CacheManager.removeFromCache(this);
 
         recordingThread = new RecordingThread(getTempFile(), getFile(), Options.getAudioFormat());
 
@@ -180,10 +181,10 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             }
         }
 
+        CacheManager.removeFromCache(this);
+
         audioData = null;
         processedAudio = null;
-        storedFormat = null;
-        storedLength = -1;
 
         if (!id.equals("room-noise")) {
             String tm = Options.get("audio.recording.trim");
@@ -559,6 +560,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     public void clearCache() {
         audioData = null;
         processedAudio = null;
+        storedFormat = null;
+        storedLength = -1;
     }
 
     public boolean lockedInCache() {

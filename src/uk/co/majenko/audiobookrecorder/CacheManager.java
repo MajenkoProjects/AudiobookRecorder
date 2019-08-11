@@ -25,4 +25,8 @@ public class CacheManager {
     public static void setCacheSize(int c) {
         cacheSize = c;
     }
+
+    public static void removeFromCache(Cacheable c) {
+        cache.remove(c);
+    }
 }

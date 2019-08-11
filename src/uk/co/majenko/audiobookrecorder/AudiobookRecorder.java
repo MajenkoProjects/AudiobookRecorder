@@ -24,6 +24,7 @@ import edu.cmu.sphinx.api.*;
 import edu.cmu.sphinx.decoder.adaptation.*;
 import edu.cmu.sphinx.result.*;
 import org.w3c.dom.Node;
+import java.util.concurrent.*;
 
 public class AudiobookRecorder extends JFrame {
 
@@ -37,6 +38,11 @@ public class AudiobookRecorder extends JFrame {
     TreeMap<String, EffectGroup> effects;
 
     String defaultEffectChain = "none";
+
+    public final static int IDLE = 0;
+    public final static int RECORDING = 1;
+    public final static int STOPPING = 2;
+    public int state = IDLE;
 
     MainToolBar toolBar;
 
@@ -548,6 +554,7 @@ public class AudiobookRecorder extends JFrame {
                     int i = effectChain.getSelectedIndex();
                     KVPair<String, String> p = effectChain.getItemAt(i);
                     if (p == null) return;
+                    CacheManager.removeFromCache(selectedSentence);
                     selectedSentence.setEffectChain(p.getKey());
                     updateWaveform();
                 }
@@ -596,6 +603,7 @@ public class AudiobookRecorder extends JFrame {
                     alertNoRoomNoise();
                     return;
                 }
+                if (!getLock()) return;
                 startRecording();
             }
         });
@@ -606,6 +614,7 @@ public class AudiobookRecorder extends JFrame {
                     alertNoRoomNoise();
                     return;
                 }
+                if (!getLock()) return;
                 startRecordingShort();
             }
         });
@@ -616,6 +625,7 @@ public class AudiobookRecorder extends JFrame {
                     alertNoRoomNoise();
                     return;
                 }
+                if (!getLock()) return;
                 startRecordingNewParagraph();
             }
         });
@@ -626,6 +636,7 @@ public class AudiobookRecorder extends JFrame {
                     alertNoRoomNoise();
                     return;
                 }
+                if (!getLock()) return;
                 startRecordingNewSection();
             }
         });
@@ -636,13 +647,16 @@ public class AudiobookRecorder extends JFrame {
                     alertNoRoomNoise();
                     return;
                 }
+                if (!getLock()) return;
                 startReRecording();
             }
         });
         centralPanel.getActionMap().put("stopRecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (bookTree.isEditing()) return;
+                stopLock();
                 stopRecording();
+                freeLock();
             }
         });
         centralPanel.getActionMap().put("deleteLast", new AbstractAction() {
@@ -2949,5 +2963,32 @@ public class AudiobookRecorder extends JFrame {
 
     public String getDefaultEffectsChain() {
         return defaultEffectChain;
+    }
+
+    public synchronized boolean getLock() {
+        if (state == RECORDING) return false;
+
+        int counts = 0;
+        while (state == STOPPING) {
+            try {
+                Thread.sleep(100);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            counts++;
+            if (counts > 100) return false;
+        }
+
+        state = RECORDING;
+        
+        return true;
+    }
+
+    public void freeLock() {
+        state = IDLE;
+    }
+
+    public void stopLock() {
+        state = STOPPING;
     }
 }
