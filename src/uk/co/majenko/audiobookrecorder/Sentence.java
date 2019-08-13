@@ -155,31 +155,24 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public boolean startRecording() {
-        System.err.println("Starting record");
         if (AudiobookRecorder.window.microphone == null) {
             JOptionPane.showMessageDialog(AudiobookRecorder.window, "Microphone not started. Start the microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
 
-        System.err.println("Removing object from cache");
         CacheManager.removeFromCache(this);
 
-        System.err.println("Creating record thread");
         recordingThread = new RecordingThread(getTempFile(), getFile(), Options.getAudioFormat());
 
-        System.err.println("Starting record thread");
         Thread rc = new Thread(recordingThread);
         rc.setDaemon(true);
         rc.start();
-        System.err.println("Recording started");
 
         return true;
     }
 
     public void stopRecording() {
-        System.err.println("Stopping recording...");
         recordingThread.stopRecording();
-        System.err.println("Waiting for stop to complete...");
         while (recordingThread.isRunning()) {
             try {
                 Thread.sleep(10);
@@ -188,14 +181,11 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             }
         }
 
-        System.err.println("Removing object from cache...");
-
         CacheManager.removeFromCache(this);
 
         audioData = null;
         processedAudio = null;
 
-        System.err.println("Running trim and recognition...");
         if (!id.equals("room-noise")) {
             String tm = Options.get("audio.recording.trim");
             if (tm.equals("peak")) {
@@ -207,7 +197,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 recognise();
             }
         }
-        System.err.println("Recording stop complete");
+
     }
 
     public static final int FFTBuckets = 1024;
@@ -225,7 +215,11 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         } else {
             samples = getProcessedAudioData();
         }
-        if (samples == null) return;
+        if (samples == null) {
+            System.err.println("Error: loading data failed!");
+            return;
+        }
+
 
         int blocks = samples.length / 4096 + 1;
 
@@ -264,6 +258,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             block++;
         }
 
+
         int limit = Options.getInteger("audio.recording.trim.fft");
 
         // Find first block with > 1 intensity and subtract one.
@@ -300,7 +295,10 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         if (endOffset <= startOffset) endOffset = startOffset + 4096;
         if (endOffset < 0) endOffset = 0;
         if (endOffset >= samples.length) endOffset = samples.length;
-        updateCrossings();
+        updateCrossings(useRaw);
+        intens = null;
+        samples = null;
+        System.gc();
 
     }
 
@@ -355,7 +353,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
         if (startOffset < 0) startOffset = 0;
         if (endOffset >= samples.length) endOffset = samples.length-1;
-        updateCrossings();
+        updateCrossings(useRaw);
     }
 
     public String getId() {
@@ -439,19 +437,31 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public void updateCrossings() {
-        updateStartCrossing();
-        updateEndCrossing();
+        updateCrossings(false);
+    }
+
+    public void updateCrossings(boolean useRaw) {
+        updateStartCrossing(useRaw);
+        updateEndCrossing(useRaw);
     }
 
     public void updateStartCrossing() {
+        updateStartCrossing(false);
+    }
+
+    public void updateStartCrossing(boolean useRaw) {
         if (crossStartOffset == -1) {
-            crossStartOffset = findNearestZeroCrossing(startOffset, 4096);
+            crossStartOffset = findNearestZeroCrossing(useRaw, startOffset, 4096);
         }
     }
 
     public void updateEndCrossing() {
+        updateEndCrossing(false);
+    }
+
+    public void updateEndCrossing(boolean useRaw) {
         if (crossEndOffset == -1) {
-            crossEndOffset = findNearestZeroCrossing(endOffset, 4096);
+            crossEndOffset = findNearestZeroCrossing(useRaw, endOffset, 4096);
         }
     }
 
@@ -580,7 +590,16 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public int findNearestZeroCrossing(int pos, int range) {
-        double[][] data = getProcessedAudioData();
+        return findNearestZeroCrossing(false, pos, range);
+    }
+
+    public int findNearestZeroCrossing(boolean useRaw, int pos, int range) {
+        double[][] data = null;
+        if (useRaw) {
+            data = getRawAudioData();
+        } else {
+            data = getProcessedAudioData();
+        }
         if (data == null) return 0;
         if (data.length == 0) return 0;
 
@@ -654,9 +673,18 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public double getPeakValue() {
+        return getPeakValue(false);
+    }
+
+    public double getPeakValue(boolean useRaw) {
         double oldGain = gain;
         gain = 1.0d;
-        double[][] samples = getProcessedAudioData();
+        double[][] samples = null;
+        if (useRaw) {
+            samples = getRawAudioData();
+        } else {
+            samples = getProcessedAudioData();
+        }
         gain = oldGain;
         if (samples == null) {
             return 0;
@@ -944,10 +972,16 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public void loadFile() {
-        if (audioData != null) return;
+        if (audioData != null) {
+            return;
+        }
 
         File f = getFile();
         try {
+            if (!f.exists()) {
+                System.err.println("TODO: Race condition: wav file doesn't exist yet");
+                return;
+            }
             AudioInputStream s = AudioSystem.getAudioInputStream(f);
             AudioFormat format = getAudioFormat();
 
@@ -967,6 +1001,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             audioData = samples;
             CacheManager.addToCache(this);
         } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

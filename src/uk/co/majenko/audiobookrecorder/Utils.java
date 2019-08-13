@@ -63,4 +63,17 @@ public class Utils {
             }
         }
     }
+
+    static long millis = System.currentTimeMillis();
+
+    public static void report(String tag) {
+        long t = System.currentTimeMillis();
+        long d = t - millis;
+        millis = t;
+        System.err.println(String.format("%10d - %10s : %8d | %8d | %8d", d, tag,
+            Runtime.getRuntime().totalMemory(),
+            Runtime.getRuntime().maxMemory(),
+            Runtime.getRuntime().freeMemory()
+        ));
+    }
 }

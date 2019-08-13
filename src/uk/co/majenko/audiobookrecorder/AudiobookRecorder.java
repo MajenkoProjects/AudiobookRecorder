@@ -598,56 +598,76 @@ public class AudiobookRecorder extends JFrame {
 
         centralPanel.getActionMap().put("startRecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
-                if (bookTree.isEditing()) return;
+                if (!getLock()) return;
+                if (bookTree.isEditing()) {
+                    freeLock();
+                    return;
+                }
                 if (getNoiseFloor() == 0) {
+                    freeLock();
                     alertNoRoomNoise();
                     return;
                 }
-                if (!getLock()) return;
                 startRecording();
             }
         });
         centralPanel.getActionMap().put("startRecordShort", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
-                if (bookTree.isEditing()) return;
+                if (!getLock()) return;
+                if (bookTree.isEditing()) {
+                    freeLock();
+                    return;
+                }
                 if (getNoiseFloor() == 0) {
+                    freeLock();
                     alertNoRoomNoise();
                     return;
                 }
-                if (!getLock()) return;
                 startRecordingShort();
             }
         });
         centralPanel.getActionMap().put("startRecordNewPara", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
-                if (bookTree.isEditing()) return;
-                if (getNoiseFloor() == 0) {
-                    alertNoRoomNoise();
+                if (!getLock()) return;
+                if (bookTree.isEditing()) {
+                    freeLock();
                     return;
                 }
-                if (!getLock()) return;
+                if (getNoiseFloor() == 0) {
+                    alertNoRoomNoise();
+                    freeLock();
+                    return;
+                }
                 startRecordingNewParagraph();
             }
         });
         centralPanel.getActionMap().put("startRecordNewSection", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
-                if (bookTree.isEditing()) return;
+                if (!getLock()) return;
+                if (bookTree.isEditing()) {
+                    freeLock();
+                    return;
+                }
                 if (getNoiseFloor() == 0) {
+                    freeLock();
                     alertNoRoomNoise();
                     return;
                 }
-                if (!getLock()) return;
                 startRecordingNewSection();
             }
         });
         centralPanel.getActionMap().put("startRerecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
-                if (bookTree.isEditing()) return;
+                if (!getLock()) return;
+                if (bookTree.isEditing()) {
+                    freeLock();
+                    return;
+                }
                 if (getNoiseFloor() == 0) {
+                    freeLock();
                     alertNoRoomNoise();
                     return;
                 }
-                if (!getLock()) return;
                 startReRecording();
             }
         });
@@ -1365,7 +1385,6 @@ public class AudiobookRecorder extends JFrame {
 
         if (s.startRecording()) {
             recording = (Sentence)selectedNode;
-            System.err.println("Starting flash");
             centralPanel.setFlash(true);
         }
     }
@@ -1415,7 +1434,6 @@ public class AudiobookRecorder extends JFrame {
 
         if (s.startRecording()) {
             recording = s;
-            System.err.println("Starting flash");
             centralPanel.setFlash(true);
         }
     }
@@ -1466,7 +1484,6 @@ public class AudiobookRecorder extends JFrame {
 
         if (s.startRecording()) {
             recording = s;
-            System.err.println("Starting flash");
             centralPanel.setFlash(true);
         }
     }
@@ -1516,7 +1533,6 @@ public class AudiobookRecorder extends JFrame {
 
         if (s.startRecording()) {
             recording = s;
-            System.err.println("Starting flash");
             centralPanel.setFlash(true);
         }
     }
@@ -1566,29 +1582,23 @@ public class AudiobookRecorder extends JFrame {
 
         if (s.startRecording()) {
             recording = s;
-            System.err.println("Starting flash");
             centralPanel.setFlash(true);
         }
     }
 
     public void stopRecording() {
-        System.err.println("Record stop requested");
         if (recording == null) return;
         recording.stopRecording();
 
-        System.err.println("Reloading model");
         bookTreeModel.reload(book);
 
         bookTree.expandPath(new TreePath(((DefaultMutableTreeNode)recording.getParent()).getPath()));
         bookTree.setSelectionPath(new TreePath(recording.getPath()));
         bookTree.scrollPathToVisible(new TreePath(recording.getPath()));
 
-        System.err.println("Stopping flash");
         centralPanel.setFlash(false);
         recording = null;
-        System.err.println("Saving book");
         saveBookStructure();
-        System.err.println("Stop request complete");
     }
 
     public void deleteLastRecording() {
@@ -3001,4 +3011,5 @@ public class AudiobookRecorder extends JFrame {
     public void stopLock() {
         state = STOPPING;
     }
+
 }
