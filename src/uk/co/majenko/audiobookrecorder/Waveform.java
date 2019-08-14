@@ -21,6 +21,11 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
     int leftAltMarker = 0;
     int rightAltMarker = 0;
 
+    int cutEntry = 0;
+    int cutExit = 0;
+    boolean displayCut = false;
+    boolean displaySplit = false;
+
     int dragging = 0;
 
     int step = 1;
@@ -133,7 +138,7 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
                 g.drawLine(n, (int)(h/2 + lave), n, (int)(h/2 - have));
             }
 
-            g.setColor(new Color(255, 0, 0, 32));
+            g.setColor(new Color(255, 0, 0, 64));
             g.fillRect(0, 0, (leftAltMarker - offset)/step, h);
             g.fillRect((rightAltMarker - offset)/step, 0, (num - rightAltMarker) / step , h);
 
@@ -144,6 +149,19 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
             g.setColor(new Color(255, 255, 0));
             g.drawLine((leftMarker - offset)/step, 0, (leftMarker - offset)/step, h);
             g.drawLine((rightMarker - offset)/step, 0, (rightMarker - offset)/step, h);
+
+            if (displayCut || displaySplit) {
+                g.setColor(new Color(0, 255, 255));
+                g.drawLine((cutEntry - offset)/step, 0, (cutEntry - offset)/step, h);
+            }
+
+            if (displayCut) {
+                g.setColor(new Color(0, 255, 255));
+                g.drawLine((cutExit - offset)/step, 0, (cutExit - offset)/step, h);
+                
+                g.setColor(new Color(0, 255, 255, 80));
+                g.fillRect((cutEntry - offset)/step, 0, ((cutExit - offset) - (cutEntry - offset))/step , h);
+            }
 
             g.setColor(new Color(0, 255, 255));
             for (int i = 0; i < h; i += 2) {
@@ -192,6 +210,8 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
     public void setData(double[][] s) {
         samples = s;
         playMarker = 0;
+        displayCut = false;
+        displaySplit = false;
         repaint();
     }
 
@@ -221,6 +241,19 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
             dragging = 2;
             return;
         }
+        if (displayCut || displaySplit) {
+            if ((x >= ((cutEntry - offset)/step) - 10) && (x <= ((cutEntry - offset)/step) + 10)) {
+                dragging = 3;
+                return;
+            }
+        }
+        if (displayCut) {
+            if ((x >= ((cutExit - offset)/step) - 10) && (x <= ((cutExit - offset)/step) + 10)) {
+                dragging = 4;
+                return;
+            }
+        }
+        
     }
 
     public void mouseReleased(MouseEvent e) {
@@ -251,6 +284,19 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
             setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
             return;
         }
+        if (displayCut || displaySplit) {
+            if ((x >= ((cutEntry - offset)/step) - 10) && (x <= ((cutEntry - offset)/step) + 10)) {
+                setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
+                return;
+            }
+        } 
+
+        if (displayCut) {
+            if ((x >= ((cutExit - offset)/step) - 10) && (x <= ((cutExit - offset)/step) + 10)) {
+                setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
+                return;
+            }
+        }
 
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 
@@ -269,6 +315,18 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
             rightMarker = (x * step) + offset;
             if (rightMarker < leftMarker) {
                 rightMarker = leftMarker;
+            }
+        } else if (dragging == 3) {
+            cutEntry = (x * step) + offset;
+            if (displayCut) {
+                if (cutEntry > cutExit) {
+                    cutEntry = cutExit;
+                }
+            }
+        } else if (dragging == 4) {
+            cutExit = (x * step) + offset;
+            if (cutExit < cutEntry) {
+                cutExit = cutEntry;
             }
         }
 
@@ -298,5 +356,34 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
     public void setPlayMarker(int m) {
         playMarker = leftAltMarker + m;
         repaint();
+    }
+
+    public void setDisplayCut(boolean c) {
+        displayCut = c;
+        displaySplit = false;
+        if (displayCut) {
+            int d = rightMarker - leftMarker;
+            cutEntry = leftMarker + (d / 3);
+            cutExit = leftMarker + (d / 3 * 2);
+        }
+        repaint();
+    }
+
+    public void setDisplaySplit(boolean c) {
+        displayCut = false;
+        displaySplit = c;
+        if (displaySplit) {
+            int d = rightMarker - leftMarker;
+            cutEntry = leftMarker + (d / 2);
+        }
+        repaint();
+    }
+
+    public int getCutStart() {
+        return cutEntry;
+    }
+
+    public int getCutEnd() {
+        return cutExit;
     }
 }

@@ -33,4 +33,8 @@ public class Icons {
     static public final ImageIcon dollar      = new ImageIcon(Icons.class.getResource("icons/dollar.png"));
     static public final ImageIcon attention   = new ImageIcon(Icons.class.getResource("icons/attention.png"));
     static public final ImageIcon normalize   = new ImageIcon(Icons.class.getResource("icons/normalize.png"));
+    static public final ImageIcon split       = new ImageIcon(Icons.class.getResource("icons/split.png"));
+    static public final ImageIcon cut         = new ImageIcon(Icons.class.getResource("icons/cut.png"));
+    static public final ImageIcon docut       = new ImageIcon(Icons.class.getResource("icons/do-cut.png"));
+    static public final ImageIcon playto      = new ImageIcon(Icons.class.getResource("icons/play-to.png"));
 }

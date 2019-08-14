@@ -30,7 +30,7 @@ public class AudiobookRecorder extends JFrame {
 
     // Settings - tweakable
 
-    public static final int PLAYBACK_CHUNK_SIZE = 16384;
+    public static final int PLAYBACK_CHUNK_SIZE = 1024;
 
     public static final String SPHINX_MODEL = "resource:/edu/cmu/sphinx/models/en-us/en-us";
 
@@ -103,6 +103,9 @@ public class AudiobookRecorder extends JFrame {
     JButtonSpacePlay reprocessAudioFFT;
     JButtonSpacePlay reprocessAudioPeak;
     JButtonSpacePlay normalizeAudio;
+    JToggleButtonSpacePlay selectSplitMode;
+    JToggleButtonSpacePlay selectCutMode;
+    JButtonSpacePlay doCutSplit;
 
     JComboBox<KVPair<String,String>> effectChain;
 
@@ -423,6 +426,23 @@ public class AudiobookRecorder extends JFrame {
             }
         });
     
+        selectSplitMode = new JToggleButtonSpacePlay(Icons.split, "Toggle split mode", new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                toggleSplitMode();
+            }
+        });
+
+        selectCutMode = new JToggleButtonSpacePlay(Icons.cut, "Toggle cut mode", new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                toggleCutMode();
+            }
+        });
+
+        doCutSplit = new JButtonSpacePlay(Icons.docut, "Perform cut or split", new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                executeCutOrSplit();
+            }
+        });
 
         postSentenceGap = new JSpinner(new SteppedNumericSpinnerModel(0, 5000, 100, 0));
         postSentenceGap.setPreferredSize(new Dimension(50, 20));
@@ -487,6 +507,11 @@ public class AudiobookRecorder extends JFrame {
                 gainPercent.setEnabled(!selectedSentence.isLocked());
                 reprocessAudioFFT.setEnabled(!selectedSentence.isLocked());
                 reprocessAudioPeak.setEnabled(!selectedSentence.isLocked());
+                selectCutMode.setEnabled(!selectedSentence.isLocked());
+                selectSplitMode.setEnabled(!selectedSentence.isLocked());
+                doCutSplit.setEnabled(false);
+                selectCutMode.setSelected(false);
+                selectSplitMode.setSelected(false);
 
                 bookTreeModel.reload(selectedSentence);
             }
@@ -560,6 +585,10 @@ public class AudiobookRecorder extends JFrame {
                 }
             }
         });
+
+        controlsBottom.add(selectSplitMode);
+        controlsBottom.add(selectCutMode);
+        controlsBottom.add(doCutSplit);
 
         sampleControl.add(controlsTop, BorderLayout.NORTH);
         sampleControl.add(controlsLeft, BorderLayout.WEST);
@@ -1704,13 +1733,14 @@ public class AudiobookRecorder extends JFrame {
         try {
             fos = new FileOutputStream(config);
             prefs.storeToXML(fos, "Audiobook Recorder Description");
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
         if (fos != null) {
             try {
                 fos.close();
-            } catch (Exception e) {
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         }
     }
@@ -1813,6 +1843,11 @@ public class AudiobookRecorder extends JFrame {
                     gainPercent.setEnabled(!s.isLocked());
                     reprocessAudioFFT.setEnabled(!s.isLocked());
                     reprocessAudioPeak.setEnabled(!s.isLocked());
+                    selectCutMode.setEnabled(!s.isLocked());
+                    selectSplitMode.setEnabled(!s.isLocked());
+                    doCutSplit.setEnabled(false);
+                    selectCutMode.setSelected(false);
+                    selectSplitMode.setSelected(false);
                 } else {
                     selectedSentence = null;
                     sampleWaveform.clearData();
@@ -1820,6 +1855,11 @@ public class AudiobookRecorder extends JFrame {
                     gainPercent.setValue(100);
                     locked.setSelected(false);
                     attention.setSelected(false);
+                    selectCutMode.setEnabled(false);
+                    selectSplitMode.setEnabled(false);
+                    doCutSplit.setEnabled(false);
+                    selectCutMode.setSelected(false);
+                    selectSplitMode.setSelected(false);
                 }
             }
         });
@@ -2045,6 +2085,7 @@ public class AudiobookRecorder extends JFrame {
                     play = AudioSystem.getSourceDataLine(format, Options.getPlaybackMixer());
                     play.open(format);
                     play.start();
+                    play.drain();
 
                     bookTree.scrollPathToVisible(new TreePath(s.getPath()));
                     data = s.getPCMData();
@@ -2068,6 +2109,7 @@ public class AudiobookRecorder extends JFrame {
                         play.close();
                     }
                     play = null;
+                    e.printStackTrace();
                 }
             }
         });
@@ -2117,6 +2159,82 @@ public class AudiobookRecorder extends JFrame {
     }
 
 
+    public void playToSelectedSentence() {
+        if (selectedSentence == null) return;
+        if (playing != null) return;
+        if (getNoiseFloor() == 0) {
+            alertNoRoomNoise();
+            return;
+        }
+        playing = selectedSentence;
+
+        playingThread = new Thread(new Runnable() {
+            public void run() {
+                Sentence s = playing;
+                byte[] data;
+
+                try {
+
+                    AudioFormat sampleformat = s.getAudioFormat();
+                    AudioFormat format = new AudioFormat(sampleformat.getSampleRate(), 16, 2, true, false);
+
+                    play = AudioSystem.getSourceDataLine(format, Options.getPlaybackMixer());
+                    play.open(format);
+                    play.start();
+                    play.drain();
+
+                    bookTree.scrollPathToVisible(new TreePath(s.getPath()));
+                    data = s.getPCMData();
+
+                    int startPos = 0;
+                    int endPos = data.length / format.getFrameSize();
+
+//foobar
+                    if (selectSplitMode.isSelected()) {
+                        endPos = sampleWaveform.getCutStart() - selectedSentence.getStartCrossing();
+                        if (endPos < 0) endPos = 0;
+                    } else if (selectCutMode.isSelected()) {
+                        startPos = sampleWaveform.getCutStart() - selectedSentence.getStartCrossing();;
+                        endPos = sampleWaveform.getCutEnd() - selectedSentence.getStartCrossing();;
+                        if (startPos < 0) startPos = 0;
+                        if (endPos < 0) endPos = 0;
+                    }
+
+                    startPos *= format.getFrameSize();
+                    endPos *= format.getFrameSize();
+
+                    if (startPos > data.length) startPos = data.length;
+                    if (endPos > data.length) endPos = data.length;
+
+                    for (int pos = startPos; pos < endPos; pos += PLAYBACK_CHUNK_SIZE) {
+                        sampleWaveform.setPlayMarker(pos / format.getFrameSize());
+                        int l = data.length - pos;
+                        if (l > PLAYBACK_CHUNK_SIZE) l = PLAYBACK_CHUNK_SIZE;
+                        play.write(data, pos, l);
+                    }
+
+                    play.drain();
+                    play.stop();
+                    play.close();
+                    play = null;
+                    playing = null;
+                } catch (Exception e) {
+                    playing = null;
+                    if (play != null) {
+                        play.drain();
+                        play.stop();
+                        play.close();
+                    }
+                    play = null;
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        playingThread.setDaemon(true);
+        playingThread.start();
+    }
+
     public void playFromSelectedSentence() {
         if (selectedSentence == null) return;
         if (playing != null) return;
@@ -2138,6 +2256,7 @@ public class AudiobookRecorder extends JFrame {
                     play = AudioSystem.getSourceDataLine(format, Options.getPlaybackMixer());
                     play.open(format);
                     play.start();
+                    play.drain();
 
                     while (playing != null) {
                         bookTree.scrollPathToVisible(new TreePath(s.getPath()));
@@ -2202,6 +2321,7 @@ public class AudiobookRecorder extends JFrame {
                         play.close();
                     }
                     play = null;
+                    e.printStackTrace();
                 }
             }
         });
@@ -2409,6 +2529,7 @@ public class AudiobookRecorder extends JFrame {
                 try {
                     Files.copy(srcFile.toPath(), dstFile.toPath());
                 } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
 
@@ -2536,6 +2657,7 @@ public class AudiobookRecorder extends JFrame {
                     f.delete();
                 }
             } catch (Exception e) {
+                e.printStackTrace();
             }
             pd.closeDialog();
         }
@@ -3010,6 +3132,89 @@ public class AudiobookRecorder extends JFrame {
 
     public void stopLock() {
         state = STOPPING;
+    }
+
+    public void toggleSplitMode() {
+        selectCutMode.setSelected(false);
+        if (selectedSentence != null) {
+            sampleWaveform.setDisplaySplit(selectSplitMode.isSelected());
+        }
+        doCutSplit.setEnabled(selectSplitMode.isSelected());
+        toolBar.enablePlayTo(selectSplitMode.isSelected());
+    }
+
+    public void toggleCutMode() {
+        selectSplitMode.setSelected(false);
+        if (selectedSentence != null) {
+            sampleWaveform.setDisplayCut(selectCutMode.isSelected());
+        }
+        doCutSplit.setEnabled(selectCutMode.isSelected());
+        toolBar.enablePlayTo(selectCutMode.isSelected());
+    }
+
+    public void doCut(int start, int end) {
+        try {
+            double[][] samples = selectedSentence.getRawAudioData();
+            double[][] croppedSamples = new double[samples.length - (end - start)][2];
+
+            int a = 0;
+            for (int i = 0; i < samples.length; i++) {
+                if ((i < start) || (i > end)) {
+                    croppedSamples[a++] = samples[i];
+                }
+            }
+            selectedSentence.writeAudioData(croppedSamples);
+            selectedSentence.autoTrimSample();
+            updateWaveform();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public void doSplit(int at) {
+        try {
+            Sentence newSentence = selectedSentence.cloneSentence();
+            Chapter c = (Chapter)selectedSentence.getParent();
+            int idx = bookTreeModel.getIndexOfChild(c, selectedSentence);
+            bookTreeModel.insertNodeInto(newSentence, c, idx);
+
+            double[][] samples = selectedSentence.getRawAudioData();
+            double[][] startSamples = new double[at][2];
+            double[][] endSamples = new double[samples.length - at][2];
+
+            int a = 0; 
+            int b = 0;
+
+            for (int i = 0; i < samples.length; i++) {
+                if (i < at) {
+                    startSamples[a++] = samples[i];
+                } else {
+                    endSamples[b++] = samples[i];
+                }
+            }
+
+            newSentence.writeAudioData(startSamples);
+            selectedSentence.writeAudioData(endSamples);
+            selectedSentence.autoTrimSample();
+            newSentence.autoTrimSample();
+            updateWaveform();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public void executeCutOrSplit() {
+        int start = sampleWaveform.getCutStart();
+        int end = sampleWaveform.getCutEnd();
+        if (selectCutMode.isSelected()) {
+            doCut(start, end);
+        } else if (selectSplitMode.isSelected()) {
+            doSplit(start);
+        }
+        selectCutMode.setSelected(false);
+        selectSplitMode.setSelected(false);
+        toolBar.enablePlayTo(false);
+        doCutSplit.setEnabled(false);
     }
 
 }

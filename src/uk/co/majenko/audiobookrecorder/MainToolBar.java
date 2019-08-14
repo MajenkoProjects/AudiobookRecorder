@@ -14,6 +14,7 @@ public class MainToolBar extends JToolBar {
     JButtonSpacePlay recordRoomNoise;
     JButtonSpacePlay playSentence;
     JButtonSpacePlay playonSentence;
+    JButtonSpacePlay playtoSentence;
     JButtonSpacePlay stopPlaying;
     JButtonSpacePlay eq;
     JToggleButton mic;
@@ -78,6 +79,14 @@ public class MainToolBar extends JToolBar {
         });
         add(playonSentence);
 
+        playtoSentence = new JButtonSpacePlay(Icons.playto, "Play sentence to cut", new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                root.playToSelectedSentence();
+            }
+        });
+        add(playtoSentence);
+        playtoSentence.setEnabled(false);
+
         stopPlaying = new JButtonSpacePlay(Icons.stop, "Stop playing", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 root.stopPlaying();
@@ -122,6 +131,10 @@ public class MainToolBar extends JToolBar {
 
 
         setFloatable(false);
+    }
+
+    public void enablePlayTo(boolean b) {
+        playtoSentence.setEnabled(b);
     }
 
 }
