@@ -232,5 +232,11 @@ public class Chapter extends DefaultMutableTreeNode {
         return out;
     }
 
+    public void resetPostGaps() {
+        for (Enumeration s = children(); s.hasMoreElements();) {
+            Sentence snt = (Sentence)s.nextElement();
+            snt.resetPostGap();
+        }
+    }
 
 }

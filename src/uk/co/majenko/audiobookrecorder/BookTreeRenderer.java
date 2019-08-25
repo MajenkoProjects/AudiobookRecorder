@@ -10,6 +10,7 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
         JLabel ret = (JLabel) super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
         ret.setIconTextGap(0);
+        ret.setBorder(new EmptyBorder(0, 0, 0, 0));
         if (value instanceof Sentence) {
             Sentence s = (Sentence)value;
 

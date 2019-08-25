@@ -1269,4 +1269,20 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         }
         postGapType = t;
     }
+
+    public void resetPostGap() {
+        if (postGapType == null) {
+            postGapType = "sentence";
+        }
+        if (postGapType.equals("continuation")) {
+            setPostGap(Options.getInteger("catenation.short-sentence"));
+        } else if (postGapType.equals("paragraph")) {
+            setPostGap(Options.getInteger("catenation.post-paragraph"));
+        } else if (postGapType.equals("section")) {
+            setPostGap(Options.getInteger("catenation.post-section"));
+        } else {
+            setPostGap(Options.getInteger("catenation.post-sentence"));
+        } 
+
+    }
 }

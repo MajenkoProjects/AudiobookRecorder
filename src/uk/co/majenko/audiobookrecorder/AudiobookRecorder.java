@@ -1187,6 +1187,14 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
 
+                JMenuObject resetChapterGaps = new JMenuObject("Reset post gaps", c, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter c = (Chapter)o.getObject();
+                        c.resetPostGaps();
+                    }
+                });
+
                 JMenuObject moveUp = new JMenuObject("Move Up", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
@@ -1354,6 +1362,7 @@ public class AudiobookRecorder extends JFrame {
 
                 menu.add(convertAll);
                 menu.add(normalizeAll);
+                menu.add(resetChapterGaps);
                 menu.addSeparator();
                 menu.add(moveUp);
                 menu.add(moveDown);
@@ -1441,6 +1450,17 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
                 menu.add(editData);
+
+                JMenuObject resetBookGaps = new JMenuObject("Reset all post gaps", book, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        for (Enumeration ch = book.children(); ch.hasMoreElements();) {
+                            Chapter chap = (Chapter)ch.nextElement();
+                            chap.resetPostGaps();
+                        }
+                    }
+                });
+
+                menu.add(resetBookGaps);
 
                 menu.show(bookTree, e.getX(), e.getY());
             }
