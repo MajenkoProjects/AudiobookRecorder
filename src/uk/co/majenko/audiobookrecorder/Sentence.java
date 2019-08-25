@@ -39,6 +39,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     int endOffset = 0;
     int crossStartOffset = -1;
     int crossEndOffset = -1;
+    String postGapType = "none";
 
     int sampleSize = -1;
 
@@ -1246,5 +1247,26 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     public String getEffectChain() {
         if (effectChain == null) return "none";
         return effectChain;
+    }
+
+    public String getPostGapType() {
+        return postGapType;
+    }
+
+    public void setPostGapType(String t) {
+        if (t == null || t.equals("none")) {
+            if (getPostGap() == Options.getInteger("catenation.short-sentence")) {
+                t = "continuation";
+            } else if (getPostGap() == Options.getInteger("catenation.post-paragraph")) {
+                t = "paragraph";
+            } else if (getPostGap() == Options.getInteger("catenation.post-section")) {
+                t = "section";
+            } else if (getPostGap() == Options.getInteger("catenation.post-sentence")) {
+                t = "sentence";
+            } else {
+                t = "sentence";
+            }
+        }
+        postGapType = t;
     }
 }

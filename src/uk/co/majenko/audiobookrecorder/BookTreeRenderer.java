@@ -3,11 +3,13 @@ package uk.co.majenko.audiobookrecorder;
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.awt.*;
+import javax.swing.border.*;
 
 public class BookTreeRenderer extends DefaultTreeCellRenderer {
 
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
         JLabel ret = (JLabel) super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+        ret.setIconTextGap(0);
         if (value instanceof Sentence) {
             Sentence s = (Sentence)value;
 
@@ -38,6 +40,28 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
             }
 
             ret.setIcon(icn);
+
+            String gaptype = s.getPostGapType();
+            DefaultMutableTreeNode prev = s.getPreviousSibling();
+            String prevtype = "sentence";
+            if (prev instanceof Sentence) {
+                Sentence s2 = (Sentence)prev;
+                prevtype = s2.getPostGapType();
+            }
+
+            if (prevtype.equals("continuation")) {
+                ret.setIconTextGap(20);
+            }
+
+            if (gaptype.equals("sentence")) {
+                ret.setBorder(new EmptyBorder(0, 0, 0, 0));
+            } else if (gaptype.equals("continuation")) {
+                ret.setBorder(new EmptyBorder(0, 0, 0, 0));
+            } else if (gaptype.equals("paragraph")) {
+                ret.setBorder(new EmptyBorder(0, 0, 0, 0));
+            } else if (gaptype.equals("section")) {
+                ret.setBorder(new EmptyBorder(0, 0, 15, 0));
+            }
 
         } else if (value instanceof Chapter) {
             ret.setIcon(Icons.chapter);

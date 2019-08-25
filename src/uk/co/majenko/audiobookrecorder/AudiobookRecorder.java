@@ -984,6 +984,72 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
 
+                JMenu setGapType = new JMenu("Post-gap Type...");
+
+                String sentenceText = "  Sentence";
+                String continuationText = "  Continuation";
+                String paragraphText = "  Paragraph";
+                String sectionText = "  Section";
+
+                if (s.getPostGapType().equals("sentence")) {
+                    sentenceText = "\u2713 Sentence";
+                } else if (s.getPostGapType().equals("continuation")) {
+                    continuationText = "\u2713 Continuation";
+                } else if (s.getPostGapType().equals("paragraph")) {
+                    paragraphText = "\u2713 Paragraph";
+                } else if (s.getPostGapType().equals("section")) {
+                    sectionText = "\u2713 Section";
+                }
+
+                JMenuObject2 gapTypeSentence = new JMenuObject2(sentenceText, s, "sentence", new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject2 o = (JMenuObject2)e.getSource();
+                        Sentence sent = (Sentence)o.getObject1();
+                        String type = (String)o.getObject2();
+                        sent.setPostGapType(type);
+                        sent.setPostGap(Options.getInteger("catenation.post-sentence"));
+                        bookTreeModel.reload(sent);
+                    }
+                });
+                setGapType.add(gapTypeSentence);
+                
+                JMenuObject2 gapTypeContinuation = new JMenuObject2(continuationText, s, "continuation", new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject2 o = (JMenuObject2)e.getSource();
+                        Sentence sent = (Sentence)o.getObject1();
+                        String type = (String)o.getObject2();
+                        sent.setPostGapType(type);
+                        sent.setPostGap(Options.getInteger("catenation.short-sentence"));
+                        bookTreeModel.reload(sent);
+                    }
+                });
+                setGapType.add(gapTypeContinuation);
+
+                JMenuObject2 gapTypeParagraph = new JMenuObject2(paragraphText, s, "paragraph", new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject2 o = (JMenuObject2)e.getSource();
+                        Sentence sent = (Sentence)o.getObject1();
+                        String type = (String)o.getObject2();
+                        sent.setPostGapType(type);
+                        sent.setPostGap(Options.getInteger("catenation.post-paragraph"));
+                        bookTreeModel.reload(sent);
+                    }
+                });
+                setGapType.add(gapTypeParagraph);
+                
+                JMenuObject2 gapTypeSection = new JMenuObject2(sectionText, s, "section", new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject2 o = (JMenuObject2)e.getSource();
+                        Sentence sent = (Sentence)o.getObject1();
+                        String type = (String)o.getObject2();
+                        sent.setPostGapType(type);
+                        sent.setPostGap(Options.getInteger("catenation.post-section"));
+                        bookTreeModel.reload(sent);
+                    }
+                });
+                setGapType.add(gapTypeSection);
+                
+
 
                 JMenuObject ins = new JMenuObject("Insert phrase above", s, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
@@ -1067,6 +1133,7 @@ public class AudiobookRecorder extends JFrame {
                 menu.add(moveUp);
                 menu.add(moveDown);
                 menu.add(moveMenu);
+                menu.add(setGapType);
                 menu.addSeparator();
                 menu.add(edit);
                 menu.add(external);
@@ -1452,6 +1519,7 @@ public class AudiobookRecorder extends JFrame {
         if (lastLeaf instanceof Sentence) {
             Sentence lastSentence = (Sentence)lastLeaf;
             lastSentence.setPostGap(Options.getInteger("catenation.short-sentence"));
+            lastSentence.setPostGapType("continuation");
         }
 
         Sentence s = new Sentence();
@@ -1502,6 +1570,7 @@ public class AudiobookRecorder extends JFrame {
         if (lastLeaf instanceof Sentence) {
             Sentence lastSentence = (Sentence)lastLeaf;
             lastSentence.setPostGap(Options.getInteger("catenation.post-paragraph"));
+            lastSentence.setPostGapType("paragraph");
         }
 
         Sentence s = new Sentence();
@@ -1551,6 +1620,7 @@ public class AudiobookRecorder extends JFrame {
         if (lastLeaf instanceof Sentence) {
             Sentence lastSentence = (Sentence)lastLeaf;
             lastSentence.setPostGap(Options.getInteger("catenation.post-section"));
+            lastSentence.setPostGapType("section");
         }
 
         Sentence s = new Sentence();
@@ -1600,6 +1670,7 @@ public class AudiobookRecorder extends JFrame {
         if (lastLeaf instanceof Sentence) {
             Sentence lastSentence = (Sentence)lastLeaf;
             lastSentence.setPostGap(Options.getInteger("catenation.post-sentence"));
+            lastSentence.setPostGapType("sentence");
         }
 
         Sentence s = new Sentence();
@@ -1725,6 +1796,7 @@ public class AudiobookRecorder extends JFrame {
                 prefs.setProperty(String.format("%s.sentence.%08d.attention", keybase, i), snt.getAttentionFlag() ? "true" : "false");
                 prefs.setProperty(String.format("%s.sentence.%08d.gain", keybase, i), String.format("%.8f", snt.getGain()));
                 prefs.setProperty(String.format("%s.sentence.%08d.effect", keybase, i), snt.getEffectChain());
+                prefs.setProperty(String.format("%s.sentence.%08d.gaptype", keybase, i), snt.getPostGapType());
                 i++;
             }
         }
@@ -1901,6 +1973,7 @@ public class AudiobookRecorder extends JFrame {
             s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.attention", i))));
             s.setGain(Utils.s2d(prefs.getProperty(String.format("chapter.audition.sentence.%08d.gain", i))));
             s.setEffectChain(prefs.getProperty(String.format("chapter.audition.sentence.%08d.effect", i)));
+            s.setPostGapType(prefs.getProperty(String.format("chapter.audition.sentence.%08d.gaptype", i)));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
@@ -1922,6 +1995,7 @@ public class AudiobookRecorder extends JFrame {
             s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.attention", i))));
             s.setGain(Utils.s2d(prefs.getProperty(String.format("chapter.open.sentence.%08d.gain", i))));
             s.setEffectChain(prefs.getProperty(String.format("chapter.open.sentence.%08d.effect", i)));
+            s.setPostGapType(prefs.getProperty(String.format("chapter.open.sentence.%08d.gaptype", i)));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
@@ -1949,6 +2023,7 @@ public class AudiobookRecorder extends JFrame {
                 s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.attention", cno, i))));
                 s.setGain(Utils.s2d(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.gain", cno, i))));
                 s.setEffectChain(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.effect", cno, i)));
+                s.setPostGapType(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.gaptype", cno, i)));
                 bookTreeModel.insertNodeInto(s, c, c.getChildCount());
             }
         }
@@ -1971,6 +2046,7 @@ public class AudiobookRecorder extends JFrame {
             s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.attention", i))));
             s.setGain(Utils.s2d(prefs.getProperty(String.format("chapter.close.sentence.%08d.gain", i))));
             s.setEffectChain(prefs.getProperty(String.format("chapter.close.sentence.%08d.effect", i)));
+            s.setPostGapType(prefs.getProperty(String.format("chapter.close.sentence.%08d.gaptype", i)));
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
