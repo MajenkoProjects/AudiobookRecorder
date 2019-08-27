@@ -795,7 +795,7 @@ public abstract class AbstractTheme extends MetalTheme {
     public FontUIResource getControlTextFont() {
         if (controlFont == null) {
             if (JTattooUtilities.isLinux() && JTattooUtilities.isHiresScreen()) {
-                controlFont = new FontUIResource(DIALOG, Font.BOLD, 14);
+                controlFont = new FontUIResource(DIALOG, Font.PLAIN, 14); // bold
             } else {
                 controlFont = new FontUIResource(DIALOG, Font.PLAIN, 12);
             }
@@ -806,7 +806,7 @@ public abstract class AbstractTheme extends MetalTheme {
     public FontUIResource getSystemTextFont() {
         if (systemFont == null) {
             if (JTattooUtilities.isLinux() && JTattooUtilities.isHiresScreen()) {
-                systemFont = new FontUIResource(DIALOG, Font.BOLD, 14);
+                systemFont = new FontUIResource(DIALOG, Font.PLAIN, 14); // bold
             } else {
                 systemFont = new FontUIResource(DIALOG, Font.PLAIN, 12);
             }
@@ -817,7 +817,7 @@ public abstract class AbstractTheme extends MetalTheme {
     public FontUIResource getUserTextFont() {
         if (userFont == null) {
             if (JTattooUtilities.isLinux() && JTattooUtilities.isHiresScreen()) {
-                userFont = new FontUIResource(DIALOG, Font.BOLD, 14);
+                userFont = new FontUIResource(DIALOG, Font.PLAIN, 14); // bold
             } else {
                 userFont = new FontUIResource(DIALOG, Font.PLAIN, 12);
             }
@@ -828,7 +828,7 @@ public abstract class AbstractTheme extends MetalTheme {
     public FontUIResource getMenuTextFont() {
         if (menuFont == null) {
             if (JTattooUtilities.isLinux() && JTattooUtilities.isHiresScreen()) {
-                menuFont = new FontUIResource(DIALOG, Font.BOLD, 14);
+                menuFont = new FontUIResource(DIALOG, Font.PLAIN, 14); // bold
             } else {
                 menuFont = new FontUIResource(DIALOG, Font.PLAIN, 12);
             }
@@ -839,9 +839,9 @@ public abstract class AbstractTheme extends MetalTheme {
     public FontUIResource getWindowTitleFont() {
         if (windowTitleFont == null) {
             if (JTattooUtilities.isLinux() && JTattooUtilities.isHiresScreen()) {
-                windowTitleFont = new FontUIResource(DIALOG, Font.BOLD, 14);
+                windowTitleFont = new FontUIResource(DIALOG, Font.PLAIN, 14); // bold
             } else {
-                windowTitleFont = new FontUIResource(DIALOG, Font.BOLD, 12);
+                windowTitleFont = new FontUIResource(DIALOG, Font.PLAIN, 12); // bold
             }
         }
         return windowTitleFont;
@@ -850,7 +850,7 @@ public abstract class AbstractTheme extends MetalTheme {
     public FontUIResource getSubTextFont() {
         if (smallFont == null) {
             if (JTattooUtilities.isLinux() && JTattooUtilities.isHiresScreen()) {
-                smallFont = new FontUIResource(DIALOG, Font.BOLD, 12);
+                smallFont = new FontUIResource(DIALOG, Font.PLAIN, 12); // bold
             } else {
                 smallFont = new FontUIResource(DIALOG, Font.PLAIN, 10);
             }

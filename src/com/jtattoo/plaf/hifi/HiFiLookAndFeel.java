@@ -42,18 +42,18 @@ public class HiFiLookAndFeel extends AbstractLookAndFeel {
     private static final Properties giantFontProps = new Properties();
 
     static {
-        smallFontProps.setProperty("controlTextFont", "Dialog bold 10");
-        smallFontProps.setProperty("systemTextFont", "Dialog bold 10");
+        smallFontProps.setProperty("controlTextFont", "Dialog 10"); // bold
+        smallFontProps.setProperty("systemTextFont", "Dialog 10"); // bold
         smallFontProps.setProperty("userTextFont", "Dialog 10");
-        smallFontProps.setProperty("menuTextFont", "Dialog bold 10");
-        smallFontProps.setProperty("windowTitleFont", "Dialog bold 10");
+        smallFontProps.setProperty("menuTextFont", "Dialog 10"); // bold
+        smallFontProps.setProperty("windowTitleFont", "Dialog 10"); // bold
         smallFontProps.setProperty("subTextFont", "Dialog 8");
 
-        largeFontProps.setProperty("controlTextFont", "Dialog bold 14");
-        largeFontProps.setProperty("systemTextFont", "Dialog bold 14");
-        largeFontProps.setProperty("userTextFont", "Dialog bold 14");
-        largeFontProps.setProperty("menuTextFont", "Dialog bold 14");
-        largeFontProps.setProperty("windowTitleFont", "Dialog bold 14");
+        largeFontProps.setProperty("controlTextFont", "Dialog 14"); // bold
+        largeFontProps.setProperty("systemTextFont", "Dialog 14"); // bold
+        largeFontProps.setProperty("userTextFont", "Dialog 14"); // bold
+        largeFontProps.setProperty("menuTextFont", "Dialog 14"); // bold
+        largeFontProps.setProperty("windowTitleFont", "Dialog 14"); // bold
         largeFontProps.setProperty("subTextFont", "Dialog 12");
 
         giantFontProps.setProperty("controlTextFont", "Dialog 18");

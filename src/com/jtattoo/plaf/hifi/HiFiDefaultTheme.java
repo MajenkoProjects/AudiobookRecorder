@@ -125,11 +125,11 @@ public class HiFiDefaultTheme extends AbstractTheme {
         tooltipForegroundColor = white;
         tooltipBackgroundColor = new ColorUIResource(24, 24, 24);
         
-        controlFont = new FontUIResource("Dialog", Font.BOLD, 12);
-        systemFont = new FontUIResource("Dialog", Font.BOLD, 12);
-        userFont = new FontUIResource("Dialog", Font.BOLD, 12);
-        menuFont = new FontUIResource("Dialog", Font.BOLD, 12);
-        windowTitleFont = new FontUIResource("Dialog", Font.BOLD, 12);
+        controlFont = new FontUIResource("Dialog", Font.PLAIN, 12); // bold
+        systemFont = new FontUIResource("Dialog", Font.PLAIN, 12); // bold
+        userFont = new FontUIResource("Dialog", Font.PLAIN, 12); // bold
+        menuFont = new FontUIResource("Dialog", Font.PLAIN, 12); // bold
+        windowTitleFont = new FontUIResource("Dialog", Font.PLAIN, 12); // bold
         smallFont = new FontUIResource("Dialog", Font.PLAIN, 10);
     }
 

@@ -27,6 +27,8 @@ public class FlashPanel extends JPanel {
     public void setFlash(boolean f) {
         flash = f;
 
+        col = true;
+
         for (Component o : getComponents()) {
             ((JComponent)o).setVisible(!f);
         }
@@ -42,7 +44,7 @@ public class FlashPanel extends JPanel {
         if (col) {
             g.setColor(Color.RED);
         } else {
-            g.setColor(Color.BLACK);
+            g.setColor(Color.GREEN);
         }
         Dimension d = getSize();
         g.fillRect(0, 0, d.width, d.height);
