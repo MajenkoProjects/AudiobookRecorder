@@ -59,7 +59,7 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
             } else if (gaptype.equals("continuation")) {
                 ret.setBorder(new EmptyBorder(0, 0, 0, 0));
             } else if (gaptype.equals("paragraph")) {
-                ret.setBorder(new EmptyBorder(0, 0, 0, 0));
+                ret.setBorder(new EmptyBorder(0, 0, 7, 0));
             } else if (gaptype.equals("section")) {
                 ret.setBorder(new EmptyBorder(0, 0, 15, 0));
             }
