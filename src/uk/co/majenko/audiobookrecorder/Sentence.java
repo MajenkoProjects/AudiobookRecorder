@@ -720,7 +720,9 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         if (g <= 0.0001d) g = 1.0d;
         if (g == gain) return;
 
-        if (gain != g) {
+        int gint = (int)(g * 100d);
+        int gainint = (int)(gain * 100d);
+        if (gint != gainint) {
             debug("Gain based purge");
             CacheManager.removeFromCache(this);
         }
