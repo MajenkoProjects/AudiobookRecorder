@@ -115,6 +115,8 @@ public class AudiobookRecorder extends JFrame {
 
     SourceDataLine play = null;
 
+    boolean effectsEnabled = true;
+
     public TargetDataLine microphone = null;
     public AudioInputStream microphoneStream = null;
 
@@ -395,7 +397,7 @@ public class AudiobookRecorder extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 if (selectedSentence != null) {
                     selectedSentence.autoTrimSampleFFT();
-                    sampleWaveform.setData(selectedSentence.getDoubleAudioData());
+                    sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
                     sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
                     sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
                     postSentenceGap.setValue(selectedSentence.getPostGap());
@@ -408,7 +410,7 @@ public class AudiobookRecorder extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 if (selectedSentence != null) {
                     selectedSentence.autoTrimSamplePeak();
-                    sampleWaveform.setData(selectedSentence.getDoubleAudioData());
+                    sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
                     sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
                     sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
                     postSentenceGap.setValue(selectedSentence.getPostGap());
@@ -421,7 +423,7 @@ public class AudiobookRecorder extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 if (selectedSentence != null) {
                     selectedSentence.normalize();
-                    sampleWaveform.setData(selectedSentence.getDoubleAudioData());
+                    sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
                 }
             }
         });
@@ -464,7 +466,7 @@ public class AudiobookRecorder extends JFrame {
                 JSpinner ob = (JSpinner)e.getSource();
                 if (selectedSentence != null) {
                     selectedSentence.setGain((Integer)ob.getValue() / 100d);
-                    sampleWaveform.setData(selectedSentence.getDoubleAudioData());
+                    sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
                 }
             }
         });
@@ -579,7 +581,6 @@ public class AudiobookRecorder extends JFrame {
                     int i = effectChain.getSelectedIndex();
                     KVPair<String, String> p = effectChain.getItemAt(i);
                     if (p == null) return;
-                    CacheManager.removeFromCache(selectedSentence);
                     selectedSentence.setEffectChain(p.getKey());
                     updateWaveform();
                 }
@@ -1920,7 +1921,7 @@ public class AudiobookRecorder extends JFrame {
                 if (n instanceof Sentence) {
                     Sentence s = (Sentence)n;
                     selectedSentence = s;
-                    sampleWaveform.setData(s.getDoubleAudioData());
+                    sampleWaveform.setData(s.getDoubleAudioData(effectsEnabled));
                     sampleWaveform.setMarkers(s.getStartOffset(), s.getEndOffset());
                     s.updateCrossings();
                     sampleWaveform.setAltMarkers(s.getStartCrossing(), s.getEndCrossing());
@@ -2184,7 +2185,7 @@ public class AudiobookRecorder extends JFrame {
                     play.drain();
 
                     bookTree.scrollPathToVisible(new TreePath(s.getPath()));
-                    data = s.getPCMData();
+                    data = s.getPCMData(effectsEnabled);
                     for (int pos = 0; pos < data.length; pos += PLAYBACK_CHUNK_SIZE) {
                         sampleWaveform.setPlayMarker(pos / format.getFrameSize());
                         int l = data.length - pos;
@@ -2280,7 +2281,7 @@ public class AudiobookRecorder extends JFrame {
                     play.drain();
 
                     bookTree.scrollPathToVisible(new TreePath(s.getPath()));
-                    data = s.getPCMData();
+                    data = s.getPCMData(effectsEnabled);
 
                     int startPos = 0;
                     int endPos = data.length / format.getFrameSize();
@@ -2367,17 +2368,17 @@ public class AudiobookRecorder extends JFrame {
                             data = getRoomNoise(Utils.s2i(Options.get("catenation.pre-chapter")));
                             play.write(data, 0, data.length);
                         }
-                        data = s.getPCMData();
+                        data = s.getPCMData(effectsEnabled);
                         DefaultMutableTreeNode next = s.getNextSibling();
-//                        if (next != null) {
-//                            Thread t = new Thread(new Runnable() {
-//                                public void run() {
-//                                    Sentence ns = (Sentence)next;
-//                                    ns.getProcessedAudioData(); // Cache it
-//                                }
-//                            });
-//                            t.start();
-//                        }
+                        if (next != null) {
+                            Thread t = new Thread(new Runnable() {
+                                public void run() {
+                                    Sentence ns = (Sentence)next;
+                                    ns.getProcessedAudioData(effectsEnabled); // Cache it
+                                }
+                            });
+                            t.start();
+                        }
                         for (int pos = 0; pos < data.length; pos += PLAYBACK_CHUNK_SIZE) {
                             sampleWaveform.setPlayMarker(pos / format.getFrameSize());
                             int l = data.length - pos;
@@ -2904,7 +2905,7 @@ public class AudiobookRecorder extends JFrame {
             if (rawAudio.isSelected()) {
                 sampleWaveform.setData(selectedSentence.getRawAudioData());
             } else {
-                sampleWaveform.setData(selectedSentence.getDoubleAudioData());
+                sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
             }
         }
     }
@@ -3311,6 +3312,11 @@ public class AudiobookRecorder extends JFrame {
         selectSplitMode.setSelected(false);
         toolBar.enablePlayTo(false);
         doCutSplit.setEnabled(false);
+    }
+
+    public void setEffectsEnabled(boolean b) {
+        effectsEnabled = b;
+        System.err.println("Effects Enabled: " + b);
     }
 
 }

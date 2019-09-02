@@ -37,4 +37,5 @@ public class Icons {
     static public final ImageIcon cut         = new ImageIcon(Icons.class.getResource("icons/cut.png"));
     static public final ImageIcon docut       = new ImageIcon(Icons.class.getResource("icons/do-cut.png"));
     static public final ImageIcon playto      = new ImageIcon(Icons.class.getResource("icons/play-to.png"));
+    static public final ImageIcon disable     = new ImageIcon(Icons.class.getResource("icons/disable-effects.png"));
 }

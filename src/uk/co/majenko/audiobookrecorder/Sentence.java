@@ -161,6 +161,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             return false;
         }
 
+        debug("Start recording based purge");
         CacheManager.removeFromCache(this);
 
         recordingThread = new RecordingThread(getTempFile(), getFile(), Options.getAudioFormat());
@@ -182,10 +183,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             }
         }
 
+        debug("Stop recording based purge");
         CacheManager.removeFromCache(this);
-
-        audioData = null;
-        processedAudio = null;
 
         if (!id.equals("room-noise")) {
             autoTrimSample(true);
@@ -225,7 +224,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             samples = getProcessedAudioData();
         }
         if (samples == null) {
-            System.err.println("Error: loading data failed!");
+            debug("Error: loading data failed!");
             return;
         }
 
@@ -588,6 +587,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public void clearCache() {
+        debug("Clearing cached data");
         audioData = null;
         processedAudio = null;
         storedFormat = null;
@@ -721,6 +721,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         if (g == gain) return;
 
         if (gain != g) {
+            debug("Gain based purge");
             CacheManager.removeFromCache(this);
         }
         gain = g;
@@ -767,6 +768,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 proc.waitFor();
             } catch (Exception e) { 
             }
+            debug("External editor based purge");
             CacheManager.removeFromCache(Sentence.this);
             AudiobookRecorder.window.updateWaveform();
         }
@@ -793,7 +795,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             }
         }
         if (backupNumber == -1) {
-            System.err.println("Out of backup space!");
+            debug("Out of backup space!");
             return;
         }
 
@@ -857,6 +859,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 }
             }
 
+            debug("External processor based purge");
             CacheManager.removeFromCache(Sentence.this);
             AudiobookRecorder.window.updateWaveform();
         }
@@ -900,6 +903,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             e.printStackTrace();
         }
         
+        debug("Undo based purge");
         CacheManager.removeFromCache(this);
         AudiobookRecorder.window.updateWaveform();
     }
@@ -1074,6 +1078,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 break;
         }
 
+        debug("Write based purge");
         CacheManager.removeFromCache(this);
     }
 
@@ -1124,7 +1129,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         File f = getFile();
         try {
             if (!f.exists()) {
-                System.err.println("TODO: Race condition: wav file doesn't exist yet");
+                debug("TODO: Race condition: wav file doesn't exist yet");
                 return;
             }
             AudioInputStream s = AudioSystem.getAudioInputStream(f);
@@ -1156,8 +1161,15 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     synchronized public double[][] getProcessedAudioData() {
+        return getProcessedAudioData(true);
+    }
+
+    synchronized public double[][] getProcessedAudioData(boolean effectsEnabled) {
         loadFile();
-        if (processedAudio != null) return processedAudio;
+        if (processedAudio != null) {
+            debug("Returning cached data");
+            return processedAudio;
+        }
 
         if (audioData == null) return null;
         processedAudio = new double[audioData.length][2];
@@ -1171,21 +1183,26 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         String def = AudiobookRecorder.window.getDefaultEffectsChain();
         Effect eff = AudiobookRecorder.window.effects.get(def);
     
-        if (eff != null) {
-            eff.init(getAudioFormat().getFrameRate());
-            eff.process(processedAudio);
-        }
+        if (effectsEnabled) {
+            debug("Processing audio effects");
+            if (eff != null) {
+                eff.init(getAudioFormat().getFrameRate());
+                eff.process(processedAudio);
+            }
 
-        if (effectChain != null) {
-            // Don't double up the default chain
-            if (!effectChain.equals(def)) {
-                eff = AudiobookRecorder.window.effects.get(effectChain);
-                if (eff != null) {
-                    eff.init(getAudioFormat().getFrameRate());
-                    eff.process(processedAudio);
+            if (effectChain != null) {
+                // Don't double up the default chain
+                if (!effectChain.equals(def)) {
+                    eff = AudiobookRecorder.window.effects.get(effectChain);
+                    if (eff != null) {
+                        eff.init(getAudioFormat().getFrameRate());
+                        eff.process(processedAudio);
+                    }
                 }
             }
         }
+
+        debug("Processing done");
         
         // Add final master gain stage
         for (int i = 0; i < processedAudio.length; i++) {
@@ -1193,15 +1210,25 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             processedAudio[i][RIGHT] *= gain;
         }
 
+        debug("Gain applied");
+
         return processedAudio;
     }
 
     public double[][] getDoubleAudioData() {
-        return getProcessedAudioData();
+        return getDoubleAudioData(true);
+    }
+
+    public double[][] getDoubleAudioData(boolean effectsEnabled) {
+        return getProcessedAudioData(effectsEnabled);
     }
 
     public double[][] getCroppedAudioData() {
-        double[][] inSamples = getDoubleAudioData();
+        return getCroppedAudioData(true);
+    }
+
+    public double[][] getCroppedAudioData(boolean effectsEnabled) {
+        double[][] inSamples = getDoubleAudioData(effectsEnabled);
         if (inSamples == null) return null;
         updateCrossings();
 
@@ -1216,7 +1243,11 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public byte[] getPCMData() {
-        double[][] croppedData = getCroppedAudioData();
+        return getPCMData(true);
+    }
+
+    public byte[] getPCMData(boolean effectsEnabled) {
+        double[][] croppedData = getCroppedAudioData(effectsEnabled);
         if (croppedData == null) return null;
         int length = croppedData.length;
         byte[] pcmData = new byte[length * 4];
@@ -1239,6 +1270,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public void setEffectChain(String key) {
         if ((effectChain != null) && (!effectChain.equals(key))) {
+            debug("Effects chain based purge");
             CacheManager.removeFromCache(this);
         }
         effectChain = key;
@@ -1284,5 +1316,9 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             setPostGap(Options.getInteger("catenation.post-sentence"));
         } 
 
+    }
+
+    public void debug(String txt) {
+        System.err.println(id + ": " + txt);
     }
 }

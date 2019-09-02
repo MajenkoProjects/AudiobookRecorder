@@ -17,7 +17,9 @@ public class MainToolBar extends JToolBar {
     JButtonSpacePlay playtoSentence;
     JButtonSpacePlay stopPlaying;
     JButtonSpacePlay eq;
-    JToggleButton mic;
+    JToggleButtonSpacePlay mic;
+
+    JToggleButtonSpacePlay disableEffects;
 
     AudiobookRecorder root;
 
@@ -128,6 +130,28 @@ public class MainToolBar extends JToolBar {
         });
         
         add(mic);
+
+        addSeparator();
+
+        disableEffects = new JToggleButtonSpacePlay(Icons.disable, "Disable effects", new ActionListener() {
+            Color bgCol = null;
+            public void actionPerformed(ActionEvent e) {
+                JToggleButton b = (JToggleButton)e.getSource();
+                if (b.isSelected()) {
+                    root.setEffectsEnabled(false);
+                    bgCol = b.getBackground();
+                    b.setBackground(Color.RED);
+                } else {
+                    root.setEffectsEnabled(true);
+                    if (bgCol != null) {
+                        b.setBackground(bgCol);
+                    }
+                }
+            }
+        });
+
+        add(disableEffects);
+
 
 
         setFloatable(false);
