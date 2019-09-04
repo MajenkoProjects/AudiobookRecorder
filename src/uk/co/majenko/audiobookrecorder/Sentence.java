@@ -161,7 +161,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             return false;
         }
 
-        debug("Start recording based purge");
         CacheManager.removeFromCache(this);
 
         recordingThread = new RecordingThread(getTempFile(), getFile(), Options.getAudioFormat());
@@ -183,7 +182,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             }
         }
 
-        debug("Stop recording based purge");
         CacheManager.removeFromCache(this);
 
         if (!id.equals("room-noise")) {
@@ -224,7 +222,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             samples = getProcessedAudioData();
         }
         if (samples == null) {
-            debug("Error: loading data failed!");
             return;
         }
 
@@ -306,7 +303,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         updateCrossings(useRaw);
         intens = null;
         samples = null;
-        System.gc();
 
     }
 
@@ -587,7 +583,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public void clearCache() {
-        debug("Clearing cached data");
         audioData = null;
         processedAudio = null;
         storedFormat = null;
@@ -723,7 +718,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         int gint = (int)(g * 100d);
         int gainint = (int)(gain * 100d);
         if (gint != gainint) {
-            debug("Gain based purge");
             CacheManager.removeFromCache(this);
         }
         gain = g;
@@ -770,7 +764,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 proc.waitFor();
             } catch (Exception e) { 
             }
-            debug("External editor based purge");
             CacheManager.removeFromCache(Sentence.this);
             AudiobookRecorder.window.updateWaveform();
         }
@@ -861,7 +854,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 }
             }
 
-            debug("External processor based purge");
             CacheManager.removeFromCache(Sentence.this);
             AudiobookRecorder.window.updateWaveform();
         }
@@ -905,7 +897,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             e.printStackTrace();
         }
         
-        debug("Undo based purge");
         CacheManager.removeFromCache(this);
         AudiobookRecorder.window.updateWaveform();
     }
@@ -1080,7 +1071,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 break;
         }
 
-        debug("Write based purge");
         CacheManager.removeFromCache(this);
     }
 
@@ -1169,7 +1159,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     synchronized public double[][] getProcessedAudioData(boolean effectsEnabled) {
         loadFile();
         if (processedAudio != null) {
-            debug("Returning cached data");
             return processedAudio;
         }
 
@@ -1186,7 +1175,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         Effect eff = AudiobookRecorder.window.effects.get(def);
     
         if (effectsEnabled) {
-            debug("Processing audio effects");
             if (eff != null) {
                 eff.init(getAudioFormat().getFrameRate());
                 eff.process(processedAudio);
@@ -1204,7 +1192,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             }
         }
 
-        debug("Processing done");
         
         // Add final master gain stage
         for (int i = 0; i < processedAudio.length; i++) {
@@ -1212,7 +1199,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             processedAudio[i][RIGHT] *= gain;
         }
 
-        debug("Gain applied");
 
         return processedAudio;
     }
@@ -1272,7 +1258,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public void setEffectChain(String key) {
         if ((effectChain != null) && (!effectChain.equals(key))) {
-            debug("Effects chain based purge");
             CacheManager.removeFromCache(this);
         }
         effectChain = key;
@@ -1321,6 +1306,6 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public void debug(String txt) {
-        System.err.println(id + ": " + txt);
+        Debug.debug(String.format("%s: %s", id, txt));
     }
 }

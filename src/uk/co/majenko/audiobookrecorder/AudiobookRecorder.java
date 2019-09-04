@@ -1165,26 +1165,28 @@ public class AudiobookRecorder extends JFrame {
                 JMenuObject peak = new JMenuObject("Auto-trim all (Peak)", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
-                        Chapter c = (Chapter)o.getObject();
-                        for (Enumeration s = c.children(); s.hasMoreElements();) {
-                            Sentence snt = (Sentence)s.nextElement();
-                            if (!snt.isLocked()) {
-                                snt.autoTrimSamplePeak();
-                            }
-                        }
+                        Chapter chap = (Chapter)o.getObject();
+
+                        ProgressDialog ed = new ProgressDialog("Auto-trimming " + chap.getName());
+
+                        AutoTrimThread t = new AutoTrimThread(chap, ed, AutoTrimThread.Peak);
+                        Thread nt = new Thread(t);
+                        nt.start();
+                        ed.setVisible(true);
                     }
                 });
 
                 JMenuObject fft = new JMenuObject("Auto-trim all (FFT)", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
-                        Chapter c = (Chapter)o.getObject();
-                        for (Enumeration s = c.children(); s.hasMoreElements();) {
-                            Sentence snt = (Sentence)s.nextElement();
-                            if (!snt.isLocked()) {
-                                snt.autoTrimSampleFFT();
-                            }
-                        }
+                        Chapter chap = (Chapter)o.getObject();
+
+                        ProgressDialog ed = new ProgressDialog("Auto-trimming " + chap.getName());
+
+                        AutoTrimThread t = new AutoTrimThread(chap, ed, AutoTrimThread.FFT);
+                        Thread nt = new Thread(t);
+                        nt.start();
+                        ed.setVisible(true);
                     }
                 });
 
@@ -1329,12 +1331,16 @@ public class AudiobookRecorder extends JFrame {
 
                 JMenuObject normalizeAll = new JMenuObject("Normalize chapter", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+
                         JMenuObject o = (JMenuObject)e.getSource();
-                        Chapter c = (Chapter)o.getObject();
-                        for (Enumeration s = c.children(); s.hasMoreElements();) {
-                            Sentence snt = (Sentence)s.nextElement();
-                            snt.normalize();
-                        }
+                        Chapter chap = (Chapter)o.getObject();
+
+                        ProgressDialog ed = new ProgressDialog("Normalizing " + chap.getName());
+
+                        NormalizeThread t = new NormalizeThread(chap, ed);
+                        Thread nt = new Thread(t);
+                        nt.start();
+                        ed.setVisible(true);
                     }
                 });
 
@@ -2215,6 +2221,72 @@ public class AudiobookRecorder extends JFrame {
         playingThread.start();
     }
 
+    class NormalizeThread implements Runnable {
+        ProgressDialog dialog;
+        Chapter chapter;
+    
+        public NormalizeThread(Chapter c, ProgressDialog e) {
+            super();
+            dialog = e;
+            chapter = c;
+        }
+
+        @SuppressWarnings("unchecked")
+        public void run() {
+
+            int numKids = chapter.getChildCount();
+            int kidCount = 0;
+            for (Enumeration s = chapter.children(); s.hasMoreElements();) {
+                kidCount++;
+                dialog.setProgress(kidCount * 2000 / numKids);
+                Sentence snt = (Sentence)s.nextElement();
+                snt.normalize();
+            }
+
+            dialog.closeDialog();
+        }
+    }
+
+    class AutoTrimThread implements Runnable {
+        ProgressDialog dialog;
+        Chapter chapter;
+        int type;
+
+        public final static int FFT = 0;
+        public final static int Peak = 1;
+   
+        public AutoTrimThread(Chapter c, ProgressDialog e, int t) {
+            super();
+            dialog = e;
+            chapter = c;
+            type = t;
+        }
+
+        @SuppressWarnings("unchecked")
+        public void run() {
+
+            int numKids = chapter.getChildCount();
+            int kidCount = 0;
+            for (Enumeration s = chapter.children(); s.hasMoreElements();) {
+                kidCount++;
+                dialog.setProgress(kidCount * 2000 / numKids);
+                Sentence snt = (Sentence)s.nextElement();
+                switch (type) {
+                    case FFT:
+                        snt.autoTrimSampleFFT();
+                        break;
+                    case Peak:
+                        snt.autoTrimSamplePeak();
+                        break;
+                } 
+            }
+
+            dialog.closeDialog();
+        }
+    }
+
+
+
     class ExportThread implements Runnable {
         ProgressDialog exportDialog;
         Chapter chapter;
@@ -2398,6 +2470,12 @@ public class AudiobookRecorder extends JFrame {
                             play.write(data, 0, data.length);
                             playing = null;
                         } else {
+                            play.drain();
+                            play.stop();
+                            play.close();
+                            play.open(format);
+                            play.start();
+                            play.drain();
                             data = getRoomNoise(s.getPostGap());
                             play.write(data, 0, data.length);
                         }

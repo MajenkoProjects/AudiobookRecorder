@@ -15,15 +15,12 @@ public class CacheManager {
             } else {
                 if (ob instanceof Sentence) {
                     Sentence s = (Sentence)ob;
-                    s.debug("Normal removal from cache");
                 }
                 ob.clearCache();
             }
         }
 
         cache.add(c);
-
-        System.gc();
     }
 
     public static void setCacheSize(int c) {
@@ -33,7 +30,6 @@ public class CacheManager {
     public static void removeFromCache(Cacheable c) {
         if (c instanceof Sentence) {
             Sentence s = (Sentence)c;
-            s.debug("Manual removal from cache");
         }
         cache.remove(c);
         c.clearCache();
