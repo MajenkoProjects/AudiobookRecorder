@@ -31,7 +31,7 @@ import java.util.Timer;
 
 
 public class Sentence extends DefaultMutableTreeNode implements Cacheable {
-    
+
     String text;
     String id;
     int postGap;
@@ -225,17 +225,18 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             return;
         }
 
+        int fftSize = Options.getInteger("audio.recording.trim.blocksize");
 
-        int blocks = samples.length / 4096 + 1;
+        int blocks = samples.length / fftSize + 1;
 
         int[] intens = new int[blocks];
         int block = 0;
 
-        for (int i = 0; i < samples.length; i+= 4096) {
-            double[] real = new double[4096];
-            double[] imag = new double[4096];
+        for (int i = 0; i < samples.length; i+= fftSize) {
+            double[] real = new double[fftSize];
+            double[] imag = new double[fftSize];
 
-            for (int j = 0; j < 4096; j++) {
+            for (int j = 0; j < fftSize; j++) {
                 if (i + j < samples.length) {
                     real[j] = (samples[i+j][LEFT] + samples[i+j][RIGHT]) / 2d;
                     imag[j] = 0;
@@ -247,14 +248,14 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
             double[] buckets = FFT.fft(real, imag, true);
             double av = 0;
-            for (int j = 1; j < 2048; j++) {
+            for (int j = 1; j < fftSize/2; j++) {
                 av += Math.abs(buckets[j]);
             }
-            av /= 2047d;
+            av /= (fftSize / 2);
 
             intens[block] = 0;
 
-            for (int j = 2; j < 4096; j += 2) {
+            for (int j = 2; j < fftSize; j += 2) {
                 double d = Math.abs(av - buckets[j]);
                 if (d > 0.05) {
                     intens[block]++;
@@ -278,7 +279,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             start = 0;
         }
 
-        startOffset = start * 4096;
+        startOffset = start * fftSize;
         if (startOffset < 0) startOffset = 0;
         if (startOffset >= samples.length) startOffset = samples.length;
 
@@ -295,9 +296,9 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             end = blocks - 1;
         }
 
-        endOffset = end * 4096;
+        endOffset = (end+1) * fftSize;
 
-        if (endOffset <= startOffset) endOffset = startOffset + 4096;
+        if (endOffset <= startOffset) endOffset = startOffset + fftSize;
         if (endOffset < 0) endOffset = 0;
         if (endOffset >= samples.length) endOffset = samples.length;
         updateCrossings(useRaw);
@@ -337,7 +338,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             startOffset = 0;
         }
 
-        startOffset -= 4096;
+        int fftSize = Options.getInteger("audio.recording.trim.blocksize");
+        startOffset -= fftSize;
 
         for (int i = samples.length-1; i >= 0; i--) {
             endOffset = i;
@@ -348,9 +350,9 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             }
         }
 
-        endOffset += 4096;
+        endOffset += fftSize;
 
-        if (endOffset <= startOffset) endOffset = startOffset + 4096;
+        if (endOffset <= startOffset) endOffset = startOffset + fftSize;
         if (endOffset <= 0) {
             endOffset = samples.length-1;
         }

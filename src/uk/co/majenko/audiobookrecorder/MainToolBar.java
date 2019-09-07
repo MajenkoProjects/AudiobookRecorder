@@ -165,6 +165,7 @@ public class MainToolBar extends JToolBar {
             "1.50x",
             "1.75x"
         });
+        playbackSpeed.setFocusable(false);
 
         playbackSpeed.setSelectedIndex(1);
         add(playbackSpeed);

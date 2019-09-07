@@ -24,6 +24,7 @@ public class Options extends JDialog {
     JComboBox<KVPair> rateList;
     JComboBox<KVPair> bitDepth;
     JComboBox<KVPair> trimMethod;
+    JComboBox<KVPair> fftBlockSize;
     JTextField storageFolder;
     JTextField archiveFolder;
     JSpinner preChapterGap;
@@ -297,6 +298,7 @@ public class Options extends JDialog {
         bitDepth = addDropdown(optionsPanel, "Sample resolution:", getResolutionList(), get("audio.recording.resolution"));
         trimMethod = addDropdown(optionsPanel, "Auto-trim method:", getTrimMethods(), get("audio.recording.trim"));
         fftThreshold = addSpinner(optionsPanel, "FFT threshold:", 0, 100, 1, getInteger("audio.recording.trim.fft"), "");
+        fftBlockSize = addDropdown(optionsPanel, "FFT Block size:", getFFTBlockSizes(), get("audio.recording.trim.blocksize"));
 
         addSeparator(optionsPanel);
 
@@ -565,6 +567,7 @@ public class Options extends JDialog {
         } else {
             defaultPrefs.put("audio.playback.device", "");
         }
+        defaultPrefs.put("audio.recording.trim.blocksize", "4096");
 
         defaultPrefs.put("catenation.pre-chapter", "1000");
         defaultPrefs.put("catenation.post-chapter", "1500");
@@ -708,6 +711,7 @@ public class Options extends JDialog {
         set("editor.external", externalEditor.getText());
         set("cache.size", cacheSize.getValue());
         set("audio.recording.trim.fft", fftThreshold.getValue());
+        set("audio.recording.trim.blocksize", ((KVPair)fftBlockSize.getSelectedItem()).key);
 
         set("effects.ethereal.offset", etherealOffset.getValue());
         set("effects.ethereal.iterations", etherealIterations.getValue());
@@ -779,6 +783,19 @@ public class Options extends JDialog {
         pairs[0] = new KVPair<String, String>("none", "None");
         pairs[1] = new KVPair<String, String>("peak", "Peak Amplitude");
         pairs[2] = new KVPair<String, String>("fft", "FFT Analysis");
+        return pairs;
+    }
+
+    public static KVPair[] getFFTBlockSizes() {
+        KVPair[] pairs = new KVPair[8];
+        pairs[0] = new KVPair<String, String>("1024", "1024");
+        pairs[1] = new KVPair<String, String>("2048", "2048");
+        pairs[2] = new KVPair<String, String>("4096", "4096");
+        pairs[3] = new KVPair<String, String>("8192", "8192");
+        pairs[4] = new KVPair<String, String>("16384", "16384");
+        pairs[5] = new KVPair<String, String>("32768", "32768");
+        pairs[6] = new KVPair<String, String>("65536", "65537");
+        pairs[7] = new KVPair<String, String>("131072", "131072");
         return pairs;
     }
 
