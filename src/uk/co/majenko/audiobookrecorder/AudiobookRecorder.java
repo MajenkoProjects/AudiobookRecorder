@@ -2183,7 +2183,9 @@ public class AudiobookRecorder extends JFrame {
                 try {
 
                     AudioFormat sampleformat = s.getAudioFormat();
-                    AudioFormat format = new AudioFormat(sampleformat.getSampleRate(), 16, 2, true, false);
+                    float sampleRate = sampleformat.getSampleRate();
+                    sampleRate *= toolBar.getPlaybackSpeed();
+                    AudioFormat format = new AudioFormat(sampleRate, 16, 2, true, false);
             
                     play = AudioSystem.getSourceDataLine(format, Options.getPlaybackMixer());
                     play.open(format);
@@ -2421,7 +2423,9 @@ public class AudiobookRecorder extends JFrame {
                 try {
 
                     AudioFormat sampleformat = s.getAudioFormat();
-                    AudioFormat format = new AudioFormat(sampleformat.getSampleRate(), 16, 2, true, false);
+                    float sampleRate = sampleformat.getSampleRate();
+                    sampleRate *= toolBar.getPlaybackSpeed();
+                    AudioFormat format = new AudioFormat(sampleRate, 16, 2, true, false);
                     play = AudioSystem.getSourceDataLine(format, Options.getPlaybackMixer());
                     play.open(format);
                     play.start();

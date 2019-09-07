@@ -19,6 +19,8 @@ public class MainToolBar extends JToolBar {
     JButtonSpacePlay eq;
     JToggleButtonSpacePlay mic;
 
+    JComboBox<String> playbackSpeed;
+
     JToggleButtonSpacePlay disableEffects;
 
     AudiobookRecorder root;
@@ -128,6 +130,7 @@ public class MainToolBar extends JToolBar {
                 }
             }
         });
+
         
         add(mic);
 
@@ -152,13 +155,30 @@ public class MainToolBar extends JToolBar {
 
         add(disableEffects);
 
+        addSeparator();
 
+        add(new JLabel("Playback speed: "));
+        playbackSpeed = new JComboBox<String>(new String[] {
+            "0.75x",
+            "1.00x",
+            "1.25x",
+            "1.50x",
+            "1.75x"
+        });
+
+        playbackSpeed.setSelectedIndex(1);
+        add(playbackSpeed);
 
         setFloatable(false);
     }
 
     public void enablePlayTo(boolean b) {
         playtoSentence.setEnabled(b);
+    }
+
+    public float getPlaybackSpeed() {
+        int v = playbackSpeed.getSelectedIndex();
+        return 0.75f + (0.25f * v);
     }
 
 }
