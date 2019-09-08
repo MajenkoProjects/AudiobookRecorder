@@ -2184,7 +2184,7 @@ public class AudiobookRecorder extends JFrame {
 
                     AudioFormat sampleformat = s.getAudioFormat();
                     float sampleRate = sampleformat.getSampleRate();
-                    sampleRate *= toolBar.getPlaybackSpeed();
+//                    sampleRate *= toolBar.getPlaybackSpeed();
                     AudioFormat format = new AudioFormat(sampleRate, 16, 2, true, false);
             
                     play = AudioSystem.getSourceDataLine(format, Options.getPlaybackMixer());
@@ -3373,6 +3373,9 @@ public class AudiobookRecorder extends JFrame {
             }
 
             newSentence.writeAudioData(startSamples);
+            newSentence.setPostGapType("continuation");
+            newSentence.setPostGap(Options.getInteger("catenation.short-sentence"));
+
             selectedSentence.writeAudioData(endSamples);
             selectedSentence.autoTrimSample();
             newSentence.autoTrimSample();
