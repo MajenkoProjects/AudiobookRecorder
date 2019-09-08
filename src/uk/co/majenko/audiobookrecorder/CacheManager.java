@@ -34,4 +34,11 @@ public class CacheManager {
         cache.remove(c);
         c.clearCache();
     }
+
+    public static void purgeCache() {
+        for (Cacheable c : cache) {
+            c.clearCache();
+        }
+        cache.clear();
+    }
 }

@@ -102,6 +102,7 @@ public class MainToolBar extends JToolBar {
         eq = new JButtonSpacePlay(Icons.eq, "Reload Effects", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 root.loadEffects();
+                CacheManager.purgeCache();
             }
         });
 

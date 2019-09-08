@@ -1454,6 +1454,8 @@ public class AudiobookRecorder extends JFrame {
                         if (!(book.getName().equals(tit))) {
                             book.renameBook(tit);
                         }
+
+                        CacheManager.purgeCache();
                     }
                 });
                 menu.add(editData);
@@ -1814,16 +1816,10 @@ public class AudiobookRecorder extends JFrame {
             int i = 0;
             for (Enumeration s = c.children(); s.hasMoreElements();) {
                 Sentence snt = (Sentence)s.nextElement();
-                prefs.setProperty(String.format("%s.sentence.%08d.id", keybase, i), snt.getId());
-                prefs.setProperty(String.format("%s.sentence.%08d.text", keybase, i), snt.getText());
-                prefs.setProperty(String.format("%s.sentence.%08d.post-gap", keybase, i), Integer.toString(snt.getPostGap()));
-                prefs.setProperty(String.format("%s.sentence.%08d.start-offset", keybase, i), Integer.toString(snt.getStartOffset()));
-                prefs.setProperty(String.format("%s.sentence.%08d.end-offset", keybase, i), Integer.toString(snt.getEndOffset()));
-                prefs.setProperty(String.format("%s.sentence.%08d.locked", keybase, i), snt.isLocked() ? "true" : "false");
-                prefs.setProperty(String.format("%s.sentence.%08d.attention", keybase, i), snt.getAttentionFlag() ? "true" : "false");
-                prefs.setProperty(String.format("%s.sentence.%08d.gain", keybase, i), String.format("%.8f", snt.getGain()));
-                prefs.setProperty(String.format("%s.sentence.%08d.effect", keybase, i), snt.getEffectChain());
-                prefs.setProperty(String.format("%s.sentence.%08d.gaptype", keybase, i), snt.getPostGapType());
+                TreeMap<String, String> settings = snt.getSentenceData();
+                for (String key : settings.keySet()) {
+                    prefs.setProperty(String.format("%s.sentence.%08d.%s", keybase, i, key), settings.get(key));
+                }
                 i++;
             }
         }
