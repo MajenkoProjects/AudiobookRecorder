@@ -47,6 +47,7 @@ public class AGC implements Effect {
 
             gain += factor;
             if (gain > limit) gain = limit;
+            if (gain < 0) gain = 0;
 
             samples[i][Sentence.LEFT] *= gain;
             samples[i][Sentence.RIGHT] *= gain;
