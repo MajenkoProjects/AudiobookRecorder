@@ -1310,4 +1310,22 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     public void debug(String txt) {
         Debug.debug(String.format("%s: %s", id, txt));
     }
+
+    public TreeMap<String, String> getSentenceData() {
+
+        TreeMap<String, String> out = new TreeMap<String, String>();
+
+        out.put("id", getId());
+        out.put("text", getText());
+        out.put("post-gap", Integer.toString(getPostGap()));
+        out.put("start-offset", Integer.toString(getStartOffset()));
+        out.put("end-offset", Integer.toString(getEndOffset()));
+        out.put("locked", isLocked() ? "true" : "false");
+        out.put("attention", getAttentionFlag() ? "true" : "false");
+        out.put("gain", String.format("%.8f", getGain()));
+        out.put("effect", getEffectChain());
+        out.put("gaptype", getPostGapType());
+
+        return out;
+    }
 }
