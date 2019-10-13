@@ -25,6 +25,7 @@ public class Options extends JDialog {
     JComboBox<KVPair> bitDepth;
     JComboBox<KVPair> trimMethod;
     JComboBox<KVPair> fftBlockSize;
+    JComboBox<KVPair> playbackBlockSize;
     JTextField storageFolder;
     JTextField archiveFolder;
     JSpinner preChapterGap;
@@ -303,6 +304,7 @@ public class Options extends JDialog {
         addSeparator(optionsPanel);
 
         playbackList = addDropdown(optionsPanel, "Playback device:", getPlaybackMixerList(), get("audio.playback.device"));
+        playbackBlockSize = addDropdown(optionsPanel, "Playback Block size:", getPlaybackBlockSizes(), get("audio.playback.blocksize"));
         addSeparator(optionsPanel);
         storageFolder = addFilePath(optionsPanel, "Storage folder:", get("path.storage"), true);
         archiveFolder = addFilePath(optionsPanel, "Archive folder:", get("path.archive"), true);
@@ -568,6 +570,7 @@ public class Options extends JDialog {
             defaultPrefs.put("audio.playback.device", "");
         }
         defaultPrefs.put("audio.recording.trim.blocksize", "4096");
+        defaultPrefs.put("audio.playback.blocksize", "4096");
 
         defaultPrefs.put("catenation.pre-chapter", "1000");
         defaultPrefs.put("catenation.post-chapter", "1500");
@@ -712,6 +715,7 @@ public class Options extends JDialog {
         set("cache.size", cacheSize.getValue());
         set("audio.recording.trim.fft", fftThreshold.getValue());
         set("audio.recording.trim.blocksize", ((KVPair)fftBlockSize.getSelectedItem()).key);
+        set("audio.playback.blocksize", ((KVPair)playbackBlockSize.getSelectedItem()).key);
 
         set("effects.ethereal.offset", etherealOffset.getValue());
         set("effects.ethereal.iterations", etherealIterations.getValue());
@@ -799,6 +803,18 @@ public class Options extends JDialog {
         return pairs;
     }
 
+    public static KVPair[] getPlaybackBlockSizes() {
+        KVPair[] pairs = new KVPair[8];
+        pairs[0] = new KVPair<String, String>("1024", "1024");
+        pairs[1] = new KVPair<String, String>("2048", "2048");
+        pairs[2] = new KVPair<String, String>("4096", "4096");
+        pairs[3] = new KVPair<String, String>("8192", "8192");
+        pairs[4] = new KVPair<String, String>("16384", "16384");
+        pairs[5] = new KVPair<String, String>("32768", "32768");
+        pairs[6] = new KVPair<String, String>("65536", "65537");
+        pairs[7] = new KVPair<String, String>("131072", "131072");
+        return pairs;
+    }
 
     public static void createEffectChains() {
         effectChains = new ArrayList<EffectGroup>();

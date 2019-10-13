@@ -30,8 +30,6 @@ public class AudiobookRecorder extends JFrame {
 
     // Settings - tweakable
 
-    public static final int PLAYBACK_CHUNK_SIZE = 1024;
-
     public static final String SPHINX_MODEL = "resource:/edu/cmu/sphinx/models/en-us/en-us";
 
     static Properties config = new Properties();
@@ -2178,6 +2176,8 @@ public class AudiobookRecorder extends JFrame {
 
                 try {
 
+                    int blockSize = Options.getInteger("audio.playback.blocksize");
+
                     AudioFormat sampleformat = s.getAudioFormat();
                     float sampleRate = sampleformat.getSampleRate();
 //                    sampleRate *= toolBar.getPlaybackSpeed();
@@ -2190,10 +2190,10 @@ public class AudiobookRecorder extends JFrame {
 
                     bookTree.scrollPathToVisible(new TreePath(s.getPath()));
                     data = s.getPCMData(effectsEnabled);
-                    for (int pos = 0; pos < data.length; pos += PLAYBACK_CHUNK_SIZE) {
+                    for (int pos = 0; pos < data.length; pos += blockSize) {
                         sampleWaveform.setPlayMarker(pos / format.getFrameSize());
                         int l = data.length - pos;
-                        if (l > PLAYBACK_CHUNK_SIZE) l = PLAYBACK_CHUNK_SIZE;
+                        if (l > blockSize) l = blockSize;
                         play.write(data, pos, l);
                     }
 
@@ -2342,6 +2342,8 @@ public class AudiobookRecorder extends JFrame {
 
                 try {
 
+                    int blockSize = Options.getInteger("audio.playback.blocksize");
+
                     AudioFormat sampleformat = s.getAudioFormat();
                     AudioFormat format = new AudioFormat(sampleformat.getSampleRate(), 16, 2, true, false);
 
@@ -2373,10 +2375,10 @@ public class AudiobookRecorder extends JFrame {
                     if (startPos > data.length) startPos = data.length;
                     if (endPos > data.length) endPos = data.length;
 
-                    for (int pos = startPos; pos < endPos; pos += PLAYBACK_CHUNK_SIZE) {
+                    for (int pos = startPos; pos < endPos; pos += blockSize) {
                         sampleWaveform.setPlayMarker(pos / format.getFrameSize());
                         int l = data.length - pos;
-                        if (l > PLAYBACK_CHUNK_SIZE) l = PLAYBACK_CHUNK_SIZE;
+                        if (l > blockSize) l = blockSize;
                         play.write(data, pos, l);
                     }
 
@@ -2418,6 +2420,8 @@ public class AudiobookRecorder extends JFrame {
 
                 try {
 
+                    int blockSize = Options.getInteger("audio.playback.blocksize");
+
                     AudioFormat sampleformat = s.getAudioFormat();
                     float sampleRate = sampleformat.getSampleRate();
                     sampleRate *= toolBar.getPlaybackSpeed();
@@ -2451,10 +2455,10 @@ public class AudiobookRecorder extends JFrame {
                             });
                             t.start();
                         }
-                        for (int pos = 0; pos < data.length; pos += PLAYBACK_CHUNK_SIZE) {
+                        for (int pos = 0; pos < data.length; pos += blockSize) {
                             sampleWaveform.setPlayMarker(pos / format.getFrameSize());
                             int l = data.length - pos;
-                            if (l > PLAYBACK_CHUNK_SIZE) l = PLAYBACK_CHUNK_SIZE;
+                            if (l > blockSize) l = blockSize;
                             play.write(data, pos, l);
                         }
 
