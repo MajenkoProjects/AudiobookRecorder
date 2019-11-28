@@ -2474,12 +2474,6 @@ public class AudiobookRecorder extends JFrame {
                             play.write(data, 0, data.length);
                             playing = null;
                         } else {
-                            play.drain();
-                            play.stop();
-                            play.close();
-                            play.open(format);
-                            play.start();
-                            play.drain();
                             data = getRoomNoise(s.getPostGap());
                             play.write(data, 0, data.length);
                         }
