@@ -206,4 +206,14 @@ public class Book extends DefaultMutableTreeNode {
         return out;
     }
 
+    public void purgeBackups() {
+        for (Enumeration o = children(); o.hasMoreElements();) {
+            Object ob = (Object)o.nextElement();
+            if (ob instanceof Chapter) {
+                Chapter c = (Chapter)ob;
+                c.purgeBackups();
+            }
+        }
+    }
+
 }

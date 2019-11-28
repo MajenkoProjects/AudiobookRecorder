@@ -58,6 +58,7 @@ public class AudiobookRecorder extends JFrame {
 
     JMenuItem bookNewChapter;
     JMenuItem bookExportAudio;
+    JMenuItem bookPurgeBackups;
     JMenu bookVisitACX;
     JMenuItem bookVisitTitle;
     JMenuItem bookVisitAudition;
@@ -212,8 +213,16 @@ public class AudiobookRecorder extends JFrame {
             }
         });
 
+        bookPurgeBackups = new JMenuItem("Purge Backups");
+        bookPurgeBackups.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                book.purgeBackups();
+            }
+        });
+
         bookMenu.add(bookNewChapter);
         bookMenu.add(bookExportAudio);
+        bookMenu.add(bookPurgeBackups);
 
         bookVisitACX = new JMenu("Visit ACX");
         bookMenu.add(bookVisitACX);

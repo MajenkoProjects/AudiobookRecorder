@@ -239,4 +239,14 @@ public class Chapter extends DefaultMutableTreeNode {
         }
     }
 
+    public void purgeBackups() {
+        for (Enumeration o = children(); o.hasMoreElements();) {
+            Object ob = (Object)o.nextElement();
+            if (ob instanceof Sentence) {
+                Sentence s = (Sentence)ob;
+                s.purgeBackups();
+            }
+        }
+    }
+
 }

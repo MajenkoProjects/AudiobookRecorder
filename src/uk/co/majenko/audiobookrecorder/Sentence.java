@@ -1328,4 +1328,17 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
         return out;
     }
+
+    public void purgeBackups() {
+        File whereto = getFile().getParentFile();
+        String name = getFile().getName();
+
+        File[] files = whereto.listFiles();
+        for (File f : files) {
+            String fn = f.getName();
+            if (fn.startsWith("backup-") && fn.endsWith("-" + name)) {
+                f.delete();
+            }
+        }
+    }
 }
