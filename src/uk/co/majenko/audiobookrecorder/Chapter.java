@@ -116,7 +116,7 @@ public class Chapter extends DefaultMutableTreeNode {
         audioAttributes.setCodec("libmp3lame");
         audioAttributes.setBitRate(Options.getInteger("audio.export.bitrate"));
         audioAttributes.setSamplingRate(Options.getInteger("audio.export.samplerate"));
-        audioAttributes.setChannels(2); //new Integer(2));
+        audioAttributes.setChannels(Options.getInteger("audio.export.channels")); //new Integer(2));
         attributes.setFormat("mp3");
         attributes.setAudioAttributes(audioAttributes);
 

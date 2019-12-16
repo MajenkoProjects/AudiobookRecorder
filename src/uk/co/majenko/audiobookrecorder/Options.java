@@ -36,6 +36,7 @@ public class Options extends JDialog {
     JSpinner postSectionGap;
     JTextField ffmpegLocation;
     JComboBox<KVPair> bitRate;
+    JComboBox<KVPair> channels;
     JComboBox<KVPair> exportRate;
     JCheckBox enableParsing;
     JSpinner cacheSize;
@@ -322,6 +323,7 @@ public class Options extends JDialog {
 
         ffmpegLocation = addFilePath(optionsPanel, "FFMPEG location:", get("path.ffmpeg"), false);
         bitRate = addDropdown(optionsPanel, "Export bitrate:", getBitrates(), get("audio.export.bitrate"));
+        channels = addDropdown(optionsPanel, "Export channels:", getChannelCountList(), get("audio.export.channels"));
         exportRate = addDropdown(optionsPanel, "Export sample rate:", getSampleRateList(), get("audio.export.samplerate"));
         
 
@@ -586,6 +588,7 @@ public class Options extends JDialog {
         defaultPrefs.put("path.ffmpeg", "");
 
         defaultPrefs.put("audio.export.bitrate", "256000");
+        defaultPrefs.put("audio.export.channels", "2");
         defaultPrefs.put("audio.export.samplerate", "44100");
         defaultPrefs.put("process.sphinx", "false");
 
@@ -709,6 +712,7 @@ public class Options extends JDialog {
         set("catenation.post-paragraph", postParagraphGap.getValue());
         set("catenation.post-section", postSectionGap.getValue());
         set("audio.export.bitrate", ((KVPair)bitRate.getSelectedItem()).key);
+        set("audio.export.channels", ((KVPair)channels.getSelectedItem()).key);
         set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
         set("process.sphinx", enableParsing.isSelected());
         set("editor.external", externalEditor.getText());
