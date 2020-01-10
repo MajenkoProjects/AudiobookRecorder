@@ -1,0 +1,3 @@
+<effect name="Pan Right">
+    <pan pan="0.4" />
+</effect>

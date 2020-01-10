@@ -1,0 +1,10 @@
+<effect name="Stereo Chorus">
+    <delayline>
+        <delay samples="2000" gain="0.1" pan="-0.3">
+            <biquad type="highpass" fc="300" q="1" gain="0" />
+        </delay>
+        <delay samples="4000" gain="0.1" pan="0.3">
+            <biquad type="highpass" fc="300" q="1" gain="0" />
+        </delay>
+    </delayline>
+</effect>

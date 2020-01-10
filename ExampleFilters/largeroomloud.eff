@@ -1,7 +1,4 @@
 <effect name="Large Room (loud)">
-    <biquad type="notch" fc="28" q="20" gain="-50" />
-    <biquad type="notch" fc="91" q="20" gain="-50" />
-    <biquad type="notch" fc="120" q="20" gain="-50" />
     <biquad type="lowpass" fc="10000" q="1" gain="-10" />
     <delayline>
         <delay samples="5500" gain="0.2" pan="-0.3">

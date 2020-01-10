@@ -1,0 +1,15 @@
+<effect name="Cut Computer Hum (with AGC and Stereo)">
+    <biquad type="notch" fc="28" q="20" gain="-50" />
+    <biquad type="notch" fc="91" q="20" gain="-50" />
+    <biquad type="notch" fc="120" q="20" gain="-50" />
+    <biquad type="lowpass" fc="10000" q="1" gain="-10" />
+    <delayline wetonly="false">
+        <delay samples="-100" gain="0.1" pan="-1.0">
+            <biquad type="highpass" fc="300" q="1" gain="0" />
+        </delay>
+        <delay samples="100" gain="0.1" pan="1.0">
+            <biquad type="highpass" fc="300" q="1" gain="0" />
+        </delay>
+    </delayline>
+    <agc ceiling="0.666" limit="1.5" attack="0.1" decay="0.01" />
+</effect>

@@ -1,7 +1,4 @@
 <effect name="Ethereal Voice">
-    <biquad type="notch" fc="28" q="20" gain="-50" />
-    <biquad type="notch" fc="91" q="20" gain="-50" />
-    <biquad type="notch" fc="120" q="20" gain="-50" />
     <amplifier gain="0.1" />
     <delayline>
         <delay samples="2000" gain="1.0" pan="-0.3">
