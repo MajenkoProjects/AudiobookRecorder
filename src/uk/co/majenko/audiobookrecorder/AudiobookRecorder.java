@@ -3227,7 +3227,40 @@ public class AudiobookRecorder extends JFrame {
         double f = Utils.s2d(root.getAttribute("frequency"));
         double d = Utils.s2d(root.getAttribute("depth"));
         double p = Utils.s2d(root.getAttribute("phase"));
-        return new LFO(f, d, p);
+        double dty = Math.PI;
+        String waveform = root.getAttribute("waveform");
+        if (waveform == null) {
+            waveform = "sine";
+        }
+
+        int w = LFO.SINE;
+
+        switch (waveform.toLowerCase()) {
+            case "sine": w = LFO.SINE; break;
+            case "cosine": w = LFO.COSINE; break;
+            case "square": w = LFO.SQUARE; break;
+            case "triangle": w = LFO.TRIANGLE; break;
+            case "sawtooth": w = LFO.SAWTOOTH; break;
+        }
+
+        int m = LFO.ADD;
+
+        String mode = root.getAttribute("mode");
+
+        if (mode == null) {
+            mode = "add";
+        }
+
+        switch (mode.toLowerCase()) {
+            case "add": m = LFO.ADD; break;
+            case "replace": m = LFO.REPLACE; break;
+        }
+
+        if (root.getAttribute("duty") != null) {
+            int di = Utils.s2i(root.getAttribute("duty")); // 0-100;
+            dty = (Math.PI * 2) * ((double)di / 100d);
+        }
+        return new LFO(f, d, p, w, dty, m);
     }
 
     public AGC loadAGC(Element root) {

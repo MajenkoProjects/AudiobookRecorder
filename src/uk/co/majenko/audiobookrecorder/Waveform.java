@@ -97,6 +97,7 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
                 double lmax = 0;
 
                 for (int o = 0; o < step; o++) {
+                    if (offset + (n * step) + o >= samples.length) break;
                     double sample = (samples[offset + (n * step) + o][Sentence.LEFT] + samples[offset + (n * step) + o][Sentence.RIGHT]) / 2d;
                     if (sample >= 0) {
                         have += sample;
