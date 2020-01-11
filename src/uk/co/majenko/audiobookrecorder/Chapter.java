@@ -12,6 +12,19 @@ import it.sauronsoftware.jave.*;
 import com.mpatric.mp3agic.*;
 import javax.sound.sampled.*;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 
 public class Chapter extends DefaultMutableTreeNode {
     
@@ -28,7 +41,22 @@ public class Chapter extends DefaultMutableTreeNode {
         name = chaptername;
         preGap = Options.getInteger("catenation.pre-chapter");
         postGap = Options.getInteger("catenation.post-chapter");
+    }
 
+    public Chapter(Element root, DefaultTreeModel model) {
+
+        name = Book.getTextNode(root, "name");
+        preGap = Utils.s2i(Book.getTextNode(root, "pre-gap"));
+        postGap = Utils.s2i(Book.getTextNode(root, "post-gap"));
+    
+        Element sentencesNode = Book.getNode(root, "sentences");
+        NodeList sentences = sentencesNode.getElementsByTagName("sentence");
+
+        for (int i = 0; i < sentences.getLength(); i++) {
+            Element sentenceElement = (Element)sentences.item(i);
+            Sentence newSentence = new Sentence(sentenceElement);
+            model.insertNodeInto(newSentence, this, getChildCount());
+        }
     }
 
     public String getId() {
@@ -247,6 +275,27 @@ public class Chapter extends DefaultMutableTreeNode {
                 s.purgeBackups();
             }
         }
+    }
+
+    public Element getChapterXML(Document doc) {
+        Element chapterNode = doc.createElement("chapter");
+        chapterNode.setAttribute("id", id);
+        chapterNode.appendChild(Book.makeTextNode(doc, "name", name));
+        chapterNode.appendChild(Book.makeTextNode(doc, "pre-gap", preGap));
+        chapterNode.appendChild(Book.makeTextNode(doc, "post-gap", postGap));
+
+        Element sentencesNode = doc.createElement("sentences");
+        chapterNode.appendChild(sentencesNode);
+
+        for (Enumeration o = children(); o.hasMoreElements();) {
+            Object ob = (Object)o.nextElement();
+            if (ob instanceof Sentence) {
+                Sentence s = (Sentence)ob;
+                sentencesNode.appendChild(s.getSentenceXML(doc));
+            }
+        }
+
+        return chapterNode;
     }
 
 }

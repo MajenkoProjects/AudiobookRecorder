@@ -29,6 +29,17 @@ import org.json.*;
 
 import java.util.Timer;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Text;
 
 public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
@@ -153,6 +164,22 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         text = t;
         setUserObject(text);
         postGap = Options.getInteger("catenation.post-sentence");
+    }
+
+    public Sentence(Element root) {
+        super("");
+        id = root.getAttribute("id");
+        text = Book.getTextNode(root, "text");
+        setUserObject(text);
+        setPostGap(Utils.s2i(Book.getTextNode(root, "post-gap")));
+        setStartOffset(Utils.s2i(Book.getTextNode(root, "start-offset")));
+        setEndOffset(Utils.s2i(Book.getTextNode(root, "end-offset")));
+        setLocked(Utils.s2b(Book.getTextNode(root, "locked")));
+        setAttentionFlag(Utils.s2b(Book.getTextNode(root, "attention")));
+        setGain(Utils.s2d(Book.getTextNode(root, "gain")));
+        setEffectChain(Book.getTextNode(root, "effect"));
+        setPostGapType(Book.getTextNode(root, "gaptype"));
+        sampleSize = Utils.s2i(Book.getTextNode(root, "samples"));
     }
 
     public boolean startRecording() {
@@ -1202,13 +1229,13 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             }
         }
 
-        
-        // Add final master gain stage
-        for (int i = 0; i < processedAudio.length; i++) {
-            processedAudio[i][LEFT] *= gain;
-            processedAudio[i][RIGHT] *= gain;
+        if (applyGain) {
+            // Add final master gain stage
+            for (int i = 0; i < processedAudio.length; i++) {
+                processedAudio[i][LEFT] *= gain;
+                processedAudio[i][RIGHT] *= gain;
+            }
         }
-
 
         return processedAudio;
     }
@@ -1333,6 +1360,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         out.put("gain", String.format("%.8f", getGain()));
         out.put("effect", getEffectChain());
         out.put("gaptype", getPostGapType());
+//        out.put("samples", Integer.toString(getSampleSize()));
 
         return out;
     }
@@ -1349,4 +1377,21 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             }
         }
     }
+
+    public Element getSentenceXML(Document doc) {
+        Element sentenceNode = doc.createElement("sentence");
+        sentenceNode.setAttribute("id", getId());
+        sentenceNode.appendChild(Book.makeTextNode(doc, "text", getText()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "post-gap", getPostGap()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "start-offset", getStartOffset()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "end-offset", getEndOffset()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "locked", isLocked()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "attention", getAttentionFlag()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "gain", getGain()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "effect", getEffectChain()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "gaptype", getPostGapType()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "samples", getSampleSize()));
+        return sentenceNode;
+    }
+
 }

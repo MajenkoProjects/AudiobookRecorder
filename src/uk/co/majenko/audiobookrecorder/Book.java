@@ -10,6 +10,20 @@ import java.nio.file.*;
 import javax.swing.tree.*;
 import javax.sound.sampled.*;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Element;
+import org.w3c.dom.Text;
+
 public class Book extends DefaultMutableTreeNode {
     
     String name;
@@ -17,6 +31,8 @@ public class Book extends DefaultMutableTreeNode {
     String genre;
     String comment;
     String ACX;
+
+    String defaultEffect = "none";
 
     int sampleRate;
     int channels;
@@ -31,7 +47,57 @@ public class Book extends DefaultMutableTreeNode {
 
         prefs = p;
         name = bookname;
-        AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name);
+        AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name); // This should be in the load routine!!!!
+    }
+
+    public Book(Element root) {
+        super(getTextNode(root, "title"));
+
+        name = getTextNode(root, "title");
+        AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name); // This should be in the load routine!!!!
+    }
+
+    public void loadBookXML(Element root, DefaultTreeModel model) {
+        name = getTextNode(root, "title");
+        author = getTextNode(root, "author");
+        genre = getTextNode(root, "genre");
+        comment = getTextNode(root, "comment");
+        ACX = getTextNode(root, "acx");
+
+        Element settings = getNode(root, "settings");
+        Element audioSettings = getNode(settings, "audio");
+        Element effectSettings = getNode(settings, "effects");
+
+        sampleRate = Utils.s2i(getTextNode(audioSettings, "samplerate"));
+        channels = Utils.s2i(getTextNode(audioSettings, "channels"));
+        resolution = Utils.s2i(getTextNode(audioSettings, "resolution"));
+
+        defaultEffect = getTextNode(settings, "default");
+
+        AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name); // This should be in the load routine!!!!
+
+        Element chapters = getNode(root, "chapters");
+
+        NodeList chapterList = chapters.getElementsByTagName("chapter");
+
+        for (int i = 0; i < chapterList.getLength(); i++) {
+            Element chapterElement = (Element)chapterList.item(i);
+            Chapter newChapter = new Chapter(chapterElement, model);
+            model.insertNodeInto(newChapter, this, getChildCount());
+        }
+    }
+
+    public static Element getNode(Element r, String n) {
+        NodeList nl = r.getElementsByTagName(n);
+        if (nl == null) return null;
+        if (nl.getLength() == 0) return null;
+        return (Element)nl.item(0);
+    }
+
+    public static String getTextNode(Element r, String n) {
+        Element node = getNode(r, n);
+        if (node == null) return "";
+        return node.getTextContent();
     }
 
     public void setAuthor(String a) { author = a; }
@@ -214,6 +280,87 @@ public class Book extends DefaultMutableTreeNode {
                 c.purgeBackups();
             }
         }
+    }
+
+    public Document buildDocument() throws ParserConfigurationException {
+        DocumentBuilderFactory dbFactory =
+        DocumentBuilderFactory.newInstance();
+        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+        Document doc = dBuilder.newDocument();
+
+        Element root = doc.createElement("book");
+        doc.appendChild(root);
+
+        root.appendChild(makeTextNode(doc, "title", name));
+        root.appendChild(makeTextNode(doc, "author", author));
+        root.appendChild(makeTextNode(doc, "comment", comment));
+        root.appendChild(makeTextNode(doc, "genre", genre));
+        root.appendChild(makeTextNode(doc, "acx", ACX));
+
+        Element settingsNode = doc.createElement("settings");
+        root.appendChild(settingsNode);
+        
+        Element audioSettingsNode = doc.createElement("audio");
+        settingsNode.appendChild(audioSettingsNode);
+
+        audioSettingsNode.appendChild(makeTextNode(doc, "channels", channels));
+        audioSettingsNode.appendChild(makeTextNode(doc, "resolution", resolution));
+        audioSettingsNode.appendChild(makeTextNode(doc, "samplerate", sampleRate));
+        
+        Element effectsNode = doc.createElement("effects");
+        settingsNode.appendChild(effectsNode);
+        
+        effectsNode.appendChild(makeTextNode(doc, "default", defaultEffect));
+
+        Element chaptersNode = doc.createElement("chapters");
+
+        root.appendChild(chaptersNode);
+
+        for (Enumeration o = children(); o.hasMoreElements();) {
+            Object ob = (Object)o.nextElement();
+            if (ob instanceof Chapter) {
+                Chapter c = (Chapter)ob;
+                chaptersNode.appendChild(c.getChapterXML(doc));
+            }
+        }
+
+        return doc;
+    }
+
+    public static Element makeTextNode(Document doc, String name, String text) {
+        Element node = doc.createElement(name);
+        Text tnode = doc.createTextNode(text);
+        node.appendChild(tnode);
+        return node;
+    }
+
+    public static Element makeTextNode(Document doc, String name, Integer text) {
+        Element node = doc.createElement(name);
+        Text tnode = doc.createTextNode(Integer.toString(text));
+        node.appendChild(tnode);
+        return node;
+    }
+
+    public static Element makeTextNode(Document doc, String name, Double text) {
+        Element node = doc.createElement(name);
+        Text tnode = doc.createTextNode(String.format("%.8f", text));
+        node.appendChild(tnode);
+        return node;
+    }
+
+    public static Element makeTextNode(Document doc, String name, Boolean text) {
+        Element node = doc.createElement(name);
+        Text tnode = doc.createTextNode(text ? "true" : "false");
+        node.appendChild(tnode);
+        return node;
+    }
+
+    public String getDefaultEffect() {
+        return defaultEffect;
+    }
+
+    public void setDefaultEffect(String eff) {
+        defaultEffect = eff;
     }
 
 }

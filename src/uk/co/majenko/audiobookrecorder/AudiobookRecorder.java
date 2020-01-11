@@ -26,6 +26,16 @@ import edu.cmu.sphinx.result.*;
 import org.w3c.dom.Node;
 import java.util.concurrent.*;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
 public class AudiobookRecorder extends JFrame {
 
     // Settings - tweakable
@@ -34,8 +44,6 @@ public class AudiobookRecorder extends JFrame {
 
     static Properties config = new Properties();
     TreeMap<String, EffectGroup> effects;
-
-    String defaultEffectChain = "none";
 
     public final static int IDLE = 0;
     public final static int RECORDING = 1;
@@ -759,9 +767,14 @@ public class AudiobookRecorder extends JFrame {
         if (lastBook != null && !lastBook.equals("")) {
             File f = new File(Options.get("path.storage"), lastBook);
             if (f.exists() && f.isDirectory()) {
-                File x = new File(f, "audiobook.abk");
-                if (x.exists()) {
-                    loadBookStructure(x);
+                File y = new File(f, "audiobook.abx");
+                if (y.exists()) {
+                    loadXMLBookStructure(y);
+                } else {
+                    File x = new File(f, "audiobook.abk");
+                    if (x.exists()) {
+                        loadBookStructure(x);
+                    }
                 }
             }
         }
@@ -803,30 +816,44 @@ public class AudiobookRecorder extends JFrame {
             return;
         }
 
+        try {
+            Properties prefs = new Properties();
+            Book newbook = new Book(prefs, info.getTitle().trim());
+            newbook.setAuthor(info.getAuthor().trim());
+            newbook.setGenre(info.getGenre().trim());
+            newbook.setComment(info.getComment().trim());
+            newbook.setACX(info.getACX().trim());
 
-        Properties prefs = new Properties();
+            Chapter caud = new Chapter("audition", "Audition");
+            Chapter copen = new Chapter("open", "Opening Credits");
+            Chapter cone = new Chapter("0001", "Chapter 1");
+            Chapter cclose = new Chapter("close", "Closing Credits");
 
-        prefs.setProperty("book.name", info.getTitle());
-        prefs.setProperty("book.author", info.getAuthor());
-        prefs.setProperty("book.genre", info.getGenre());
-        prefs.setProperty("book.comment", info.getComment());
-        prefs.setProperty("book.acx", info.getACX());
-        prefs.setProperty("chapter.audition.name", "Audition");
-        prefs.setProperty("chapter.audition.pre-gap", Options.get("catenation.pre-chapter"));
-        prefs.setProperty("chapter.audition.post-gap", Options.get("catenation.post-chapter"));
-        prefs.setProperty("chapter.open.name", "Opening Credits");
-        prefs.setProperty("chapter.open.pre-gap", Options.get("catenation.pre-chapter"));
-        prefs.setProperty("chapter.open.post-gap", Options.get("catenation.post-chapter"));
-        prefs.setProperty("chapter.0001.name", "Chapter 1");
-        prefs.setProperty("chapter.0001.pre-gap", Options.get("catenation.pre-chapter"));
-        prefs.setProperty("chapter.0001.post-gap", Options.get("catenation.post-chapter"));
-        prefs.setProperty("chapter.close.name", "Closing Credits");
-        prefs.setProperty("chapter.close.pre-gap", Options.get("catenation.pre-chapter"));
-        prefs.setProperty("chapter.close.post-gap", Options.get("catenation.post-chapter"));
+            newbook.add(caud);
+            newbook.add(copen);
+            newbook.add(cone);
+            newbook.add(cclose);
 
-        buildBook(prefs);
+            File bookRoot = new File(Options.get("path.storage"), newbook.getName());
+            if (!bookRoot.exists()) {
+                bookRoot.mkdirs();
+            }
 
-        Options.set("path.last-book", book.getName());
+            File xml = new File(bookRoot, "audiobook.abx");
+            Document doc = newbook.buildDocument();
+
+
+            // write the content into xml file
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            DOMSource source = new DOMSource(doc);
+            StreamResult result = new StreamResult(xml);
+            transformer.transform(source, result);
+
+            loadXMLBookStructure(xml);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
     class JMenuObject extends JMenuItem {
@@ -1426,7 +1453,7 @@ public class AudiobookRecorder extends JFrame {
                         int i = 0;
                         if (effects != null) {
                             for (String k : effects.keySet()) {
-                                if (k.equals(defaultEffectChain)) {
+                                if (k.equals(book.getDefaultEffect())) {
                                     selEff = i;
                                 }
                                 KVPair<String, String> p = new KVPair<String, String>(k, effects.get(k).toString());
@@ -1452,7 +1479,7 @@ public class AudiobookRecorder extends JFrame {
 
                         i = defEff.getSelectedIndex();
                         KVPair<String, String> de = defEff.getItemAt(i);
-                        defaultEffectChain = de.getKey();
+                        book.setDefaultEffect(de.getKey());
 
                         book.setAuthor(aut);
                         book.setGenre(gen);
@@ -1797,53 +1824,136 @@ public class AudiobookRecorder extends JFrame {
             bookRoot.mkdirs();
         }
 
-        File config = new File(bookRoot, "audiobook.abk");
-        Properties prefs = new Properties();
-
-        prefs.setProperty("book.name", book.getName());
-        prefs.setProperty("book.author", book.getAuthor());
-        prefs.setProperty("book.genre", book.getGenre());
-        prefs.setProperty("book.comment", book.getComment());
-        prefs.setProperty("book.acx", book.getACX());
-
-        prefs.setProperty("audio.recording.samplerate", "" + book.getSampleRate());
-        prefs.setProperty("audio.recording.resolution", "" + book.getResolution());
-        prefs.setProperty("audio.recording.channels", "" + book.getChannels());
-
-        prefs.setProperty("audio.effect.default", defaultEffectChain);
-
-        for (Enumeration o = book.children(); o.hasMoreElements();) {
-
-            Chapter c = (Chapter)o.nextElement();
-            String keybase = "chapter." + c.getId();
-            prefs.setProperty(keybase + ".name", c.getName());
-            prefs.setProperty(keybase + ".pre-gap", Integer.toString(c.getPreGap()));
-            prefs.setProperty(keybase + ".post-gap", Integer.toString(c.getPostGap()));
-
-            int i = 0;
-            for (Enumeration s = c.children(); s.hasMoreElements();) {
-                Sentence snt = (Sentence)s.nextElement();
-                TreeMap<String, String> settings = snt.getSentenceData();
-                for (String key : settings.keySet()) {
-                    prefs.setProperty(String.format("%s.sentence.%08d.%s", keybase, i, key), settings.get(key));
-                }
-                i++;
-            }
-        }
-        FileOutputStream fos = null;
-
         try {
-            fos = new FileOutputStream(config);
-            prefs.storeToXML(fos, "Audiobook Recorder Description");
+            File xml = new File(bookRoot, "audiobook.abx");
+            Document doc = book.buildDocument();
+
+
+            // write the content into xml file
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            DOMSource source = new DOMSource(doc);
+            StreamResult result = new StreamResult(xml);
+            transformer.transform(source, result);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        if (fos != null) {
-            try {
-                fos.close();
-            } catch (Exception ex) {
-                ex.printStackTrace();
+    }
+
+    public void loadXMLBookStructure(File inputFile) {
+
+        try {
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            Document doc = dBuilder.parse(inputFile);
+            doc.getDocumentElement().normalize();
+
+            Element root = doc.getDocumentElement();
+
+            book = new Book(root);
+            
+            bookTreeModel = new DefaultTreeModel(book);
+
+            book.loadBookXML(root, bookTreeModel);
+
+            loadEffects();
+
+            bookTree = new JTree(bookTreeModel);
+            bookTree.setEditable(true);
+            bookTree.setUI(new CustomTreeUI(mainScroll));
+
+            bookTree.setCellRenderer(new BookTreeRenderer());
+
+
+            InputMap im = bookTree.getInputMap(JComponent.WHEN_FOCUSED);
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "startStopPlayback");
+            im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.SHIFT_DOWN_MASK), "startPlaybackFrom");
+
+            roomNoise = new Sentence("room-noise", "Room Noise");
+
+            bookTree.addTreeSelectionListener(new TreeSelectionListener() {
+                public void valueChanged(TreeSelectionEvent e) {
+                    DefaultMutableTreeNode n = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
+                    if (n instanceof Sentence) {
+                        Sentence s = (Sentence)n;
+                        selectedSentence = s;
+                        sampleWaveform.setData(s.getDoubleAudioData(effectsEnabled));
+                        sampleWaveform.setMarkers(s.getStartOffset(), s.getEndOffset());
+                        s.updateCrossings();
+                        sampleWaveform.setAltMarkers(s.getStartCrossing(), s.getEndCrossing());
+                        postSentenceGap.setValue(s.getPostGap());
+                        gainPercent.setValue((int)(s.getGain() * 100d));
+                        locked.setSelected(s.isLocked());
+                        attention.setSelected(s.getAttentionFlag());
+
+                        setEffectChain(s.getEffectChain());
+
+                        postSentenceGap.setEnabled(!s.isLocked());
+                        gainPercent.setEnabled(!s.isLocked());
+                        reprocessAudioFFT.setEnabled(!s.isLocked());
+                        reprocessAudioPeak.setEnabled(!s.isLocked());
+                        selectCutMode.setEnabled(!s.isLocked());
+                        selectSplitMode.setEnabled(!s.isLocked());
+                        doCutSplit.setEnabled(false);
+                        selectCutMode.setSelected(false);
+                        selectSplitMode.setSelected(false);
+                    } else {
+                        selectedSentence = null;
+                        sampleWaveform.clearData();
+                        postSentenceGap.setValue(0);
+                        gainPercent.setValue(100);
+                        locked.setSelected(false);
+                        attention.setSelected(false);
+                        selectCutMode.setEnabled(false);
+                        selectSplitMode.setEnabled(false);
+                        doCutSplit.setEnabled(false);
+                        selectCutMode.setSelected(false);
+                        selectSplitMode.setSelected(false);
+                    }
+                }
+            });
+
+
+            bookTree.addMouseListener(new MouseAdapter() {
+                public void mousePressed(MouseEvent e) {
+                    if (e.isPopupTrigger()) {
+                        treePopup(e);
+                    }
+                }
+
+                public void mouseReleased(MouseEvent e) {
+                    if (e.isPopupTrigger()) {
+                        treePopup(e);
+                    }
+                }
+
+            });
+
+            mainScroll.setViewportView(bookTree);
+            File r = inputFile.getParentFile();
+
+            File cf = new File(r, "coverart.png");
+            if (!cf.exists()) {
+                cf = new File(r, "coverart.jpg");
+                if (!cf.exists()) {
+                    cf = new File(r, "coverart.gif");
+                }
             }
+
+            if (cf.exists()) {
+                ImageIcon i = new ImageIcon(cf.getAbsolutePath());
+                Image ri = Utils.getScaledImage(i.getImage(), 22, 22);
+                book.setIcon(new ImageIcon(ri));
+                bookTreeModel.reload(book);
+            }
+
+            bookTree.expandPath(new TreePath(book.getPath()));
+
+            statusLabel.setText("Noise floor: " + getNoiseFloorDB() + "dB");
+            book.setIcon(Icons.book);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 
@@ -1876,6 +1986,7 @@ public class AudiobookRecorder extends JFrame {
         }
     }
 
+    /* Retained for legacy use...! */
     public void buildBook(Properties prefs) {
 
         book = new Book(prefs, prefs.getProperty("book.name"));
@@ -1887,10 +1998,13 @@ public class AudiobookRecorder extends JFrame {
 
         loadEffects();
 
-        defaultEffectChain = prefs.getProperty("audio.effect.default");
+        String defaultEffectChain = prefs.getProperty("audio.effect.default");
+
         if (defaultEffectChain == null) {
             defaultEffectChain = "none";
         }
+
+        book.setDefaultEffect(defaultEffectChain);
 
         int sr = Utils.s2i(prefs.getProperty("audio.recording.samplerate"));
         if (sr == 0) {
@@ -2103,12 +2217,16 @@ public class AudiobookRecorder extends JFrame {
                 return;
             }
 
-            if (!f.getName().endsWith(".abk")) {
-                JOptionPane.showMessageDialog(this, "Not a .abk file.", "Error", JOptionPane.ERROR_MESSAGE);
+            if (!(f.getName().endsWith(".abk") || f.getName().endsWith(".abx"))) {
+                JOptionPane.showMessageDialog(this, "Not a .abk or .abx file.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
                 
-            loadBookStructure(f);
+            if (f.getName().endsWith(".abx")) {
+                loadXMLBookStructure(f);
+            } else {
+                loadBookStructure(f);
+            }
 
             Options.set("path.last-book", book.getName());
             Options.savePreferences();
@@ -2517,7 +2635,7 @@ public class AudiobookRecorder extends JFrame {
 
         if (roomNoise == null) return null;
 
-        roomNoise.setEffectChain(defaultEffectChain);
+        roomNoise.setEffectChain(book.getDefaultEffect());
 
         int len = roomNoise.getSampleSize();
         if (len == 0) return null;
@@ -2629,8 +2747,8 @@ public class AudiobookRecorder extends JFrame {
                 return;
             }
 
-            if (!f.getName().endsWith(".abk")) {
-                JOptionPane.showMessageDialog(this, "Not a .abk file.", "Error", JOptionPane.ERROR_MESSAGE);
+            if (!(f.getName().endsWith(".abk") || f.getName().endsWith(".abx"))) {
+                JOptionPane.showMessageDialog(this, "Not a .abk or .abx file.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
@@ -2875,7 +2993,16 @@ public class AudiobookRecorder extends JFrame {
             File f = jc.getSelectedFile();
             if (f.exists()) {
 
+                BookPanel pan = null;
+
                 try {
+
+                    String bookName = null;
+                    String bookAuthor = null;
+                    String bookGenre = null;
+                    String bookComment = null;
+                    ImageIcon bookCover = null;
+
                     ZipInputStream zis = new ZipInputStream(new FileInputStream(f)) {
                         public void close() throws IOException {
                             return;
@@ -2885,15 +3012,28 @@ public class AudiobookRecorder extends JFrame {
                     ImageIcon cover = null;
                     Properties props = new Properties();
 
-                    boolean gotMeta = false;
-                    boolean gotCover = false;
-
                     while ((entry = zis.getNextEntry()) != null) {
-                        if (gotMeta && gotCover) break;
-
                         if (entry.getName().endsWith("/audiobook.abk")) {
                             props.loadFromXML(zis);
-                            gotMeta = true;
+
+                            if (bookName == null) bookName = props.getProperty("book.name");
+                            if (bookAuthor == null) bookAuthor = props.getProperty("book.author");
+                            if (bookGenre == null) bookGenre = props.getProperty("book.genre");
+                            if (bookComment == null) bookComment = props.getProperty("book.comment");
+                        }
+
+                        if (entry.getName().endsWith("/audiobook.abx")) {
+                            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+                            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+                            Document doc = dBuilder.parse(zis);
+                            doc.getDocumentElement().normalize();
+
+                            Element rootnode = doc.getDocumentElement();
+
+                            bookName = Book.getTextNode(rootnode, "title");
+                            bookAuthor = Book.getTextNode(rootnode, "author");
+                            bookGenre = Book.getTextNode(rootnode, "genre");
+                            bookComment = Book.getTextNode(rootnode, "comment");
                         }
 
                         if (
@@ -2901,13 +3041,13 @@ public class AudiobookRecorder extends JFrame {
                                 entry.getName().endsWith("/coverart.jpg") ||
                                 entry.getName().endsWith("/coverart.gif") 
                             ) {
-                            cover = new ImageIcon(ImageIO.read(zis));
-                            gotCover = true;
+                            bookCover = new ImageIcon(ImageIO.read(zis));
                         }
                     }
                     zis.close();
 
-                    BookPanel pan = new BookPanel(props, cover);
+                    pan = new BookPanel(bookName, bookAuthor, bookGenre, bookComment, bookCover);
+
                     int okToImport = JOptionPane.showConfirmDialog(this, pan, "Import this book?", JOptionPane.OK_CANCEL_OPTION);
                     if (okToImport == JOptionPane.OK_OPTION) {
                         zis = new ZipInputStream(new FileInputStream(f));
@@ -2928,8 +3068,13 @@ public class AudiobookRecorder extends JFrame {
                         zis.close();
 
                         File bookdir = new File(Options.get("path.storage"), props.getProperty("book.name"));
-                        File conf = new File(bookdir, "audiobook.abk");
-                        loadBookStructure(conf);
+                        File conf = new File(bookdir, "audiobook.abx");
+                        if (conf.exists()) {
+                            loadXMLBookStructure(conf);
+                        } else {
+                            conf = new File(bookdir, "audiobook.abk");
+                            loadBookStructure(conf);
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -3295,7 +3440,7 @@ public class AudiobookRecorder extends JFrame {
         if (ent != null) {
             setEffectChain(ent.getKey());
         } else {
-            setEffectChain(defaultEffectChain);
+            setEffectChain(book.getDefaultEffect());
         }
     }
 
@@ -3309,8 +3454,8 @@ public class AudiobookRecorder extends JFrame {
             }
         }
 
-        if (effects.get(defaultEffectChain) != null) {
-            setEffectChain(defaultEffectChain);
+        if (effects.get(book.getDefaultEffect()) != null) {
+            setEffectChain(book.getDefaultEffect());
             updateWaveform();
         } else {
             effectChain.setSelectedIndex(0);
@@ -3319,7 +3464,7 @@ public class AudiobookRecorder extends JFrame {
     }
 
     public String getDefaultEffectsChain() {
-        return defaultEffectChain;
+        return book.getDefaultEffect();
     }
 
     public synchronized boolean getLock() {

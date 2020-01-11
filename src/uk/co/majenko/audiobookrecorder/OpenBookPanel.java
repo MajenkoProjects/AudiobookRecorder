@@ -86,10 +86,16 @@ public class OpenBookPanel extends JPanel {
                 for (File b : dir.listFiles()) {
                     if (b == null) continue;
                     if (!b.isDirectory()) continue;
-                    File xml = new File(b, "audiobook.abk");
+                    File xml = new File(b, "audiobook.abx");
                     if (xml.exists()) {
                         BookPanel book = new BookPanel(b);
                         model.addBook(book);
+                    } else {
+                        xml = new File(b, "audiobook.abk");
+                        if (xml.exists()) {
+                            BookPanel book = new BookPanel(b);
+                            model.addBook(book);
+                        }
                     }
                 }
             }
