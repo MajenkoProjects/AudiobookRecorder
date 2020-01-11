@@ -679,17 +679,21 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     public double getPeakValue() {
-        return getPeakValue(false);
+        return getPeakValue(false, true);
     }
 
     public double getPeakValue(boolean useRaw) {
+        return getPeakValue(useRaw, true);
+    }
+
+    public double getPeakValue(boolean useRaw, boolean applyGain) {
         double oldGain = gain;
         gain = 1.0d;
         double[][] samples = null;
         if (useRaw) {
             samples = getRawAudioData();
         } else {
-            samples = getProcessedAudioData();
+            samples = getProcessedAudioData(true, applyGain);
         }
         gain = oldGain;
         if (samples == null) {
@@ -731,7 +735,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public void normalize() {
         if (locked) return;
-        double max = getPeakValue();
+        double max = getPeakValue(true, false);
         double d = 0.708 / max;
         if (d > 1d) d = 1d;
         setGain(d);
@@ -1155,10 +1159,14 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     }
 
     synchronized public double[][] getProcessedAudioData() {
-        return getProcessedAudioData(true);
+        return getProcessedAudioData(true, true);
     }
 
     synchronized public double[][] getProcessedAudioData(boolean effectsEnabled) {
+        return getProcessedAudioData(effectsEnabled, true);
+    }
+
+    synchronized public double[][] getProcessedAudioData(boolean effectsEnabled, boolean applyGain) {
         loadFile();
         if (processedAudio != null) {
             return processedAudio;
