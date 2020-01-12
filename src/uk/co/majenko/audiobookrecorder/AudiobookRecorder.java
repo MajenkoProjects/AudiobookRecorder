@@ -773,6 +773,7 @@ public class AudiobookRecorder extends JFrame {
         mainScroll = new JScrollPane();
 
         notesArea = new JTextArea();
+        notesArea.setFont(new Font("Monospaced", Font.PLAIN, 10));
         notesScroll = new JScrollPane();
         notesScroll.setViewportView(notesArea);
 
@@ -800,9 +801,16 @@ public class AudiobookRecorder extends JFrame {
 
         bindKeys(centralPanel);
 
+        mainSplit.setResizeWeight(0.8d);
+
         pack();
-        mainSplit.setDividerLocation(0.8d);
         setVisible(true);
+
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                mainSplit.setDividerLocation(0.8d);
+            }
+        });
 
         String lastBook = Options.get("path.last-book");
 
