@@ -17,6 +17,7 @@ public class MainToolBar extends JToolBar {
     JButtonSpacePlay playtoSentence;
     JButtonSpacePlay stopPlaying;
     JButtonSpacePlay eq;
+    JButtonSpacePlay openManuscript;
     JToggleButtonSpacePlay mic;
 
     JComboBox<String> playbackSpeed;
@@ -170,6 +171,15 @@ public class MainToolBar extends JToolBar {
 
         playbackSpeed.setSelectedIndex(1);
         add(playbackSpeed);
+
+        addSeparator();
+        openManuscript = new JButtonSpacePlay(Icons.manuscript, "Open Manuscript", new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                root.openManuscript();
+            }
+        });
+        add(openManuscript);
+
 
         setFloatable(false);
     }

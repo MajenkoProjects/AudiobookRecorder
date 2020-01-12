@@ -78,6 +78,7 @@ public class AudiobookRecorder extends JFrame {
     JMenuItem toolsMerge;
     JMenuItem toolsArchive;
     JMenuItem toolsCoverArt;
+    JMenuItem toolsManuscript;
     JMenuItem toolsOptions;
 
     JMenuItem helpAbout;
@@ -292,6 +293,13 @@ public class AudiobookRecorder extends JFrame {
             }
         });
         
+        toolsManuscript = new JMenuItem("Import Manuscript...");
+        toolsManuscript.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                loadManuscript();
+            }
+        });
+        
         toolsOptions = new JMenuItem("Options");
         toolsOptions.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -302,6 +310,7 @@ public class AudiobookRecorder extends JFrame {
         toolsMenu.add(toolsMerge);
         toolsMenu.add(toolsArchive);
         toolsMenu.add(toolsCoverArt);
+        toolsMenu.add(toolsManuscript);
         toolsMenu.addSeparator();
         toolsMenu.add(toolsOptions);
 
@@ -3684,6 +3693,35 @@ public class AudiobookRecorder extends JFrame {
 
     public String getNotes() {
         return notesArea.getText();
+    }
+
+    public void openManuscript() {
+        if (book == null) return;
+        File ms = book.getManuscript();
+        if (ms == null) return;
+        try {
+            Desktop.getDesktop().open(ms);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public void loadManuscript() {
+        if (book == null) return;
+
+        JFileChooser jc = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Document Files", "doc", "docx", "pdf", "odt");
+        jc.addChoosableFileFilter(filter);
+        jc.setFileFilter(filter);
+        jc.setDialogTitle("Select manuscript");
+        int r = jc.showOpenDialog(this);
+
+        if (r == JFileChooser.APPROVE_OPTION) {
+            File src = jc.getSelectedFile();
+            if (src.exists()) {
+                book.setManuscript(src);
+            }
+        }
     }
 
 }

@@ -26,7 +26,7 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
             } 
 
             if (s.isLocked()) {
-                ret.setForeground(new Color(0x00, 0x80, 0xFF));
+                ret.setForeground(new Color(0x30, 0xb0, 0xFF));
                 icn.add(Overlays.locked, OverlayIcon.BOTTOM_LEFT);
             } 
 

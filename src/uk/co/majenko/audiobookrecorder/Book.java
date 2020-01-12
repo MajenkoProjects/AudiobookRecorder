@@ -31,6 +31,7 @@ public class Book extends DefaultMutableTreeNode {
     String genre;
     String comment;
     String ACX;
+    String manuscript;
 
     String defaultEffect = "none";
 
@@ -63,6 +64,7 @@ public class Book extends DefaultMutableTreeNode {
         genre = getTextNode(root, "genre");
         comment = getTextNode(root, "comment");
         ACX = getTextNode(root, "acx");
+        manuscript = getTextNode(root, "manuscript");
 
         AudiobookRecorder.window.setNotes(getTextNode(root, "notes"));
 
@@ -183,8 +185,12 @@ public class Book extends DefaultMutableTreeNode {
         }
     }
 
+    public File getBookPath() {
+        return new File(Options.get("path.storage"), name);
+    }
+
     public void renameBook(String newName) {
-        File oldDir = new File(Options.get("path.storage"), name);
+        File oldDir = getBookPath();
         File newDir = new File(Options.get("path.storage"), newName);
 
         if (newDir.exists()) {
@@ -298,6 +304,7 @@ public class Book extends DefaultMutableTreeNode {
         root.appendChild(makeTextNode(doc, "comment", comment));
         root.appendChild(makeTextNode(doc, "genre", genre));
         root.appendChild(makeTextNode(doc, "acx", ACX));
+        root.appendChild(makeTextNode(doc, "manuscript", manuscript));
 
         root.appendChild(makeTextNode(doc, "notes", AudiobookRecorder.window.getNotes()));
 
@@ -333,7 +340,7 @@ public class Book extends DefaultMutableTreeNode {
 
     public static Element makeTextNode(Document doc, String name, String text) {
         Element node = doc.createElement(name);
-        Text tnode = doc.createTextNode(text);
+        Text tnode = doc.createTextNode(text == null ? "" : text);
         node.appendChild(tnode);
         return node;
     }
@@ -367,4 +374,24 @@ public class Book extends DefaultMutableTreeNode {
         defaultEffect = eff;
     }
 
+    public void setManuscript(File f) {
+        manuscript = f.getName();
+        File dst = new File(getBookPath(), manuscript);
+
+        try {
+            Files.copy(f.toPath(), dst.toPath());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public File getManuscript() {
+        if (manuscript == null) return null;
+        if (manuscript.equals("")) return null;
+        File f = new File(getBookPath(), manuscript);
+        if (f.exists()) { 
+            return f;
+        }
+        return null;
+    }
 }
