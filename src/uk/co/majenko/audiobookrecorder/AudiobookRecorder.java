@@ -563,11 +563,11 @@ public class AudiobookRecorder extends JFrame {
         controlsTop.add(attention);
 
         controlsTop.add(Box.createHorizontalGlue());
-        controlsTop.add(new JLabel("Post gap:"));
+        controlsTop.add(new JLabel(" Post gap:"));
         controlsTop.add(postSentenceGap);
-        controlsTop.add(new JLabel("ms"));
+        controlsTop.add(new JLabel("ms "));
 
-        controlsTop.add(new JLabel("Gain:"));
+        controlsTop.add(new JLabel(" Gain:"));
         controlsTop.add(gainPercent);
         controlsTop.add(new JLabel("%"));
 
