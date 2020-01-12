@@ -100,6 +100,9 @@ public class AudiobookRecorder extends JFrame {
     JPanel sampleControl;
     public Waveform sampleWaveform;
     JScrollBar sampleScroll;
+    JSplitPane mainSplit;
+    JTextArea notesArea;
+    JScrollPane notesScroll;
 
     JSpinner postSentenceGap;
     JSpinner gainPercent;
@@ -621,29 +624,14 @@ public class AudiobookRecorder extends JFrame {
 
         buildToolbar(centralPanel);
 
-        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("F"), "startRecordShort");
-        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released F"), "stopRecord");
-
-        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("R"), "startRecord");
-        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released R"), "stopRecord");
-
-        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("T"), "startRecordNewPara");
-        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released T"), "stopRecord");
-
-        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("Y"), "startRecordNewSection");
-        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released Y"), "stopRecord");
-
-        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released D"), "deleteLast");
-
-        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("SPACE"), "startStopPlayback");
-        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.SHIFT_DOWN_MASK), "startPlaybackFrom");
-
-        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("E"), "startRerecord");
-        centralPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released E"), "stopRecord");
 
         centralPanel.getActionMap().put("startRecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (!getLock()) return;
+                if (getFocusOwner() == notesArea) {
+                    freeLock();
+                    return;
+                }
                 if (bookTree.isEditing()) {
                     freeLock();
                     return;
@@ -659,6 +647,10 @@ public class AudiobookRecorder extends JFrame {
         centralPanel.getActionMap().put("startRecordShort", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (!getLock()) return;
+                if (getFocusOwner() == notesArea) {
+                    freeLock();
+                    return;
+                }
                 if (bookTree.isEditing()) {
                     freeLock();
                     return;
@@ -674,6 +666,10 @@ public class AudiobookRecorder extends JFrame {
         centralPanel.getActionMap().put("startRecordNewPara", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (!getLock()) return;
+                if (getFocusOwner() == notesArea) {
+                    freeLock();
+                    return;
+                }
                 if (bookTree.isEditing()) {
                     freeLock();
                     return;
@@ -689,6 +685,10 @@ public class AudiobookRecorder extends JFrame {
         centralPanel.getActionMap().put("startRecordNewSection", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (!getLock()) return;
+                if (getFocusOwner() == notesArea) {
+                    freeLock();
+                    return;
+                }
                 if (bookTree.isEditing()) {
                     freeLock();
                     return;
@@ -704,6 +704,10 @@ public class AudiobookRecorder extends JFrame {
         centralPanel.getActionMap().put("startRerecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (!getLock()) return;
+                if (getFocusOwner() == notesArea) {
+                    freeLock();
+                    return;
+                }
                 if (bookTree.isEditing()) {
                     freeLock();
                     return;
@@ -718,6 +722,9 @@ public class AudiobookRecorder extends JFrame {
         });
         centralPanel.getActionMap().put("stopRecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
+                if (getFocusOwner() == notesArea) {
+                    return;
+                }
                 if (bookTree.isEditing()) return;
                 stopLock();
                 stopRecording();
@@ -726,6 +733,9 @@ public class AudiobookRecorder extends JFrame {
         });
         centralPanel.getActionMap().put("deleteLast", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
+                if (getFocusOwner() == notesArea) {
+                    return;
+                }
                 if (bookTree.isEditing()) return;
                 deleteLastRecording();
             }
@@ -733,6 +743,9 @@ public class AudiobookRecorder extends JFrame {
 
         centralPanel.getActionMap().put("startStopPlayback", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
+                if (getFocusOwner() == notesArea) {
+                    return;
+                }
                 if (bookTree.isEditing()) return;
                 if (playing == null) {
                     playSelectedSentence();
@@ -744,6 +757,9 @@ public class AudiobookRecorder extends JFrame {
 
         centralPanel.getActionMap().put("startPlaybackFrom", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
+                if (getFocusOwner() == notesArea) {
+                    return;
+                }
                 if (bookTree.isEditing()) return;
                 if (playing == null) {
                     playFromSelectedSentence();
@@ -752,14 +768,23 @@ public class AudiobookRecorder extends JFrame {
         });
 
         mainScroll = new JScrollPane();
-        centralPanel.add(mainScroll, BorderLayout.CENTER);
+
+        notesArea = new JTextArea();
+        notesScroll = new JScrollPane();
+        notesScroll.setViewportView(notesArea);
+
+        mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mainScroll, notesScroll);
+        centralPanel.add(mainSplit, BorderLayout.CENTER);
+
 
         setTitle("AudioBook Recorder");
 
         setIconImage(Icons.appIcon.getImage());
 
+        bindKeys(centralPanel);
 
         pack();
+        mainSplit.setDividerLocation(0.8d);
         setVisible(true);
 
         String lastBook = Options.get("path.last-book");
@@ -790,6 +815,50 @@ public class AudiobookRecorder extends JFrame {
             Options.savePreferences();
         }
 
+    }
+
+    void bindKeys(JComponent component) {
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("F"), "startRecordShort");
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released F"), "stopRecord");
+
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("R"), "startRecord");
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released R"), "stopRecord");
+
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("T"), "startRecordNewPara");
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released T"), "stopRecord");
+
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("Y"), "startRecordNewSection");
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released Y"), "stopRecord");
+
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released D"), "deleteLast");
+
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("SPACE"), "startStopPlayback");
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.SHIFT_DOWN_MASK), "startPlaybackFrom");
+
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("E"), "startRerecord");
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released E"), "stopRecord");
+    }
+
+    void unbindKeys(JComponent component) {
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("F"), "ignore");
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released F"), "ignore");
+
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("R"), "ignore");
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released R"), "ignore");
+
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("T"), "ignore");
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released T"), "ignore");
+
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("Y"), "ignore");
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released Y"), "ignore");
+
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released D"), "ignore");
+
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("SPACE"), "ignore");
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.SHIFT_DOWN_MASK), "ignore");
+
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("E"), "ignore");
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released E"), "ignore");
     }
 
     public static void main(String args[]) {
@@ -3583,6 +3652,14 @@ public class AudiobookRecorder extends JFrame {
     public void setEffectsEnabled(boolean b) {
         effectsEnabled = b;
         System.err.println("Effects Enabled: " + b);
+    }
+
+    public void setNotes(String text) {
+        notesArea.setText(text);
+    }
+
+    public String getNotes() {
+        return notesArea.getText();
     }
 
 }
