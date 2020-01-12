@@ -46,6 +46,7 @@ public class Chapter extends DefaultMutableTreeNode {
     public Chapter(Element root, DefaultTreeModel model) {
 
         name = Book.getTextNode(root, "name");
+        id = root.getAttribute("id");
         preGap = Utils.s2i(Book.getTextNode(root, "pre-gap"));
         postGap = Utils.s2i(Book.getTextNode(root, "post-gap"));
     

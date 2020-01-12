@@ -1020,7 +1020,6 @@ public class AudiobookRecorder extends JFrame {
 
     @SuppressWarnings("unchecked")
     void treePopup(MouseEvent e) {
-
         int selRow = bookTree.getRowForLocation(e.getX(), e.getY());
         TreePath selPath = bookTree.getPathForLocation(e.getX(), e.getY());
         if (selRow != -1) {
