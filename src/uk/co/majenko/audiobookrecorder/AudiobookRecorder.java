@@ -36,6 +36,9 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
+
 public class AudiobookRecorder extends JFrame {
 
     // Settings - tweakable
@@ -775,6 +778,20 @@ public class AudiobookRecorder extends JFrame {
 
         mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mainScroll, notesScroll);
         centralPanel.add(mainSplit, BorderLayout.CENTER);
+
+        mainSplit.addPropertyChangeListener(new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent ev) {
+                if (ev.getPropertyName().equals("dividerLocation")) {
+                    if ((bookTreeModel != null) && (book != null)) {
+                        SwingUtilities.invokeLater(new Runnable() {
+                            public void run() {
+                                bookTreeModel.reload(book);
+                            }
+                        });
+                    }
+                }
+            }
+        });
 
 
         setTitle("AudioBook Recorder");
