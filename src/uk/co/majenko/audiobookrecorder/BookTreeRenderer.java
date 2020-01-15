@@ -20,6 +20,10 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
                 ret.setText(s.getOverrideText());
             }
 
+            if (!s.isProcessed()) {
+                ret.setForeground(new Color(0x88, 0x88, 0x88));
+            }
+
             if (s.getAttentionFlag()) {
                 ret.setForeground(new Color(0xFF, 0xFF, 0x00));
                 icn.add(Overlays.attention, OverlayIcon.TOP_LEFT);

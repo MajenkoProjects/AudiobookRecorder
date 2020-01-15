@@ -60,6 +60,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     boolean inSample;
     boolean attention = false;
+    boolean processed = false;
 
     String effectChain = null;
 
@@ -86,20 +87,26 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     boolean effectEthereal = false;
 
+    public void setSampleSize(int s) {
+        sampleSize = s;
+    }
+
     static class RecordingThread implements Runnable {
 
         boolean running = false;
         boolean recording = false;
+        Sentence sent = null;
 
         File tempFile;
         File wavFile;
 
         AudioFormat format;
 
-        public RecordingThread(File tf, File wf, AudioFormat af) {
+        public RecordingThread(File tf, File wf, AudioFormat af, Sentence s) {
             tempFile = tf;
             wavFile = wf;
             format = af;
+            sent = s;
         }
 
         public void run() {
@@ -120,6 +127,8 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
                 len += nr;
                 fos.write(buf, 0, nr);
                 fos.close();
+
+                sent.setSampleSize(len / format.getFrameSize());
 
                 FileInputStream fis = new FileInputStream(tempFile);
                 AudioInputStream ais = new AudioInputStream(fis, format, len / format.getFrameSize());
@@ -180,6 +189,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         setEffectChain(Book.getTextNode(root, "effect"));
         setPostGapType(Book.getTextNode(root, "gaptype"));
         sampleSize = Utils.s2i(Book.getTextNode(root, "samples"));
+        processed = Utils.s2b(Book.getTextNode(root, "processed"));
     }
 
     public boolean startRecording() {
@@ -190,7 +200,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
         CacheManager.removeFromCache(this);
 
-        recordingThread = new RecordingThread(getTempFile(), getFile(), Options.getAudioFormat());
+        recordingThread = new RecordingThread(getTempFile(), getFile(), Options.getAudioFormat(), this);
 
         Thread rc = new Thread(recordingThread);
         rc.setDaemon(true);
@@ -230,6 +240,12 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             autoTrimSamplePeak(useRaw);
         } else if (tm.equals("fft")) {
             autoTrimSampleFFT(useRaw);
+        } else {
+            startOffset = 0;
+            crossStartOffset = 0;
+            endOffset = sampleSize - 1;
+            crossEndOffset = sampleSize - 1;
+            processed = false;
         }
     }
 
@@ -331,6 +347,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         updateCrossings(useRaw);
         intens = null;
         samples = null;
+        processed = true;
 
     }
 
@@ -387,6 +404,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         if (startOffset < 0) startOffset = 0;
         if (endOffset >= samples.length) endOffset = samples.length-1;
         updateCrossings(useRaw);
+        processed = true;
     }
 
     public String getId() {
@@ -1391,7 +1409,17 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         sentenceNode.appendChild(Book.makeTextNode(doc, "effect", getEffectChain()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "gaptype", getPostGapType()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "samples", getSampleSize()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "processed", isProcessed()));
         return sentenceNode;
     }
+
+    public boolean isProcessed() {
+        return processed;
+    }
+
+    public void setProcessed(boolean p) {
+        processed = p;
+    }
+
 
 }

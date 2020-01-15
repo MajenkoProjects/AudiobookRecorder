@@ -32,6 +32,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.OutputKeys;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -949,6 +950,8 @@ public class AudiobookRecorder extends JFrame {
             // write the content into xml file
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
             DOMSource source = new DOMSource(doc);
             StreamResult result = new StreamResult(xml);
             transformer.transform(source, result);
@@ -1298,6 +1301,34 @@ public class AudiobookRecorder extends JFrame {
                     }
                 });
 
+                JMenuObject peaknew = new JMenuObject("Auto-trim new (Peak)", c, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter chap = (Chapter)o.getObject();
+
+                        ProgressDialog ed = new ProgressDialog("Auto-trimming " + chap.getName());
+
+                        AutoTrimThread t = new AutoTrimThread(chap, ed, AutoTrimThread.Peak, AutoTrimThread.NewOnly);
+                        Thread nt = new Thread(t);
+                        nt.start();
+                        ed.setVisible(true);
+                    }
+                });
+
+                JMenuObject fftnew = new JMenuObject("Auto-trim new (FFT)", c, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter chap = (Chapter)o.getObject();
+
+                        ProgressDialog ed = new ProgressDialog("Auto-trimming " + chap.getName());
+
+                        AutoTrimThread t = new AutoTrimThread(chap, ed, AutoTrimThread.FFT, AutoTrimThread.NewOnly);
+                        Thread nt = new Thread(t);
+                        nt.start();
+                        ed.setVisible(true);
+                    }
+                });
+
                 JMenuObject peak = new JMenuObject("Auto-trim all (Peak)", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         JMenuObject o = (JMenuObject)e.getSource();
@@ -1305,7 +1336,7 @@ public class AudiobookRecorder extends JFrame {
 
                         ProgressDialog ed = new ProgressDialog("Auto-trimming " + chap.getName());
 
-                        AutoTrimThread t = new AutoTrimThread(chap, ed, AutoTrimThread.Peak);
+                        AutoTrimThread t = new AutoTrimThread(chap, ed, AutoTrimThread.Peak, AutoTrimThread.All);
                         Thread nt = new Thread(t);
                         nt.start();
                         ed.setVisible(true);
@@ -1319,7 +1350,7 @@ public class AudiobookRecorder extends JFrame {
 
                         ProgressDialog ed = new ProgressDialog("Auto-trimming " + chap.getName());
 
-                        AutoTrimThread t = new AutoTrimThread(chap, ed, AutoTrimThread.FFT);
+                        AutoTrimThread t = new AutoTrimThread(chap, ed, AutoTrimThread.FFT, AutoTrimThread.All);
                         Thread nt = new Thread(t);
                         nt.start();
                         ed.setVisible(true);
@@ -1512,6 +1543,8 @@ public class AudiobookRecorder extends JFrame {
                 menu.addSeparator();
                 menu.add(mergeWith);
                 menu.addSeparator();
+                menu.add(peaknew);
+                menu.add(fftnew);
                 menu.add(peak);
                 menu.add(fft);
                 menu.addSeparator();
@@ -1934,6 +1967,8 @@ public class AudiobookRecorder extends JFrame {
             // write the content into xml file
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
             DOMSource source = new DOMSource(doc);
             StreamResult result = new StreamResult(xml);
             transformer.transform(source, result);
@@ -2478,15 +2513,19 @@ public class AudiobookRecorder extends JFrame {
         ProgressDialog dialog;
         Chapter chapter;
         int type;
+        int scope;
 
         public final static int FFT = 0;
         public final static int Peak = 1;
+        public final static int NewOnly = 0;
+        public final static int All = 1;
    
-        public AutoTrimThread(Chapter c, ProgressDialog e, int t) {
+        public AutoTrimThread(Chapter c, ProgressDialog e, int t, int sc) {
             super();
             dialog = e;
             chapter = c;
             type = t;
+            scope = sc;
         }
 
         @SuppressWarnings("unchecked")
@@ -2498,6 +2537,9 @@ public class AudiobookRecorder extends JFrame {
                 kidCount++;
                 dialog.setProgress(kidCount * 2000 / numKids);
                 Sentence snt = (Sentence)s.nextElement();
+                if (scope == NewOnly) {
+                    if (snt.isProcessed()) continue;
+                }
                 switch (type) {
                     case FFT:
                         snt.autoTrimSampleFFT();
