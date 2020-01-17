@@ -41,10 +41,11 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
-public class Sentence extends DefaultMutableTreeNode implements Cacheable {
+public class Sentence extends BookTreeNode implements Cacheable {
 
     String text;
     String id;
+    String notes;
     int postGap;
     int startOffset = 0;
     int endOffset = 0;
@@ -179,6 +180,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         super("");
         id = root.getAttribute("id");
         text = Book.getTextNode(root, "text");
+        notes = Book.getTextNode(root, "notes");
         setUserObject(text);
         setPostGap(Utils.s2i(Book.getTextNode(root, "post-gap")));
         setStartOffset(Utils.s2i(Book.getTextNode(root, "start-offset")));
@@ -348,7 +350,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         intens = null;
         samples = null;
         processed = true;
-
+        AudiobookRecorder.window.bookTreeModel.reload(this);
     }
 
     public void autoTrimSamplePeak() {
@@ -405,6 +407,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         if (endOffset >= samples.length) endOffset = samples.length-1;
         updateCrossings(useRaw);
         processed = true;
+        AudiobookRecorder.window.bookTreeModel.reload(this);
     }
 
     public String getId() {
@@ -414,6 +417,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
     public void setText(String t) {
         overrideText = null;
         text = t;
+        AudiobookRecorder.window.bookTreeModel.reload(this);
     }
 
     public String getText() {
@@ -461,6 +465,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         if (o instanceof String) {
             String so = (String)o;
             text = so;
+            AudiobookRecorder.window.bookTreeModel.reload(this);
         }
     }
 
@@ -520,6 +525,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         if (startOffset != o) {
             startOffset = o;
             crossStartOffset = -1;
+            AudiobookRecorder.window.bookTreeModel.reload(this);
         }
     }
 
@@ -535,6 +541,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         if (endOffset != o) {
             endOffset = o;
             crossEndOffset = -1;
+            AudiobookRecorder.window.bookTreeModel.reload(this);
         }
     }
 
@@ -615,6 +622,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public void setLocked(boolean l) {
         locked = l;
+        AudiobookRecorder.window.bookTreeModel.reload(this);
     }
 
     public boolean isLocked() {
@@ -717,6 +725,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public void setAttentionFlag(boolean f) {
         attention = f;
+        AudiobookRecorder.window.bookTreeModel.reload(this);
     }
 
     public boolean getAttentionFlag() {
@@ -1316,6 +1325,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             CacheManager.removeFromCache(this);
         }
         effectChain = key;
+        AudiobookRecorder.window.bookTreeModel.reload(this);
     }
 
     public String getEffectChain() {
@@ -1342,6 +1352,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
             }
         }
         postGapType = t;
+        AudiobookRecorder.window.bookTreeModel.reload(this);
     }
 
     public void resetPostGap() {
@@ -1410,6 +1421,7 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
         sentenceNode.appendChild(Book.makeTextNode(doc, "gaptype", getPostGapType()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "samples", getSampleSize()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "processed", isProcessed()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "notes", getNotes()));
         return sentenceNode;
     }
 
@@ -1419,7 +1431,19 @@ public class Sentence extends DefaultMutableTreeNode implements Cacheable {
 
     public void setProcessed(boolean p) {
         processed = p;
+        AudiobookRecorder.window.bookTreeModel.reload(this);
     }
 
+    public void setNotes(String n) {
+        notes = n;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void onSelect() {
+        AudiobookRecorder.window.setSentenceNotes(notes);
+    }
 
 }

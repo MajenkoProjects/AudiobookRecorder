@@ -26,13 +26,15 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
-public class Chapter extends DefaultMutableTreeNode {
+public class Chapter extends BookTreeNode {
     
     String name;
     String id;
 
     int preGap;
     int postGap;
+
+    String notes;
 
     public Chapter(String i, String chaptername) {
         super(chaptername);
@@ -49,6 +51,8 @@ public class Chapter extends DefaultMutableTreeNode {
         id = root.getAttribute("id");
         preGap = Utils.s2i(Book.getTextNode(root, "pre-gap"));
         postGap = Utils.s2i(Book.getTextNode(root, "post-gap"));
+
+        notes = Book.getTextNode(root, "notes");
     
         Element sentencesNode = Book.getNode(root, "sentences");
         NodeList sentences = sentencesNode.getElementsByTagName("sentence");
@@ -284,6 +288,7 @@ public class Chapter extends DefaultMutableTreeNode {
         chapterNode.appendChild(Book.makeTextNode(doc, "name", name));
         chapterNode.appendChild(Book.makeTextNode(doc, "pre-gap", preGap));
         chapterNode.appendChild(Book.makeTextNode(doc, "post-gap", postGap));
+        chapterNode.appendChild(Book.makeTextNode(doc, "notes", notes));
 
         Element sentencesNode = doc.createElement("sentences");
         chapterNode.appendChild(sentencesNode);
@@ -297,6 +302,18 @@ public class Chapter extends DefaultMutableTreeNode {
         }
 
         return chapterNode;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String t) {
+        notes = t;
+    }
+
+    public void onSelect() {
+        AudiobookRecorder.window.setChapterNotes(notes);
     }
 
 }

@@ -66,7 +66,7 @@ public class Book extends DefaultMutableTreeNode {
         ACX = getTextNode(root, "acx");
         manuscript = getTextNode(root, "manuscript");
 
-        AudiobookRecorder.window.setNotes(getTextNode(root, "notes"));
+        AudiobookRecorder.window.setBookNotes(getTextNode(root, "notes"));
 
         Element settings = getNode(root, "settings");
         Element audioSettings = getNode(settings, "audio");
@@ -306,7 +306,7 @@ public class Book extends DefaultMutableTreeNode {
         root.appendChild(makeTextNode(doc, "acx", ACX));
         root.appendChild(makeTextNode(doc, "manuscript", manuscript));
 
-        root.appendChild(makeTextNode(doc, "notes", AudiobookRecorder.window.getNotes()));
+        root.appendChild(makeTextNode(doc, "notes", AudiobookRecorder.window.getBookNotes()));
 
         Element settingsNode = doc.createElement("settings");
         root.appendChild(settingsNode);

@@ -3,6 +3,7 @@ package uk.co.majenko.audiobookrecorder;
 import javax.sound.sampled.*;
 import javax.swing.*;
 import javax.swing.event.*;
+import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.nio.file.*;
@@ -40,7 +41,7 @@ import org.w3c.dom.Element;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 
-public class AudiobookRecorder extends JFrame {
+public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     // Settings - tweakable
 
@@ -106,8 +107,17 @@ public class AudiobookRecorder extends JFrame {
     public Waveform sampleWaveform;
     JScrollBar sampleScroll;
     JSplitPane mainSplit;
-    JTextArea notesArea;
-    JScrollPane notesScroll;
+
+    JTabbedPane notesTabs;
+
+    JTextArea bookNotesArea;
+    JScrollPane bookNotesScroll;
+
+    JTextArea chapterNotesArea;
+    JScrollPane chapterNotesScroll;
+
+    JTextArea sentenceNotesArea;
+    JScrollPane sentenceNotesScroll;
 
     JSpinner postSentenceGap;
     JSpinner gainPercent;
@@ -641,10 +651,9 @@ public class AudiobookRecorder extends JFrame {
         centralPanel.getActionMap().put("startRecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (!getLock()) return;
-                if (getFocusOwner() == notesArea) {
-                    freeLock();
-                    return;
-                }
+                if (getFocusOwner() == bookNotesArea) { freeLock(); return; }
+                if (getFocusOwner() == chapterNotesArea) { freeLock(); return; }
+                if (getFocusOwner() == sentenceNotesArea) { freeLock(); return; }
                 if (bookTree.isEditing()) {
                     freeLock();
                     return;
@@ -660,10 +669,9 @@ public class AudiobookRecorder extends JFrame {
         centralPanel.getActionMap().put("startRecordShort", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (!getLock()) return;
-                if (getFocusOwner() == notesArea) {
-                    freeLock();
-                    return;
-                }
+                if (getFocusOwner() == bookNotesArea) { freeLock(); return; }
+                if (getFocusOwner() == chapterNotesArea) { freeLock(); return; }
+                if (getFocusOwner() == sentenceNotesArea) { freeLock(); return; }
                 if (bookTree.isEditing()) {
                     freeLock();
                     return;
@@ -679,10 +687,9 @@ public class AudiobookRecorder extends JFrame {
         centralPanel.getActionMap().put("startRecordNewPara", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (!getLock()) return;
-                if (getFocusOwner() == notesArea) {
-                    freeLock();
-                    return;
-                }
+                if (getFocusOwner() == bookNotesArea) { freeLock(); return; }
+                if (getFocusOwner() == chapterNotesArea) { freeLock(); return; }
+                if (getFocusOwner() == sentenceNotesArea) { freeLock(); return; }
                 if (bookTree.isEditing()) {
                     freeLock();
                     return;
@@ -698,10 +705,9 @@ public class AudiobookRecorder extends JFrame {
         centralPanel.getActionMap().put("startRecordNewSection", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (!getLock()) return;
-                if (getFocusOwner() == notesArea) {
-                    freeLock();
-                    return;
-                }
+                if (getFocusOwner() == bookNotesArea) { freeLock(); return; }
+                if (getFocusOwner() == chapterNotesArea) { freeLock(); return; }
+                if (getFocusOwner() == sentenceNotesArea) { freeLock(); return; }
                 if (bookTree.isEditing()) {
                     freeLock();
                     return;
@@ -717,10 +723,9 @@ public class AudiobookRecorder extends JFrame {
         centralPanel.getActionMap().put("startRerecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (!getLock()) return;
-                if (getFocusOwner() == notesArea) {
-                    freeLock();
-                    return;
-                }
+                if (getFocusOwner() == bookNotesArea) { freeLock(); return; }
+                if (getFocusOwner() == chapterNotesArea) { freeLock(); return; }
+                if (getFocusOwner() == sentenceNotesArea) { freeLock(); return; }
                 if (bookTree.isEditing()) {
                     freeLock();
                     return;
@@ -735,9 +740,9 @@ public class AudiobookRecorder extends JFrame {
         });
         centralPanel.getActionMap().put("stopRecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
-                if (getFocusOwner() == notesArea) {
-                    return;
-                }
+                if (getFocusOwner() == bookNotesArea) { return; }
+                if (getFocusOwner() == chapterNotesArea) { return; }
+                if (getFocusOwner() == sentenceNotesArea) { return; }
                 if (bookTree.isEditing()) return;
                 stopLock();
                 stopRecording();
@@ -746,9 +751,9 @@ public class AudiobookRecorder extends JFrame {
         });
         centralPanel.getActionMap().put("deleteLast", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
-                if (getFocusOwner() == notesArea) {
-                    return;
-                }
+                if (getFocusOwner() == bookNotesArea) { return; }
+                if (getFocusOwner() == chapterNotesArea) { return; }
+                if (getFocusOwner() == sentenceNotesArea) { return; }
                 if (bookTree.isEditing()) return;
                 deleteLastRecording();
             }
@@ -756,9 +761,9 @@ public class AudiobookRecorder extends JFrame {
 
         centralPanel.getActionMap().put("startStopPlayback", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
-                if (getFocusOwner() == notesArea) {
-                    return;
-                }
+                if (getFocusOwner() == bookNotesArea) { return; }
+                if (getFocusOwner() == chapterNotesArea) { return; }
+                if (getFocusOwner() == sentenceNotesArea) { return; }
                 if (bookTree.isEditing()) return;
                 if (playing == null) {
                     playSelectedSentence();
@@ -770,9 +775,9 @@ public class AudiobookRecorder extends JFrame {
 
         centralPanel.getActionMap().put("startPlaybackFrom", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
-                if (getFocusOwner() == notesArea) {
-                    return;
-                }
+                if (getFocusOwner() == bookNotesArea) { return; }
+                if (getFocusOwner() == chapterNotesArea) { return; }
+                if (getFocusOwner() == sentenceNotesArea) { return; }
                 if (bookTree.isEditing()) return;
                 if (playing == null) {
                     playFromSelectedSentence();
@@ -782,12 +787,30 @@ public class AudiobookRecorder extends JFrame {
 
         mainScroll = new JScrollPane();
 
-        notesArea = new JTextArea();
-        notesArea.setFont(new Font("Monospaced", Font.PLAIN, 10));
-        notesScroll = new JScrollPane();
-        notesScroll.setViewportView(notesArea);
+        bookNotesArea = new JTextArea();
+        bookNotesArea.setFont(new Font("Monospaced", Font.PLAIN, 10));
+        bookNotesScroll = new JScrollPane();
+        bookNotesScroll.setViewportView(bookNotesArea);
 
-        mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mainScroll, notesScroll);
+        chapterNotesArea = new JTextArea();
+        chapterNotesArea.setFont(new Font("Monospaced", Font.PLAIN, 10));
+        chapterNotesArea.getDocument().addDocumentListener(this);
+        chapterNotesScroll = new JScrollPane();
+        chapterNotesScroll.setViewportView(chapterNotesArea);
+
+        sentenceNotesArea = new JTextArea();
+        sentenceNotesArea.setFont(new Font("Monospaced", Font.PLAIN, 10));
+        sentenceNotesArea.getDocument().addDocumentListener(this);
+        sentenceNotesScroll = new JScrollPane();
+        sentenceNotesScroll.setViewportView(sentenceNotesArea);
+
+        notesTabs = new JTabbedPane();
+
+        notesTabs.add("Book", bookNotesScroll);
+        notesTabs.add("Chapter", chapterNotesScroll);
+        notesTabs.add("Phrase", sentenceNotesScroll);
+
+        mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mainScroll, notesTabs);
         centralPanel.add(mainSplit, BorderLayout.CENTER);
 
         mainSplit.addPropertyChangeListener(new PropertyChangeListener() {
@@ -2011,6 +2034,11 @@ public class AudiobookRecorder extends JFrame {
             bookTree.addTreeSelectionListener(new TreeSelectionListener() {
                 public void valueChanged(TreeSelectionEvent e) {
                     DefaultMutableTreeNode n = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
+                if (n instanceof BookTreeNode) {
+                    BookTreeNode btn = (BookTreeNode)n;
+                    btn.onSelect();
+                }
+
                     if (n instanceof Sentence) {
                         Sentence s = (Sentence)n;
                         selectedSentence = s;
@@ -2178,6 +2206,11 @@ public class AudiobookRecorder extends JFrame {
         bookTree.addTreeSelectionListener(new TreeSelectionListener() {
             public void valueChanged(TreeSelectionEvent e) {
                 DefaultMutableTreeNode n = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
+                if (n instanceof BookTreeNode) {
+                    BookTreeNode btn = (BookTreeNode)n;
+                    btn.onSelect();
+                }
+
                 if (n instanceof Sentence) {
                     Sentence s = (Sentence)n;
                     selectedSentence = s;
@@ -3729,12 +3762,28 @@ public class AudiobookRecorder extends JFrame {
         System.err.println("Effects Enabled: " + b);
     }
 
-    public void setNotes(String text) {
-        notesArea.setText(text);
+    public void setBookNotes(String text) {
+        bookNotesArea.setText(text);
     }
 
-    public String getNotes() {
-        return notesArea.getText();
+    public void setChapterNotes(String text) {
+        chapterNotesArea.setText(text);
+    }
+
+    public void setSentenceNotes(String text) {
+        sentenceNotesArea.setText(text);
+    }
+
+    public String getBookNotes() {
+        return bookNotesArea.getText();
+    }
+
+    public String getChapterNotes() {
+        return chapterNotesArea.getText();
+    }
+
+    public String getSentenceNotes() {
+        return sentenceNotesArea.getText();
     }
 
     public void openManuscript() {
@@ -3765,5 +3814,75 @@ public class AudiobookRecorder extends JFrame {
             }
         }
     }
+
+    //* DocumentListener
+
+    public void changedUpdate(DocumentEvent e) {
+        javax.swing.text.Document doc = e.getDocument();
+        if (doc == chapterNotesArea.getDocument()) {
+            DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
+            if (selectedNode instanceof Sentence) {
+                selectedNode = (DefaultMutableTreeNode)selectedNode.getParent();
+            }
+            if (! (selectedNode instanceof Chapter)) {
+                return;
+            }
+            Chapter c = (Chapter)selectedNode;
+            c.setNotes(chapterNotesArea.getText());
+        } else if (doc == sentenceNotesArea.getDocument()) {
+            DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
+            if (! (selectedNode instanceof Sentence)) {
+                return;
+            }
+            Sentence s = (Sentence)selectedNode;
+            s.setNotes(sentenceNotesArea.getText());
+        }
+    }
+
+    public void removeUpdate(DocumentEvent e) {
+        javax.swing.text.Document doc = e.getDocument();
+        if (doc == chapterNotesArea.getDocument()) {
+            DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
+            if (selectedNode instanceof Sentence) {
+                selectedNode = (DefaultMutableTreeNode)selectedNode.getParent();
+            }
+            if (! (selectedNode instanceof Chapter)) {
+                return;
+            }
+            Chapter c = (Chapter)selectedNode;
+            c.setNotes(chapterNotesArea.getText());
+        } else if (doc == sentenceNotesArea.getDocument()) {
+            DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
+            if (! (selectedNode instanceof Sentence)) {
+                return;
+            }
+            Sentence s = (Sentence)selectedNode;
+            s.setNotes(sentenceNotesArea.getText());
+        }
+    }
+
+    public void insertUpdate(DocumentEvent e) {
+        javax.swing.text.Document doc = e.getDocument();
+        if (doc == chapterNotesArea.getDocument()) {
+            DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
+            if (selectedNode instanceof Sentence) {
+                selectedNode = (DefaultMutableTreeNode)selectedNode.getParent();
+            }
+            if (! (selectedNode instanceof Chapter)) {
+                return;
+            }
+            Chapter c = (Chapter)selectedNode;
+            c.setNotes(chapterNotesArea.getText());
+        } else if (doc == sentenceNotesArea.getDocument()) {
+            DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
+            if (! (selectedNode instanceof Sentence)) {
+                return;
+            }
+            Sentence s = (Sentence)selectedNode;
+            s.setNotes(sentenceNotesArea.getText());
+        }
+    }
+
+    // DocumentListener *//
 
 }
