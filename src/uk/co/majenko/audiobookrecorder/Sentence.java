@@ -78,7 +78,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
     TargetDataLine line;
     AudioInputStream inputStream;
     AudioFormat storedFormat = null;
-    double storedLength = -1d;
+
+    double runtime = -1d;
 
     double[][] audioData = null;
 
@@ -185,6 +186,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
         setPostGap(Utils.s2i(Book.getTextNode(root, "post-gap")));
         setStartOffset(Utils.s2i(Book.getTextNode(root, "start-offset")));
         setEndOffset(Utils.s2i(Book.getTextNode(root, "end-offset")));
+        crossStartOffset = Utils.s2i(Book.getTextNode(root, "cross-start-offset", "-1"));
+        crossEndOffset = Utils.s2i(Book.getTextNode(root, "end-offset", "-1"));
         setLocked(Utils.s2b(Book.getTextNode(root, "locked")));
         setAttentionFlag(Utils.s2b(Book.getTextNode(root, "attention")));
         setGain(Utils.s2d(Book.getTextNode(root, "gain")));
@@ -192,6 +195,14 @@ public class Sentence extends BookTreeNode implements Cacheable {
         setPostGapType(Book.getTextNode(root, "gaptype"));
         sampleSize = Utils.s2i(Book.getTextNode(root, "samples"));
         processed = Utils.s2b(Book.getTextNode(root, "processed"));
+        runtime = Utils.s2d(Book.getTextNode(root, "time", "-1.000"));
+
+        if ((crossStartOffset == -1) || (crossEndOffset == -1)) {
+            System.err.println("Updating " + id);
+            updateCrossings(true);
+        }
+
+        if (runtime <= 0.01d) getLength();
     }
 
     public boolean startRecording() {
@@ -450,11 +461,14 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public String toString() {
+        return text;
+/*
         if (effectChain == null) return text;
         if (effectChain.equals("none")) return text;
         Effect e = AudiobookRecorder.window.effects.get(effectChain);
         if (e == null) return text;
         return text + " (" + e.toString() + ")";
+*/
     }
 
     public boolean isRecording() {
@@ -499,6 +513,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
     public void updateCrossings(boolean useRaw) {
         updateStartCrossing(useRaw);
         updateEndCrossing(useRaw);
+        runtime = -1d;
+        getLength();
     }
 
     public void updateStartCrossing() {
@@ -642,7 +658,6 @@ public class Sentence extends BookTreeNode implements Cacheable {
         audioData = null;
         processedAudio = null;
         storedFormat = null;
-        storedLength = -1;
     }
 
     public boolean lockedInCache() {
@@ -698,13 +713,12 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     /* Get the length of the sample in seconds */
     public double getLength() {
-        if (storedLength > -1d) return storedLength;
+        if (runtime > 0.01d) return runtime;
         AudioFormat format = getAudioFormat();
         float sampleFrequency = format.getFrameRate();
         int length = crossEndOffset - crossStartOffset;
-        double time = (double)length / (double)sampleFrequency;
-        storedLength = time;
-        return time;
+        runtime = (double)length / (double)sampleFrequency;
+        return runtime;
     }
 
     public Sentence cloneSentence() throws IOException {
@@ -1431,6 +1445,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
         sentenceNode.appendChild(Book.makeTextNode(doc, "post-gap", getPostGap()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "start-offset", getStartOffset()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "end-offset", getEndOffset()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "cross-start-offset", crossStartOffset));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "cross-end-offset", crossEndOffset));
         sentenceNode.appendChild(Book.makeTextNode(doc, "locked", isLocked()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "attention", getAttentionFlag()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "gain", getGain()));
@@ -1439,6 +1455,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         sentenceNode.appendChild(Book.makeTextNode(doc, "samples", getSampleSize()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "processed", isProcessed()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "notes", getNotes()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "time", getLength()));
         return sentenceNode;
     }
 

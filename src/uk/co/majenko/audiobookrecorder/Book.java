@@ -99,8 +99,12 @@ public class Book extends DefaultMutableTreeNode {
     }
 
     public static String getTextNode(Element r, String n) {
+        return getTextNode(r, n, "");
+    }
+
+    public static String getTextNode(Element r, String n, String d) {
         Element node = getNode(r, n);
-        if (node == null) return "";
+        if (node == null) return d;
         return node.getTextContent();
     }
 

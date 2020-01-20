@@ -1246,6 +1246,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                             Chapter c = (Chapter)s.getParent();
                             int idx = bookTreeModel.getIndexOfChild(c, s);
                             bookTreeModel.insertNodeInto(newSentence, c, idx);
+                            bookTree.setSelectionPath(new TreePath(newSentence.getPath()));
                         } catch (Exception ex) {
                             ex.printStackTrace();
                         }
@@ -2805,7 +2806,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         play.close();
                     }
                     play = null;
-                    e.printStackTrace();
+//                    e.printStackTrace();
                 }
             }
         });

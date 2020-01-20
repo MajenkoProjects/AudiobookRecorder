@@ -10,6 +10,8 @@ import java.util.*;
 import java.io.*;
 import java.net.*;
 
+import java.text.SimpleDateFormat;
+
 public class Utils {
     public static Image getScaledImage(Image srcImg, int w, int h){
         BufferedImage resizedImg = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
@@ -75,5 +77,13 @@ public class Utils {
             Runtime.getRuntime().maxMemory(),
             Runtime.getRuntime().freeMemory()
         ));
+    }
+
+    public static String secToTime(double sec, String fmt) {
+        Date d = new Date((long)(sec * 1000d));
+        SimpleDateFormat df = new SimpleDateFormat(fmt); 
+        df.setTimeZone(TimeZone.getTimeZone("GMT"));
+        String time = df.format(d); 
+        return time;
     }
 }

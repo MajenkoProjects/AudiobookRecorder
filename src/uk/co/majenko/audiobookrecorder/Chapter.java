@@ -316,4 +316,16 @@ public class Chapter extends BookTreeNode {
         AudiobookRecorder.window.setChapterNotes(notes);
     }
 
+    public double getLength() {
+        double len = 0;
+        for (Enumeration o = children(); o.hasMoreElements();) {
+            Object ob = (Object)o.nextElement();
+            if (ob instanceof Sentence) {
+                Sentence s = (Sentence)ob;
+                len += s.getLength();
+            }
+        }
+        return len;
+    }
+
 }
