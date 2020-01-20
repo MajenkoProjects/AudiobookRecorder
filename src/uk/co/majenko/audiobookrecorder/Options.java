@@ -34,6 +34,7 @@ public class Options extends JDialog {
     JSpinner shortSentenceGap;
     JSpinner postParagraphGap;
     JSpinner postSectionGap;
+    JSpinner maxGainVariance;
     JTextField ffmpegLocation;
     JComboBox<KVPair> bitRate;
     JComboBox<KVPair> channels;
@@ -301,6 +302,7 @@ public class Options extends JDialog {
         trimMethod = addDropdown(optionsPanel, "Auto-trim method:", getTrimMethods(), get("audio.recording.trim"));
         fftThreshold = addSpinner(optionsPanel, "FFT threshold:", 0, 100, 1, getInteger("audio.recording.trim.fft"), "");
         fftBlockSize = addDropdown(optionsPanel, "FFT Block size:", getFFTBlockSizes(), get("audio.recording.trim.blocksize"));
+        maxGainVariance = addSpinner(optionsPanel, "Maximum gain variance:", 0, 100, 1, getInteger("audio.recording.variance"), "");
 
         addSeparator(optionsPanel);
 
@@ -582,6 +584,7 @@ public class Options extends JDialog {
         defaultPrefs.put("catenation.post-section", "3000");
 
         defaultPrefs.put("audio.recording.trim.fft", "10");
+        defaultPrefs.put("audio.recording.variance", "10");
     
         defaultPrefs.put("path.storage", (new File(System.getProperty("user.home"), "Recordings")).toString());
         defaultPrefs.put("path.archive", (new File(new File(System.getProperty("user.home"), "Recordings"),"archive")).toString());
@@ -718,6 +721,7 @@ public class Options extends JDialog {
         set("editor.external", externalEditor.getText());
         set("cache.size", cacheSize.getValue());
         set("audio.recording.trim.fft", fftThreshold.getValue());
+        set("audio.recording.variance", maxGainVariance.getValue());
         set("audio.recording.trim.blocksize", ((KVPair)fftBlockSize.getSelectedItem()).key);
         set("audio.playback.blocksize", ((KVPair)playbackBlockSize.getSelectedItem()).key);
 

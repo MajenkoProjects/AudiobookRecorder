@@ -350,7 +350,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         intens = null;
         samples = null;
         processed = true;
-        AudiobookRecorder.window.bookTreeModel.reload(this);
+        reloadTree();
     }
 
     public void autoTrimSamplePeak() {
@@ -407,7 +407,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         if (endOffset >= samples.length) endOffset = samples.length-1;
         updateCrossings(useRaw);
         processed = true;
-        AudiobookRecorder.window.bookTreeModel.reload(this);
+        reloadTree();
     }
 
     public String getId() {
@@ -417,7 +417,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     public void setText(String t) {
         overrideText = null;
         text = t;
-        AudiobookRecorder.window.bookTreeModel.reload(this);
+        reloadTree();
     }
 
     public String getText() {
@@ -465,7 +465,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         if (o instanceof String) {
             String so = (String)o;
             text = so;
-            AudiobookRecorder.window.bookTreeModel.reload(this);
+            reloadTree();
         }
     }
 
@@ -525,7 +525,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         if (startOffset != o) {
             startOffset = o;
             crossStartOffset = -1;
-            AudiobookRecorder.window.bookTreeModel.reload(this);
+            reloadTree();
         }
     }
 
@@ -541,7 +541,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         if (endOffset != o) {
             endOffset = o;
             crossEndOffset = -1;
-            AudiobookRecorder.window.bookTreeModel.reload(this);
+            reloadTree();
         }
     }
 
@@ -570,7 +570,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     public void doRecognition(StreamSpeechRecognizer recognizer) {
         try {
             setText("[recognising...]");
-            AudiobookRecorder.window.bookTreeModel.reload(this);
+            reloadTree();
 
             byte[] inData = getPCMData();
 
@@ -585,7 +585,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
             recognizer.stopRecognition();
 
             setText(res);
-            AudiobookRecorder.window.bookTreeModel.reload(this);
+            reloadTree();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -621,8 +621,9 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void setLocked(boolean l) {
+        if (locked == l) return;
         locked = l;
-        AudiobookRecorder.window.bookTreeModel.reload(this);
+        reloadTree();
     }
 
     public boolean isLocked() {
@@ -724,8 +725,9 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void setAttentionFlag(boolean f) {
+        if (attention == f) return;
         attention = f;
-        AudiobookRecorder.window.bookTreeModel.reload(this);
+        reloadTree();
     }
 
     public boolean getAttentionFlag() {
@@ -787,12 +789,24 @@ public class Sentence extends BookTreeNode implements Cacheable {
         return gain;
     }
 
-    public void normalize() {
-        if (locked) return;
+    public double normalize(double low, double high) {
+        if (locked) return gain;
+        double max = getPeakValue(true, false);
+        double d = 0.708 / max;
+        if (d > 1d) d = 1d;
+        if (d < low) d = low;
+        if (d > high) d = high;
+        setGain(d);
+        return d;
+    }
+
+    public double normalize() {
+        if (locked) return gain;
         double max = getPeakValue(true, false);
         double d = 0.708 / max;
         if (d > 1d) d = 1d;
         setGain(d);
+        return d;
     }
 
     class ExternalEditor implements Runnable {
@@ -1321,11 +1335,14 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void setEffectChain(String key) {
+        if ((effectChain != null) && (effectChain.equals(key))) {
+            return;
+        }
         if ((effectChain != null) && (!effectChain.equals(key))) {
             CacheManager.removeFromCache(this);
         }
         effectChain = key;
-        AudiobookRecorder.window.bookTreeModel.reload(this);
+        reloadTree();
     }
 
     public String getEffectChain() {
@@ -1352,7 +1369,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
             }
         }
         postGapType = t;
-        AudiobookRecorder.window.bookTreeModel.reload(this);
+        reloadTree();
     }
 
     public void resetPostGap() {
@@ -1431,7 +1448,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public void setProcessed(boolean p) {
         processed = p;
-        AudiobookRecorder.window.bookTreeModel.reload(this);
+        reloadTree();
     }
 
     public void setNotes(String n) {
@@ -1444,6 +1461,11 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public void onSelect() {
         AudiobookRecorder.window.setSentenceNotes(notes);
+    }
+
+    void reloadTree() {
+        if (id.equals("room-noise")) return;
+        AudiobookRecorder.window.bookTreeModel.reload(this);
     }
 
 }

@@ -2034,10 +2034,11 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             bookTree.addTreeSelectionListener(new TreeSelectionListener() {
                 public void valueChanged(TreeSelectionEvent e) {
                     DefaultMutableTreeNode n = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
-                if (n instanceof BookTreeNode) {
-                    BookTreeNode btn = (BookTreeNode)n;
-                    btn.onSelect();
-                }
+
+                    if (n instanceof BookTreeNode) {
+                        BookTreeNode btn = (BookTreeNode)n;
+                        btn.onSelect();
+                    }
 
                     if (n instanceof Sentence) {
                         Sentence s = (Sentence)n;
@@ -2531,11 +2532,17 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
             int numKids = chapter.getChildCount();
             int kidCount = 0;
+            double lastGain = -1;
+            double variance = Options.getInteger("audio.recording.variance") / 100d;
             for (Enumeration s = chapter.children(); s.hasMoreElements();) {
                 kidCount++;
                 dialog.setProgress(kidCount * 2000 / numKids);
                 Sentence snt = (Sentence)s.nextElement();
-                snt.normalize();
+                if (lastGain == -1) {
+                    lastGain = snt.normalize();
+                } else {
+                    lastGain = snt.normalize(lastGain - variance, lastGain + variance);
+                }
             }
 
             dialog.closeDialog();
