@@ -3718,8 +3718,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     public void doSplit(int at) {
         try {
-            Sentence newSentence = selectedSentence.cloneSentence();
+            if (selectedSentence == null) {
+                System.err.println("Selected sentence is NULL in split. That CANNOT happen!");
+                return;
+            }
             Chapter c = (Chapter)selectedSentence.getParent();
+            Sentence newSentence = selectedSentence.cloneSentence();
             int idx = bookTreeModel.getIndexOfChild(c, selectedSentence);
             bookTreeModel.insertNodeInto(newSentence, c, idx);
 

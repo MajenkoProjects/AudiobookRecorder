@@ -561,6 +561,14 @@ public class Sentence extends BookTreeNode implements Cacheable {
         }
     }
 
+    public void setStartCrossing(int o) {
+        crossStartOffset = o;
+    }
+
+    public void setEndCrossing(int o) {
+        crossEndOffset = o;
+    }
+
     public int getSampleSize() {
         if (sampleSize == -1) {
             loadFile();
@@ -714,6 +722,10 @@ public class Sentence extends BookTreeNode implements Cacheable {
     /* Get the length of the sample in seconds */
     public double getLength() {
         if (runtime > 0.01d) return runtime;
+        File f = getFile();
+        if (!f.exists()) { // Not recorded yet!
+            return 0;
+        }
         AudioFormat format = getAudioFormat();
         float sampleFrequency = format.getFrameRate();
         int length = crossEndOffset - crossStartOffset;
@@ -729,12 +741,14 @@ public class Sentence extends BookTreeNode implements Cacheable {
         }
         sentence.setStartOffset(getStartOffset());
         sentence.setEndOffset(getEndOffset());
+        sentence.setStartCrossing(getStartCrossing());
+        sentence.setEndCrossing(getEndCrossing());
 
         File from = getFile();
         File to = sentence.getFile();
         Files.copy(from.toPath(), to.toPath());
 
-        sentence.updateCrossings();
+//        sentence.updateCrossings();
         return sentence;
     }
 
@@ -1482,6 +1496,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     void reloadTree() {
         if (id.equals("room-noise")) return;
+        if (getParent() == null) return;
         AudiobookRecorder.window.bookTreeModel.reload(this);
     }
 
