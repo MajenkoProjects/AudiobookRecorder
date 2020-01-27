@@ -54,6 +54,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     String postGapType = "none";
 
     int sampleSize = -1;
+    double peak = -1;
 
     boolean locked;
 
@@ -196,6 +197,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         sampleSize = Utils.s2i(Book.getTextNode(root, "samples"));
         processed = Utils.s2b(Book.getTextNode(root, "processed"));
         runtime = Utils.s2d(Book.getTextNode(root, "time", "-1.000"));
+        peak = Utils.s2d(Book.getTextNode(root, "peak", "-1.000"));
 
         if ((crossStartOffset == -1) || (crossEndOffset == -1)) {
             System.err.println("Updating " + id);
@@ -259,6 +261,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
             endOffset = sampleSize - 1;
             crossEndOffset = sampleSize - 1;
             processed = false;
+            peak = -1d;
         }
     }
 
@@ -809,6 +812,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
         int gainint = (int)(gain * 100d);
         if (gint != gainint) {
             CacheManager.removeFromCache(this);
+            peak = -1;
+            reloadTree();
         }
         gain = g;
     }
@@ -1470,6 +1475,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         sentenceNode.appendChild(Book.makeTextNode(doc, "processed", isProcessed()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "notes", getNotes()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "time", getLength()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "peak", getPeak()));
         return sentenceNode;
     }
 
@@ -1499,5 +1505,35 @@ public class Sentence extends BookTreeNode implements Cacheable {
         if (getParent() == null) return;
         AudiobookRecorder.window.bookTreeModel.reload(this);
     }
+
+    public double getPeak() {
+        if (peak > -1) return peak;
+        double[][] samples = getDoubleAudioData();
+        if (samples == null) {
+            peak = -1;
+            return 0;
+        }
+        double ms = 0;
+        for (int i = 0; i < samples.length; i++) {
+            if (Math.abs((samples[i][Sentence.LEFT] + samples[i][Sentence.RIGHT]) / 2d) > ms) {
+                ms = Math.abs((samples[i][Sentence.LEFT] + samples[i][Sentence.RIGHT]) / 2d);
+            }
+        }
+
+        ms *= 10d;
+        ms /= 7d;
+        peak = ms;
+        return ms;
+    }
+
+    public int getPeakDB() {
+        double r = getPeak();
+        if (r == 0) return 0;
+        double l10 = Math.log10(r);
+        double db = 20d * l10;
+
+        return (int)db;
+    }
+
 
 }

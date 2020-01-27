@@ -90,7 +90,7 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
                 ctx.gridwidth = 2;
                 p.add(ret, ctx);
             } else {
-                ctx.weightx = 0.1d;
+                ctx.weightx = 1.0d;
                 ctx.gridwidth = 1;
                 p.add(ret, ctx);
                 Effect e = AudiobookRecorder.window.effects.get(effectChain);
@@ -101,8 +101,19 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
                 p.add(eff);
             }
 
+            ctx.gridwidth = 1;
             ctx.weightx = 0.0d;
             ctx.gridx = 2;
+            ctx.anchor = GridBagConstraints.LINE_END;
+            int peak = s.getPeakDB();
+            JLabel peakLabel = new JLabel(peak + "dB ");
+            if (peak > 0) {
+                peakLabel.setForeground(new Color(0xCC, 0x00, 0x00));
+            }
+            p.add(peakLabel, ctx);
+
+            ctx.weightx = 0.0d;
+            ctx.gridx = 3;
             ctx.anchor = GridBagConstraints.LINE_END;
             p.add(time, ctx);
 

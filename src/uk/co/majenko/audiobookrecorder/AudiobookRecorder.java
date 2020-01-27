@@ -2418,7 +2418,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     public double getNoiseFloor() { 
         if (roomNoise == null) return 0;
-        double[][] samples = roomNoise.getDoubleAudioData();
+        return roomNoise.getPeak();
+/*        double[][] samples = roomNoise.getDoubleAudioData();
         if (samples == null) {
             return 0;
         }
@@ -2431,16 +2432,20 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         ms *= 10d;
         ms /= 7d;
-        return ms;
+        return ms;*/
     }
 
     public int getNoiseFloorDB() {
+        if (roomNoise == null) return 0;
+        return roomNoise.getPeakDB();
+/*
         double r = getNoiseFloor();
         if (r == 0) return 0;
         double l10 = Math.log10(r);
         double db = 20d * l10;
 
         return (int)db;
+*/
     }
 
     public void recordRoomNoise() {
