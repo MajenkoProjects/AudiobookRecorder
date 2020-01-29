@@ -439,6 +439,16 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
         });
 
+        sampleWaveform.addMouseWheelListener(new MouseWheelListener() {
+            public void mouseWheelMoved(MouseWheelEvent e) {
+                if (selectedSentence == null) return;
+                if (selectedSentence.isLocked()) return;
+                int val = ((int)gainPercent.getValue()) - e.getWheelRotation();
+                if (val < 1) val = 1;
+                gainPercent.setValue(val);
+            }
+        });
+
         sampleWaveform.addMarkerDragListener(new MarkerDragListener() {
             public void leftMarkerMoved(MarkerDragEvent e) {
                 Debug.trace();
@@ -474,7 +484,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 Debug.trace();
                 if (selectedSentence != null) {
                     selectedSentence.autoTrimSampleFFT();
-                    sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
                     sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
                     sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
                     postSentenceGap.setValue(selectedSentence.getPostGap());
@@ -488,7 +497,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 Debug.trace();
                 if (selectedSentence != null) {
                     selectedSentence.autoTrimSamplePeak();
-                    sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
                     sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
                     sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
                     postSentenceGap.setValue(selectedSentence.getPostGap());
@@ -502,7 +510,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 Debug.trace();
                 if (selectedSentence != null) {
                     selectedSentence.normalize();
-                    sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
+                    gainPercent.setValue((int)(selectedSentence.getGain() * 100d));
+                    updateWaveform(true);
                 }
             }
         });
@@ -550,7 +559,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 JSpinner ob = (JSpinner)e.getSource();
                 if (selectedSentence != null) {
                     selectedSentence.setGain((Integer)ob.getValue() / 100d);
-                    sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
+                    updateWaveform(true);
                 }
             }
         });
@@ -672,7 +681,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     KVPair<String, String> p = effectChain.getItemAt(i);
                     if (p == null) return;
                     selectedSentence.setEffectChain(p.getKey());
-                    updateWaveform();
+                    updateWaveform(true);
                 }
             }
         });
@@ -2947,6 +2956,10 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
 
+    public Sentence getRoomNoiseSentence() {
+        return roomNoise;
+    }
+
     public byte[] getRoomNoise(int ms) {
         Debug.trace();
 
@@ -3461,9 +3474,13 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void updateWaveform() {
+        updateWaveform(false);
+    }
+
+    public void updateWaveform(boolean force) {
         Debug.trace();
         if (selectedSentence != null) {
-            if ((sampleWaveform.getId() != null) && (sampleWaveform.getId().equals(selectedSentence.getId()))) return;
+            if ((!force) && (sampleWaveform.getId() != null) && (sampleWaveform.getId().equals(selectedSentence.getId()))) return;
             sampleWaveform.setId(selectedSentence.getId());
             if (rawAudio.isSelected()) {
                 sampleWaveform.setData(selectedSentence.getRawAudioData());
@@ -3796,17 +3813,17 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             KVPair<String, String> p = effectChain.getItemAt(i);
             if (p.getKey().equals(key)) {
                 effectChain.setSelectedIndex(i);
-                updateWaveform();
+                updateWaveform(true);
                 return;
             }
         }
 
         if (effects.get(book.getDefaultEffect()) != null) {
             setEffectChain(book.getDefaultEffect());
-            updateWaveform();
+            updateWaveform(true);
         } else {
             effectChain.setSelectedIndex(0);
-            updateWaveform();
+            updateWaveform(true);
         }
     }
 
@@ -3874,12 +3891,14 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             int a = 0;
             for (int i = 0; i < samples[Sentence.LEFT].length; i++) {
                 if ((i < start) || (i > end)) {
-                    croppedSamples[a++] = samples[i];
+                    croppedSamples[Sentence.LEFT][a] = samples[Sentence.LEFT][i];
+                    croppedSamples[Sentence.RIGHT][a] = samples[Sentence.RIGHT][i];
+                    a++;
                 }
             }
             selectedSentence.writeAudioData(croppedSamples);
             selectedSentence.autoTrimSample();
-            updateWaveform();
+            updateWaveform(true);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -3906,9 +3925,13 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
             for (int i = 0; i < samples[Sentence.LEFT].length; i++) {
                 if (i < at) {
-                    startSamples[a++] = samples[i];
+                    startSamples[Sentence.LEFT][a] = samples[Sentence.LEFT][i];
+                    startSamples[Sentence.RIGHT][a] = samples[Sentence.RIGHT][i];
+                    a++;
                 } else {
-                    endSamples[b++] = samples[i];
+                    endSamples[Sentence.LEFT][b] = samples[Sentence.LEFT][i];
+                    endSamples[Sentence.RIGHT][b] = samples[Sentence.RIGHT][i];
+                    b++;
                 }
             }
 
@@ -3919,7 +3942,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             selectedSentence.writeAudioData(endSamples);
             selectedSentence.autoTrimSample();
             newSentence.autoTrimSample();
-            updateWaveform();
+            updateWaveform(true);
         } catch (Exception ex) {
             ex.printStackTrace();
         }

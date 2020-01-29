@@ -86,6 +86,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     double[][] processedAudio = null;
 
+    double[] fftProfile = null;
+
     RecordingThread recordingThread;
 
     boolean effectEthereal = false;
@@ -282,6 +284,17 @@ public class Sentence extends BookTreeNode implements Cacheable {
         Debug.trace();
         autoTrimSampleFFT(false);
     }
+    
+    public double bucketDifference(double[] a, double[] b) {
+        double diff = 0d;
+        int l = Math.min(a.length, b.length);
+        for (int i = 0; i < l; i++) {
+            if ((a[i] - b[i]) > diff) {
+                diff = (a[i] - b[i]);
+            }
+        }
+        return diff;
+    }
 
     public void autoTrimSampleFFT(boolean useRaw) {
         Debug.trace();
@@ -297,11 +310,13 @@ public class Sentence extends BookTreeNode implements Cacheable {
             return;
         }
 
+        double[] roomNoiseProfile = AudiobookRecorder.window.getRoomNoiseSentence().getFFTProfile();
+
         int fftSize = Options.getInteger("audio.recording.trim.blocksize");
 
         int blocks = samples[LEFT].length / fftSize + 1;
 
-        int[] intens = new int[blocks];
+        double[] intens = new double[blocks];
         int block = 0;
 
         for (int i = 0; i < samples[LEFT].length; i+= fftSize) {
@@ -319,31 +334,20 @@ public class Sentence extends BookTreeNode implements Cacheable {
             }
 
             double[] buckets = FFT.fft(real, imag, true);
-            double av = 0;
-            for (int j = 1; j < fftSize/2; j++) {
-                av += Math.abs(buckets[j]);
-            }
-            av /= (fftSize / 2);
 
-            intens[block] = 0;
 
-            for (int j = 2; j < fftSize; j += 2) {
-                double d = Math.abs(av - buckets[j]);
-                if (d > 0.05) {
-                    intens[block]++;
-                }
-            }
+            intens[block] = bucketDifference(buckets, roomNoiseProfile);
             block++;
         }
 
 
-        int limit = Options.getInteger("audio.recording.trim.fft");
+        double limit = (double)(Options.getInteger("audio.recording.trim.fft"));
 
         // Find first block with > 1 intensity and subtract one.
 
         int start = 0;
         for (int i = 0; i < blocks; i++) {
-            if (intens[i] > limit) break;
+            if (intens[i] >= (limit / 100.0)) break;
             start = i;
         }
 
@@ -358,7 +362,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         int end = blocks - 1;
         // And last block with > 1 intensity and add one.
         for (int i = blocks-1; i >= 0; i--) {
-            if (intens[i] > limit) break;
+            if (intens[i] >= (limit / 100)) break;
             end = i;
         }
 
@@ -379,6 +383,50 @@ public class Sentence extends BookTreeNode implements Cacheable {
         processed = true;
         reloadTree();
     }
+
+    public double[] getFFTProfile() {
+        Debug.trace();
+        if (fftProfile != null) return fftProfile;
+
+        double[][] samples = getProcessedAudioData();
+        if (samples == null) {
+            return null;
+        }
+
+        int fftSize = Options.getInteger("audio.recording.trim.blocksize");
+
+        fftProfile = new double[fftSize / 2];
+        for (int j = 1; j < fftSize/2; j++) {
+            fftProfile[j] = 0d;
+        }
+
+        for (int i = 0; i < samples[LEFT].length; i+= fftSize) {
+            double[] real = new double[fftSize];
+            double[] imag = new double[fftSize];
+
+            for (int j = 0; j < fftSize; j++) {
+                if (i + j < samples[LEFT].length) {
+                    real[j] = (samples[LEFT][i+j] + samples[RIGHT][i+j]) / 2d;
+                    imag[j] = 0;
+                } else {
+                    real[j] = 0;
+                    imag[j] = 0;
+                }
+            }
+
+            double[] buckets = FFT.fft(real, imag, true);
+
+            for (int j = 1; j < fftSize/2; j++) {
+                fftProfile[j] += Math.abs(buckets[j]);
+            }
+        }
+
+        for (int j = 1; j < fftSize/2; j++) {
+            fftProfile[j] /= (double)(fftSize / 2d);
+        }
+        return fftProfile;
+    }
+
 
     public void autoTrimSamplePeak() {
         Debug.trace();
@@ -873,12 +921,12 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
         int gint = (int)(g * 100d);
         int gainint = (int)(gain * 100d);
+        gain = g;
         if (gint != gainint) {
             CacheManager.removeFromCache(this);
             peak = -1;
             reloadTree();
         }
-        gain = g;
     }
 
     public double getGain() {
@@ -894,8 +942,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
         if (d > 1d) d = 1d;
         if (d < low) d = low;
         if (d > high) d = high;
-        peak = -1;
         setGain(d);
+        peak = -1;
         getPeak();
         reloadTree();
         return d;
@@ -945,7 +993,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
             } catch (Exception e) { 
             }
             CacheManager.removeFromCache(Sentence.this);
-            AudiobookRecorder.window.updateWaveform();
+            AudiobookRecorder.window.updateWaveform(true);
         }
     }
 
@@ -1039,7 +1087,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
             }
 
             CacheManager.removeFromCache(Sentence.this);
-            AudiobookRecorder.window.updateWaveform();
+            AudiobookRecorder.window.updateWaveform(true);
         }
     }
 
@@ -1084,7 +1132,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         }
         
         CacheManager.removeFromCache(this);
-        AudiobookRecorder.window.updateWaveform();
+        AudiobookRecorder.window.updateWaveform(true);
     }
 
     public double[][] getDoubleDataS16LE(AudioInputStream s, AudioFormat format) throws IOException {
