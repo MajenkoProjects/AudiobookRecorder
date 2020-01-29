@@ -34,6 +34,8 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
     int offsetFactor = 0;
     int offset = 0;
 
+    String loadedId = null;
+
     ArrayList<MarkerDragListener> markerDragListeners;
 
     public Waveform() {
@@ -79,7 +81,7 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
 
         if (samples != null) {
 
-            int num = samples.length;
+            int num = samples[Sentence.LEFT].length;
             step = num / zoomFactor / w;
             if (step == 0) return;
 
@@ -97,8 +99,8 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
                 double lmax = 0;
 
                 for (int o = 0; o < step; o++) {
-                    if (offset + (n * step) + o >= samples.length) break;
-                    double sample = (samples[offset + (n * step) + o][Sentence.LEFT] + samples[offset + (n * step) + o][Sentence.RIGHT]) / 2d;
+                    if (offset + (n * step) + o >= samples[Sentence.LEFT].length) break;
+                    double sample = (samples[Sentence.LEFT][offset + (n * step) + o] + samples[Sentence.RIGHT][offset + (n * step) + o]) / 2d;
                     if (sample >= 0) {
                         have += sample;
                         hcnt++;
@@ -386,5 +388,13 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
 
     public int getCutEnd() {
         return cutExit;
+    }
+
+    public void setId(String id) {
+        loadedId = id;
+    }
+
+    public String getId() {
+        return loadedId;
     }
 }

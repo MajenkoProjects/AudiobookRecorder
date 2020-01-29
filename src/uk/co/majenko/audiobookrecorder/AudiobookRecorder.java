@@ -55,6 +55,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     public final static int STOPPING = 2;
     public int state = IDLE;
 
+    public static CommandLine CLI = new CommandLine();
+
     MainToolBar toolBar;
 
     JMenuBar menuBar;
@@ -151,6 +153,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     public static AudiobookRecorder window;
 
     void initSphinx() {
+        Debug.trace();
         sphinxConfig = new Configuration();
 
         sphinxConfig.setAcousticModelPath(AudiobookRecorder.SPHINX_MODEL);
@@ -165,6 +168,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     void buildToolbar(Container ob) {
+        Debug.trace();
         toolBar = new MainToolBar(this);
         toolBar.addSeparator();
         toolBar.add(Box.createHorizontalGlue());
@@ -172,6 +176,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     void buildMenu(Container ob) {
+        Debug.trace();
         menuBar = new JMenuBar();
 
         fileMenu = new JMenu("File");
@@ -179,6 +184,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         fileNewBook = new JMenuItem("New Book...");
         fileNewBook.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 saveBookStructure();
                 createNewBook();
             }
@@ -186,6 +192,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         fileOpenBook = new JMenuItem("Open Book...");
         fileOpenBook.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 saveBookStructure();
                 openBook();
             }
@@ -193,6 +200,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         fileSave = new JMenuItem("Save Book");
         fileSave.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 saveBookStructure();
             }
         });
@@ -200,6 +208,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         fileOpenArchive = new JMenuItem("Open Archive...");
         fileOpenArchive.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 openArchive();
             }
         });
@@ -207,6 +216,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         fileExit = new JMenuItem("Exit");
         fileExit.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 saveBookStructure();
                 System.exit(0);
             }
@@ -228,6 +238,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         bookNewChapter = new JMenuItem("New Chapter");
         bookNewChapter.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 addChapter();
             }
         });
@@ -235,6 +246,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         bookExportAudio = new JMenuItem("Export Audio");
         bookExportAudio.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 exportAudio();
             }
         });
@@ -242,6 +254,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         bookPurgeBackups = new JMenuItem("Purge Backups");
         bookPurgeBackups.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 book.purgeBackups();
             }
         });
@@ -256,6 +269,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         bookVisitTitle = new JMenuItem("Title");
         bookVisitTitle.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 Utils.browse("https://www.acx.com/titleview/" + book.getACX());
             }
         });
@@ -264,6 +278,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         bookVisitAudition = new JMenuItem("Audition");
         bookVisitAudition.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 Utils.browse("https://www.acx.com/titleview/" + book.getACX() + "?bucket=AUDITION_READY");
             }
         });
@@ -272,6 +287,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         bookVisitProduce = new JMenuItem("Produce");
         bookVisitProduce.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 Utils.browse("https://www.acx.com/titleview/" + book.getACX() + "?bucket=PRODUCE");
             }
         });
@@ -284,6 +300,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         toolsMerge = new JMenuItem("Merge Book...");
         toolsMerge.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 saveBookStructure();
                 mergeBook();
             }
@@ -292,6 +309,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         toolsArchive = new JMenuItem("Archive Book");
         toolsArchive.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 saveBookStructure();
                 archiveBook();
             }
@@ -300,6 +318,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         toolsCoverArt = new JMenuItem("Import Cover Art...");
         toolsCoverArt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 loadCoverArt();
             }
         });
@@ -307,6 +326,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         toolsManuscript = new JMenuItem("Import Manuscript...");
         toolsManuscript.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 loadManuscript();
             }
         });
@@ -314,6 +334,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         toolsOptions = new JMenuItem("Options");
         toolsOptions.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 new Options(AudiobookRecorder.this);
             }
         });
@@ -333,6 +354,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         helpAbout.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 JOptionPane.showMessageDialog(AudiobookRecorder.this, new AboutPanel(), "About AudiobookRecorder", JOptionPane.PLAIN_MESSAGE);
             }
         });
@@ -346,9 +368,18 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         setLocationRelativeTo(null);
     }
 
-    public AudiobookRecorder() {
+    public AudiobookRecorder(String[] args) {
+        Debug.trace();
 
         window = this;
+
+        CLI.addParameter("debug", "", Boolean.class, "Enable debug output");
+        CLI.addParameter("trace", "", Boolean.class, "Enable function tracing");
+
+        String[] argv = CLI.process(args);
+
+        Debug.debugEnabled = CLI.isSet("debug");
+        Debug.traceEnabled = CLI.isSet("trace");
 
         try {
 
@@ -381,6 +412,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
+                Debug.trace();
                 saveBookStructure();
                 System.exit(0);
             }
@@ -402,12 +434,14 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         sampleScroll.setMaximum(1000);
         sampleScroll.addAdjustmentListener(new AdjustmentListener() {
             public void adjustmentValueChanged(AdjustmentEvent e) {
+                Debug.trace();
                 sampleWaveform.setOffset(sampleScroll.getValue());
             }
         });
 
         sampleWaveform.addMarkerDragListener(new MarkerDragListener() {
             public void leftMarkerMoved(MarkerDragEvent e) {
+                Debug.trace();
                 if (selectedSentence != null) {
                     if (!selectedSentence.isLocked()) {
                         selectedSentence.setStartOffset(e.getPosition());
@@ -420,6 +454,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
 
             public void rightMarkerMoved(MarkerDragEvent e) {
+                Debug.trace();
                 if (selectedSentence != null) {
                     if (!selectedSentence.isLocked()) {
                         selectedSentence.setEndOffset(e.getPosition());
@@ -436,6 +471,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         reprocessAudioFFT = new JButtonSpacePlay(Icons.fft, "Autotrim Audio (FFT)", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 if (selectedSentence != null) {
                     selectedSentence.autoTrimSampleFFT();
                     sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
@@ -449,6 +485,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         reprocessAudioPeak = new JButtonSpacePlay(Icons.peak, "Autotrim Audio (Peak)", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 if (selectedSentence != null) {
                     selectedSentence.autoTrimSamplePeak();
                     sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
@@ -462,6 +499,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         normalizeAudio = new JButtonSpacePlay(Icons.normalize, "Normalize audio", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 if (selectedSentence != null) {
                     selectedSentence.normalize();
                     sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
@@ -471,18 +509,21 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     
         selectSplitMode = new JToggleButtonSpacePlay(Icons.split, "Toggle split mode", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 toggleSplitMode();
             }
         });
 
         selectCutMode = new JToggleButtonSpacePlay(Icons.cut, "Toggle cut mode", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 toggleCutMode();
             }
         });
 
         doCutSplit = new JButtonSpacePlay(Icons.docut, "Perform cut or split", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 executeCutOrSplit();
             }
         });
@@ -492,6 +533,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         postSentenceGap.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
+                Debug.trace();
                 JSpinner ob = (JSpinner)e.getSource();
                 if (selectedSentence != null) {
                     selectedSentence.setPostGap((Integer)ob.getValue());
@@ -504,6 +546,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         gainPercent.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
+                Debug.trace();
                 JSpinner ob = (JSpinner)e.getSource();
                 if (selectedSentence != null) {
                     selectedSentence.setGain((Integer)ob.getValue() / 100d);
@@ -536,6 +579,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         locked.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 JCheckBox c = (JCheckBox)e.getSource();
                 if (c.isSelected()) {
                     if (selectedSentence != null) {
@@ -566,6 +610,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         attention.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 JCheckBox c = (JCheckBox)e.getSource();
                 if (c.isSelected()) {
                     if (selectedSentence != null) {
@@ -596,6 +641,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         JButtonSpacePlay zoomIn = new JButtonSpacePlay(Icons.zoomIn, "Zoom In", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 sampleWaveform.increaseZoom();
             }
         });
@@ -603,6 +649,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         JButtonSpacePlay zoomOut = new JButtonSpacePlay(Icons.zoomOut, "Zoom Out", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 sampleWaveform.decreaseZoom();
             }
         });
@@ -618,6 +665,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         effectChain.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
+                Debug.d(e);
                 if (selectedSentence != null) {
                     int i = effectChain.getSelectedIndex();
                     KVPair<String, String> p = effectChain.getItemAt(i);
@@ -650,6 +699,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         centralPanel.getActionMap().put("startRecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 if (!getLock()) return;
                 if (getFocusOwner() == bookNotesArea) { freeLock(); return; }
                 if (getFocusOwner() == chapterNotesArea) { freeLock(); return; }
@@ -668,6 +718,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         });
         centralPanel.getActionMap().put("startRecordShort", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 if (!getLock()) return;
                 if (getFocusOwner() == bookNotesArea) { freeLock(); return; }
                 if (getFocusOwner() == chapterNotesArea) { freeLock(); return; }
@@ -686,6 +737,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         });
         centralPanel.getActionMap().put("startRecordNewPara", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 if (!getLock()) return;
                 if (getFocusOwner() == bookNotesArea) { freeLock(); return; }
                 if (getFocusOwner() == chapterNotesArea) { freeLock(); return; }
@@ -704,6 +756,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         });
         centralPanel.getActionMap().put("startRecordNewSection", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 if (!getLock()) return;
                 if (getFocusOwner() == bookNotesArea) { freeLock(); return; }
                 if (getFocusOwner() == chapterNotesArea) { freeLock(); return; }
@@ -722,6 +775,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         });
         centralPanel.getActionMap().put("startRerecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 if (!getLock()) return;
                 if (getFocusOwner() == bookNotesArea) { freeLock(); return; }
                 if (getFocusOwner() == chapterNotesArea) { freeLock(); return; }
@@ -740,6 +794,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         });
         centralPanel.getActionMap().put("stopRecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 if (getFocusOwner() == bookNotesArea) { return; }
                 if (getFocusOwner() == chapterNotesArea) { return; }
                 if (getFocusOwner() == sentenceNotesArea) { return; }
@@ -751,6 +806,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         });
         centralPanel.getActionMap().put("deleteLast", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 if (getFocusOwner() == bookNotesArea) { return; }
                 if (getFocusOwner() == chapterNotesArea) { return; }
                 if (getFocusOwner() == sentenceNotesArea) { return; }
@@ -761,6 +817,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         centralPanel.getActionMap().put("startStopPlayback", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 if (getFocusOwner() == bookNotesArea) { return; }
                 if (getFocusOwner() == chapterNotesArea) { return; }
                 if (getFocusOwner() == sentenceNotesArea) { return; }
@@ -775,6 +832,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         centralPanel.getActionMap().put("startPlaybackFrom", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
+                Debug.trace();
                 if (getFocusOwner() == bookNotesArea) { return; }
                 if (getFocusOwner() == chapterNotesArea) { return; }
                 if (getFocusOwner() == sentenceNotesArea) { return; }
@@ -815,10 +873,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         mainSplit.addPropertyChangeListener(new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent ev) {
+                Debug.trace();
                 if (ev.getPropertyName().equals("dividerLocation")) {
                     if ((bookTreeModel != null) && (book != null)) {
                         SwingUtilities.invokeLater(new Runnable() {
                             public void run() {
+                                Debug.trace();
                                 bookTreeModel.reload(book);
                             }
                         });
@@ -841,6 +901,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
+                Debug.trace();
                 mainSplit.setDividerLocation(0.8d);
             }
         });
@@ -876,6 +937,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     void bindKeys(JComponent component) {
+        Debug.trace();
         component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("F"), "startRecordShort");
         component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released F"), "stopRecord");
 
@@ -898,6 +960,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     void unbindKeys(JComponent component) {
+        Debug.trace();
         component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("F"), "ignore");
         component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("released F"), "ignore");
 
@@ -920,6 +983,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public static void main(String args[]) {
+        Debug.trace();
         try {
             config.load(AudiobookRecorder.class.getResourceAsStream("config.txt"));
         } catch (Exception e) {
@@ -927,10 +991,11 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         }
 
 
-        new AudiobookRecorder();
+        new AudiobookRecorder(args);
     }
 
     public void createNewBook() {
+        Debug.trace();
         BookInfoPanel info = new BookInfoPanel("", "", "", "", "");
         int r = JOptionPane.showConfirmDialog(this, info, "New Book", JOptionPane.OK_CANCEL_OPTION);
         if (r != JOptionPane.OK_OPTION) return;
@@ -990,20 +1055,24 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         
         public JMenuObject(String p) {  
             super(p);
+            Debug.trace();
             ob = null;
         }
 
         public JMenuObject(String p, Object o, ActionListener l) {  
             super(p);
+            Debug.trace();
             ob = o;
             addActionListener(l);
         }
 
         public void setObject(Object o) {
+            Debug.trace();
             ob = o;
         }
 
         public Object getObject() {
+            Debug.trace();
             return ob;
         }
     }
@@ -1014,30 +1083,36 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         
         public JMenuObject2(String p) {  
             super(p);
+            Debug.trace();
             ob1 = null;
             ob2 = null;
         }
 
         public JMenuObject2(String p, Object o1, Object o2, ActionListener l) {  
             super(p);
+            Debug.trace();
             ob1 = o1;
             ob2 = o2;
             addActionListener(l);
         }
 
         public void setObject1(Object o) {
+            Debug.trace();
             ob1 = o;
         }
 
         public void setObject2(Object o) {
+            Debug.trace();
             ob2 = o;
         }
 
         public Object getObject1() {
+            Debug.trace();
             return ob1;
         }
 
         public Object getObject2() {
+            Debug.trace();
             return ob2;
         }
     }
@@ -1046,9 +1121,11 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         Chapter chapter;
 
         public BatchConversionThread(Chapter c) {
+            Debug.trace();
             chapter = c;
         }
         public void run() {
+            Debug.trace();
             try {
                 Configuration sphinxConfig = new Configuration();
 
@@ -1080,6 +1157,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     @SuppressWarnings("unchecked")
     void treePopup(MouseEvent e) {
+        Debug.trace();
         int selRow = bookTree.getRowForLocation(e.getX(), e.getY());
         TreePath selPath = bookTree.getPathForLocation(e.getX(), e.getY());
         if (selRow != -1) {
@@ -1095,6 +1173,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject rec = new JMenuObject("Recognise text from audio", s, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence s = (Sentence)o.getObject();
                         if (!s.isLocked()) {
@@ -1112,6 +1191,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     Chapter chp = (Chapter)c.nextElement();
                     JMenuObject2 m = new JMenuObject2(chp.getName(), s, chp, new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
+                            Debug.trace();
                             JMenuObject2 ob = (JMenuObject2)e.getSource();
                             Sentence sentence = (Sentence)ob.getObject1();
                             Chapter target = (Chapter)ob.getObject2();
@@ -1125,6 +1205,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject moveUp = new JMenuObject("Move Up", s, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence sent = (Sentence)o.getObject();
                         Chapter chap = (Chapter)sent.getParent();
@@ -1137,6 +1218,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject moveDown = new JMenuObject("Move Down", s, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence sent = (Sentence)o.getObject();
                         Chapter chap = (Chapter)sent.getParent();
@@ -1166,6 +1248,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject2 gapTypeSentence = new JMenuObject2(sentenceText, s, "sentence", new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject2 o = (JMenuObject2)e.getSource();
                         Sentence sent = (Sentence)o.getObject1();
                         String type = (String)o.getObject2();
@@ -1178,6 +1261,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 
                 JMenuObject2 gapTypeContinuation = new JMenuObject2(continuationText, s, "continuation", new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject2 o = (JMenuObject2)e.getSource();
                         Sentence sent = (Sentence)o.getObject1();
                         String type = (String)o.getObject2();
@@ -1190,6 +1274,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject2 gapTypeParagraph = new JMenuObject2(paragraphText, s, "paragraph", new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject2 o = (JMenuObject2)e.getSource();
                         Sentence sent = (Sentence)o.getObject1();
                         String type = (String)o.getObject2();
@@ -1202,6 +1287,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 
                 JMenuObject2 gapTypeSection = new JMenuObject2(sectionText, s, "section", new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject2 o = (JMenuObject2)e.getSource();
                         Sentence sent = (Sentence)o.getObject1();
                         String type = (String)o.getObject2();
@@ -1216,6 +1302,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject ins = new JMenuObject("Insert phrase above", s, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence s = (Sentence)o.getObject();
                         Chapter c = (Chapter)s.getParent();
@@ -1228,6 +1315,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject del = new JMenuObject("Delete phrase", s, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence s = (Sentence)o.getObject();
                         if (!s.isLocked()) {
@@ -1239,6 +1327,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject dup = new JMenuObject("Duplicate phrase", s, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         try {
                             JMenuObject o = (JMenuObject)e.getSource();
                             Sentence s = (Sentence)o.getObject();
@@ -1255,6 +1344,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject edit = new JMenuObject("Open in external editor", s, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         try {
                             JMenuObject o = (JMenuObject)e.getSource();
                             Sentence s = (Sentence)o.getObject();
@@ -1273,6 +1363,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     if (name.equals("")) break;
                     JMenuObject ob = new JMenuObject(name, s, new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
+                            Debug.trace();
                             JMenuObject o = (JMenuObject)e.getSource();
                             Sentence s = (Sentence)o.getObject();
                             s.runExternalProcessor(Utils.s2i(o.getActionCommand()));
@@ -1284,6 +1375,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject undo = new JMenuObject("Undo", s, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence s = (Sentence)o.getObject();
                         s.undo();
@@ -1316,6 +1408,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject undo = new JMenuObject("Undo all", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter c = (Chapter)o.getObject();
                         for (Enumeration s = c.children(); s.hasMoreElements();) {
@@ -1327,6 +1420,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject peaknew = new JMenuObject("Auto-trim new (Peak)", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter chap = (Chapter)o.getObject();
 
@@ -1341,6 +1435,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject fftnew = new JMenuObject("Auto-trim new (FFT)", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter chap = (Chapter)o.getObject();
 
@@ -1355,6 +1450,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject peak = new JMenuObject("Auto-trim all (Peak)", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter chap = (Chapter)o.getObject();
 
@@ -1369,6 +1465,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject fft = new JMenuObject("Auto-trim all (FFT)", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter chap = (Chapter)o.getObject();
 
@@ -1383,6 +1480,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject resetChapterGaps = new JMenuObject("Reset post gaps", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter c = (Chapter)o.getObject();
                         c.resetPostGaps();
@@ -1391,6 +1489,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject moveUp = new JMenuObject("Move Up", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter chap = (Chapter)o.getObject();
                         int pos = bookTreeModel.getIndexOfChild(book, chap);
@@ -1412,6 +1511,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject moveDown = new JMenuObject("Move Down", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter chap = (Chapter)o.getObject();
                         int pos = bookTreeModel.getIndexOfChild(book, chap);
@@ -1440,6 +1540,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     }
                     JMenuObject2 m = new JMenuObject2(chp.getName(), c, chp, new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
+                            Debug.trace();
                             JMenuObject2 ob = (JMenuObject2)e.getSource();
                             Chapter source = (Chapter)ob.getObject1();
                             Chapter target = (Chapter)ob.getObject2();
@@ -1457,6 +1558,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject lockAll = new JMenuObject("Lock all phrases", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter c = (Chapter)o.getObject();
                         for (Enumeration s = c.children(); s.hasMoreElements();) {
@@ -1469,6 +1571,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject unlockAll = new JMenuObject("Unlock all phrases", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter c = (Chapter)o.getObject();
                         for (Enumeration s = c.children(); s.hasMoreElements();) {
@@ -1481,6 +1584,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject exportChapter = new JMenuObject("Export chapter", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter chap = (Chapter)o.getObject();
 
@@ -1495,6 +1599,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject deleteChapter = new JMenuObject("Delete chapter", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter c = (Chapter)o.getObject();
                         int rv = JOptionPane.showConfirmDialog(AudiobookRecorder.this, "Are you sure you want to delete this chapter?", "Are you sure?", JOptionPane.OK_CANCEL_OPTION);
@@ -1512,6 +1617,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         
                 JMenuObject convertAll = new JMenuObject("Detect all text", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter c = (Chapter)o.getObject();
                         BatchConversionThread r = new BatchConversionThread(c);
@@ -1522,6 +1628,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject normalizeAll = new JMenuObject("Normalize chapter", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
 
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter chap = (Chapter)o.getObject();
@@ -1543,6 +1650,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     if (name.equals("")) break;
                     JMenuObject ob = new JMenuObject(name, c, new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
+                            Debug.trace();
                             JMenuObject o = (JMenuObject)e.getSource();
                             Chapter c = (Chapter)o.getObject();
                             for (Enumeration s = c.children(); s.hasMoreElements();) {
@@ -1588,6 +1696,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 JMenuItem editData = new JMenuItem("Edit Data...");
                 editData.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         JTabbedPane tabs = new JTabbedPane();
                         BookInfoPanel info = new BookInfoPanel(
                             book.getName(),
@@ -1655,6 +1764,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 JMenuObject resetBookGaps = new JMenuObject("Reset all post gaps", book, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
                         for (Enumeration ch = book.children(); ch.hasMoreElements();) {
                             Chapter chap = (Chapter)ch.nextElement();
                             chap.resetPostGaps();
@@ -1671,6 +1781,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void startReRecording() {
+        Debug.trace();
 
         if (recording != null) return;
         if (book == null) return;
@@ -1708,6 +1819,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void startRecordingShort() {
+        Debug.trace();
 
         if (recording != null) return;
         if (book == null) return;
@@ -1759,6 +1871,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
 
     public void startRecordingNewParagraph() {
+        Debug.trace();
 
         if (recording != null) return;
         if (book == null) return;
@@ -1809,6 +1922,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void startRecordingNewSection() {
+        Debug.trace();
 
         if (recording != null) return;
         if (book == null) return;
@@ -1859,6 +1973,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void startRecording() {
+        Debug.trace();
 
         if (recording != null) return;
         if (book == null) return;
@@ -1909,6 +2024,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void stopRecording() {
+        Debug.trace();
         if (recording == null) return;
         recording.stopRecording();
 
@@ -1924,6 +2040,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void deleteLastRecording() {
+        Debug.trace();
         if (recording != null) return;
         if (book == null) return;
 
@@ -1967,6 +2084,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void addChapter() {
+        Debug.trace();
         Chapter c = book.addChapter();   
         Chapter lc = book.getLastChapter();
         int i = bookTreeModel.getIndexOfChild(book, lc);
@@ -1976,6 +2094,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     @SuppressWarnings("unchecked")
     public void saveBookStructure() {
+        Debug.trace();
         if (book == null) return;
 
         File bookRoot = new File(Options.get("path.storage"), book.getName());
@@ -2002,6 +2121,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void loadXMLBookStructure(File inputFile) {
+        Debug.trace();
 
         try {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -2034,6 +2154,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
             bookTree.addTreeSelectionListener(new TreeSelectionListener() {
                 public void valueChanged(TreeSelectionEvent e) {
+                    Debug.trace();
+
                     DefaultMutableTreeNode n = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
 
                     if (n instanceof BookTreeNode) {
@@ -2083,12 +2205,14 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
             bookTree.addMouseListener(new MouseAdapter() {
                 public void mousePressed(MouseEvent e) {
+                    Debug.trace();
                     if (e.isPopupTrigger()) {
                         treePopup(e);
                     }
                 }
 
                 public void mouseReleased(MouseEvent e) {
+                    Debug.trace();
                     if (e.isPopupTrigger()) {
                         treePopup(e);
                     }
@@ -2125,6 +2249,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void loadBookStructure(File f) {
+        Debug.trace();
         try {
             Properties prefs = new Properties();
             FileInputStream fis = new FileInputStream(f);
@@ -2155,6 +2280,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     /* Retained for legacy use...! */
     public void buildBook(Properties prefs) {
+        Debug.trace();
 
         book = new Book(prefs, prefs.getProperty("book.name"));
 
@@ -2207,6 +2333,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         bookTree.addTreeSelectionListener(new TreeSelectionListener() {
             public void valueChanged(TreeSelectionEvent e) {
+                Debug.trace();
                 DefaultMutableTreeNode n = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
                 if (n instanceof BookTreeNode) {
                     BookTreeNode btn = (BookTreeNode)n;
@@ -2255,12 +2382,14 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         bookTree.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
+                Debug.trace();
                 if (e.isPopupTrigger()) {
                     treePopup(e);
                 }
             }
 
             public void mouseReleased(MouseEvent e) {
+                Debug.trace();
                 if (e.isPopupTrigger()) {
                     treePopup(e);
                 }
@@ -2373,6 +2502,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void openBook() {
+        Debug.trace();
 
         OpenBookPanel info = new OpenBookPanel();
         int r = JOptionPane.showConfirmDialog(this, info, "Open Book", JOptionPane.OK_CANCEL_OPTION);
@@ -2409,6 +2539,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public File getBookFolder() {
+        Debug.trace();
         File bf = new File(Options.get("path.storage"), book.getName());
         if (!bf.exists()) {
             bf.mkdirs();
@@ -2417,44 +2548,26 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public double getNoiseFloor() { 
+        Debug.trace();
         if (roomNoise == null) return 0;
         return roomNoise.getPeak();
-/*        double[][] samples = roomNoise.getDoubleAudioData();
-        if (samples == null) {
-            return 0;
-        }
-        double ms = 0;
-        for (int i = 0; i < samples.length; i++) {
-            if (Math.abs((samples[i][Sentence.LEFT] + samples[i][Sentence.RIGHT]) / 2d) > ms) {
-                ms = Math.abs((samples[i][Sentence.LEFT] + samples[i][Sentence.RIGHT]) / 2d);
-            }
-        }
-
-        ms *= 10d;
-        ms /= 7d;
-        return ms;*/
     }
 
     public int getNoiseFloorDB() {
+        Debug.trace();
         if (roomNoise == null) return 0;
         return roomNoise.getPeakDB();
-/*
-        double r = getNoiseFloor();
-        if (r == 0) return 0;
-        double l10 = Math.log10(r);
-        double db = 20d * l10;
-
-        return (int)db;
-*/
     }
 
     public void recordRoomNoise() {
+        Debug.trace();
         if (roomNoise.startRecording()) {
 
             centralPanel.setFlash(true);
             java.util.Timer ticker = new java.util.Timer(true);
             ticker.schedule(new TimerTask() {
                 public void run() {
+                    Debug.trace();
                     roomNoise.stopRecording();
                     centralPanel.setFlash(false);
                     statusLabel.setText("Noise floor: " + getNoiseFloorDB() + "dB");
@@ -2465,6 +2578,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
 
     public void playSelectedSentence() {
+        Debug.trace();
         if (selectedSentence == null) return;
         if (playing != null) return;
         if (getNoiseFloor() == 0) {
@@ -2475,6 +2589,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         playingThread = new Thread(new Runnable() {
             public void run() {
+                Debug.trace();
                 Sentence s = playing;
                 byte[] data;
 
@@ -2514,7 +2629,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         play.close();
                     }
                     play = null;
-                    e.printStackTrace();
                 }
             }
         });
@@ -2529,12 +2643,14 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     
         public NormalizeThread(Chapter c, ProgressDialog e) {
             super();
+            Debug.trace();
             dialog = e;
             chapter = c;
         }
 
         @SuppressWarnings("unchecked")
         public void run() {
+            Debug.trace();
 
             int numKids = chapter.getChildCount();
             int kidCount = 0;
@@ -2568,6 +2684,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
    
         public AutoTrimThread(Chapter c, ProgressDialog e, int t, int sc) {
             super();
+            Debug.trace();
             dialog = e;
             chapter = c;
             type = t;
@@ -2576,6 +2693,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         @SuppressWarnings("unchecked")
         public void run() {
+            Debug.trace();
 
             int numKids = chapter.getChildCount();
             int kidCount = 0;
@@ -2608,12 +2726,14 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         public ExportThread(Chapter c, ProgressDialog e) {
             super();
+            Debug.trace();
             exportDialog = e;
             chapter = c;
         }
 
         @SuppressWarnings("unchecked")
         public void run() {
+            Debug.trace();
 
             try {
                 chapter.exportChapter(exportDialog);
@@ -2627,6 +2747,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     @SuppressWarnings("unchecked")
     public void exportAudio() {
+        Debug.trace();
 
         
         for (Enumeration o = book.children(); o.hasMoreElements();) {
@@ -2644,6 +2765,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
 
     public void playToSelectedSentence() {
+        Debug.trace();
         if (selectedSentence == null) return;
         if (playing != null) return;
         if (getNoiseFloor() == 0) {
@@ -2654,6 +2776,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         playingThread = new Thread(new Runnable() {
             public void run() {
+                Debug.trace();
                 Sentence s = playing;
                 byte[] data;
 
@@ -2722,6 +2845,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void playFromSelectedSentence() {
+        Debug.trace();
         if (selectedSentence == null) return;
         if (playing != null) return;
         if (getNoiseFloor() == 0) {
@@ -2732,6 +2856,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         playingThread = new Thread(new Runnable() {
             public void run() {
+                Debug.trace();
                 Sentence s = playing;
                 byte[] data;
 
@@ -2766,6 +2891,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         if (next != null) {
                             Thread t = new Thread(new Runnable() {
                                 public void run() {
+                                    Debug.trace();
                                     Sentence ns = (Sentence)next;
                                     ns.getProcessedAudioData(effectsEnabled); // Cache it
                                 }
@@ -2822,6 +2948,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
 
     public byte[] getRoomNoise(int ms) {
+        Debug.trace();
 
         if (roomNoise == null) return null;
 
@@ -2848,6 +2975,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void stopPlaying() {
+        Debug.trace();
         if (play != null) {
             play.close();
             play = null;
@@ -2856,10 +2984,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void alertNoRoomNoise() {
+        Debug.trace();
         JOptionPane.showMessageDialog(this, "You must record room noise\nbefore recording or playback", "Error", JOptionPane.ERROR_MESSAGE);
     }
 
     public boolean enableMicrophone() {
+        Debug.trace();
         AudioFormat format = Options.getAudioFormat();
 
         Mixer.Info mixer = Options.getRecordingMixer();
@@ -2894,6 +3024,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void disableMicrophone() {
+        Debug.trace();
         try {
             microphoneStream.close();
             microphone.stop();
@@ -2906,6 +3037,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     } 
 
     public void execScript(String s) {
+        Debug.trace();
         if (s == null) return;
         String[] lines = s.split("\n");
 
@@ -2923,6 +3055,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void mergeBook() {
+        Debug.trace();
         OpenBookPanel info = new OpenBookPanel();
         int r = JOptionPane.showConfirmDialog(this, info, "Merge Book", JOptionPane.OK_CANCEL_OPTION);
         if (r == JOptionPane.OK_OPTION) {
@@ -2984,6 +3117,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void mergeChapter(Properties prefs, String chid) {
+        Debug.trace();
         Chapter c = book.addChapter();
         c.setName("Merged-" + prefs.getProperty("chapter." + chid + ".name"));
         c.setPostGap(Utils.s2i(prefs.getProperty("chapter." + chid + ".post-gap")));
@@ -3051,10 +3185,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         ProgressDialog pd;
 
         public ArchiveBookThread(ProgressDialog p) {
+            Debug.trace();
             pd = p;
         }
 
         public void run() {
+            Debug.trace();
             try {
                 String name = AudiobookRecorder.this.book.getName();
                 File storageDir = new File(Options.get("path.storage"));
@@ -3154,6 +3290,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void archiveBook() {
+        Debug.trace();
         int r = JOptionPane.showConfirmDialog(this, "This will stash the current book away\nin the archives folder in a compressed\nform. The existing book files will be deleted\nand the book closed.\n\nAre you sure you want to do this?", "Archive Book", JOptionPane.OK_CANCEL_OPTION);
 
         if (r == JOptionPane.OK_OPTION) {
@@ -3172,6 +3309,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void openArchive() {
+        Debug.trace();
         JFileChooser jc = new JFileChooser(new File(Options.get("path.archive")));
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Audiobook Archives", "abz");
         jc.addChoosableFileFilter(filter);
@@ -3195,6 +3333,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                     ZipInputStream zis = new ZipInputStream(new FileInputStream(f)) {
                         public void close() throws IOException {
+                            Debug.trace();
                             return;
                         }
                     };
@@ -3274,6 +3413,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void loadCoverArt() {
+        Debug.trace();
         if (book == null) return;
 
         JFileChooser jc = new JFileChooser();
@@ -3321,7 +3461,10 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void updateWaveform() {
+        Debug.trace();
         if (selectedSentence != null) {
+            if ((sampleWaveform.getId() != null) && (sampleWaveform.getId().equals(selectedSentence.getId()))) return;
+            sampleWaveform.setId(selectedSentence.getId());
             if (rawAudio.isSelected()) {
                 sampleWaveform.setData(selectedSentence.getRawAudioData());
             } else {
@@ -3331,6 +3474,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void loadEffects() {
+        Debug.trace();
         effects = new TreeMap<String,EffectGroup>();
         loadEffectsFromFolder(new File(Options.get("path.storage"), "System"));
         if (book != null) {
@@ -3340,6 +3484,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void loadEffectsFromFolder(File dir) {
+        Debug.trace();
         if (dir == null) return;
 	if (!dir.exists()) return;
         File[] files = dir.listFiles();
@@ -3355,6 +3500,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public EffectGroup loadEffect(File xml) {
+        Debug.trace();
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
@@ -3372,6 +3518,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public EffectGroup loadEffectGroup(Element root) {
+        Debug.trace();
         EffectGroup group = new EffectGroup(root.getAttribute("name"));
         NodeList kids = root.getChildNodes();
         for (int i = 0; i < kids.getLength(); i++) {
@@ -3430,6 +3577,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public Biquad loadBiquad(Element root) {
+        Debug.trace();
         String type = root.getAttribute("type").toLowerCase();
         Biquad bq = new Biquad();
 
@@ -3459,6 +3607,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public DelayLine loadDelayLine(Element root) {
+        Debug.trace();
         DelayLine line = new DelayLine();
     
         NodeList list = root.getChildNodes();
@@ -3539,26 +3688,31 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public Amplifier loadAmplifier(Element root) {
+        Debug.trace();
         Amplifier a = new Amplifier(Utils.s2d(root.getAttribute("gain")));
         return a;
     }
 
     public Chain loadChain(Element root) {
+        Debug.trace();
         Chain c = new Chain(root.getAttribute("src"));
         return c;
     }
 
     public Pan loadPan(Element root) {
+        Debug.trace();
         Pan p = new Pan(Utils.s2d(root.getAttribute("pan")));
         return p;
     }
 
     public Clipping loadClipping(Element root) {
+        Debug.trace();
         Clipping c = new Clipping(Utils.s2d(root.getAttribute("clip")));
         return c;
     }
 
     public LFO loadLFO(Element root) {
+        Debug.trace();
         double f = Utils.s2d(root.getAttribute("frequency"));
         double d = Utils.s2d(root.getAttribute("depth"));
         double p = Utils.s2d(root.getAttribute("phase"));
@@ -3599,6 +3753,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public AGC loadAGC(Element root) {
+        Debug.trace();
         double ceiling = Utils.s2d(root.getAttribute("ceiling"));
         double limit = Utils.s2d(root.getAttribute("limit"));
         double attack = Utils.s2d(root.getAttribute("attack"));
@@ -3614,6 +3769,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void updateEffectChains() {
+        Debug.trace();
         int sel = effectChain.getSelectedIndex();
         KVPair<String, String> ent = effectChain.getItemAt(sel);
         while (effectChain.getItemCount() > 0) {
@@ -3635,6 +3791,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void setEffectChain(String key) {
+        Debug.trace();
         for (int i = 0; i < effectChain.getItemCount(); i++) {
             KVPair<String, String> p = effectChain.getItemAt(i);
             if (p.getKey().equals(key)) {
@@ -3654,10 +3811,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public String getDefaultEffectsChain() {
+        Debug.trace();
         return book.getDefaultEffect();
     }
 
     public synchronized boolean getLock() {
+        Debug.trace();
         if (state == RECORDING) return false;
 
         int counts = 0;
@@ -3677,14 +3836,17 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void freeLock() {
+        Debug.trace();
         state = IDLE;
     }
 
     public void stopLock() {
+        Debug.trace();
         state = STOPPING;
     }
 
     public void toggleSplitMode() {
+        Debug.trace();
         selectCutMode.setSelected(false);
         if (selectedSentence != null) {
             sampleWaveform.setDisplaySplit(selectSplitMode.isSelected());
@@ -3694,6 +3856,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void toggleCutMode() {
+        Debug.trace();
         selectSplitMode.setSelected(false);
         if (selectedSentence != null) {
             sampleWaveform.setDisplayCut(selectCutMode.isSelected());
@@ -3703,12 +3866,13 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void doCut(int start, int end) {
+        Debug.trace();
         try {
             double[][] samples = selectedSentence.getRawAudioData();
-            double[][] croppedSamples = new double[samples.length - (end - start)][2];
+            double[][] croppedSamples = new double[2][samples[Sentence.LEFT].length - (end - start)];
 
             int a = 0;
-            for (int i = 0; i < samples.length; i++) {
+            for (int i = 0; i < samples[Sentence.LEFT].length; i++) {
                 if ((i < start) || (i > end)) {
                     croppedSamples[a++] = samples[i];
                 }
@@ -3722,6 +3886,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void doSplit(int at) {
+        Debug.trace();
         try {
             if (selectedSentence == null) {
                 System.err.println("Selected sentence is NULL in split. That CANNOT happen!");
@@ -3733,13 +3898,13 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             bookTreeModel.insertNodeInto(newSentence, c, idx);
 
             double[][] samples = selectedSentence.getRawAudioData();
-            double[][] startSamples = new double[at][2];
-            double[][] endSamples = new double[samples.length - at][2];
+            double[][] startSamples = new double[2][at];
+            double[][] endSamples = new double[2][samples[Sentence.LEFT].length - at];
 
             int a = 0; 
             int b = 0;
 
-            for (int i = 0; i < samples.length; i++) {
+            for (int i = 0; i < samples[Sentence.LEFT].length; i++) {
                 if (i < at) {
                     startSamples[a++] = samples[i];
                 } else {
@@ -3761,6 +3926,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void executeCutOrSplit() {
+        Debug.trace();
         int start = sampleWaveform.getCutStart();
         int end = sampleWaveform.getCutEnd();
         if (selectCutMode.isSelected()) {
@@ -3775,35 +3941,43 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void setEffectsEnabled(boolean b) {
+        Debug.trace();
         effectsEnabled = b;
         System.err.println("Effects Enabled: " + b);
     }
 
     public void setBookNotes(String text) {
+        Debug.trace();
         bookNotesArea.setText(text);
     }
 
     public void setChapterNotes(String text) {
+        Debug.trace();
         chapterNotesArea.setText(text);
     }
 
     public void setSentenceNotes(String text) {
+        Debug.trace();
         sentenceNotesArea.setText(text);
     }
 
     public String getBookNotes() {
+        Debug.trace();
         return bookNotesArea.getText();
     }
 
     public String getChapterNotes() {
+        Debug.trace();
         return chapterNotesArea.getText();
     }
 
     public String getSentenceNotes() {
+        Debug.trace();
         return sentenceNotesArea.getText();
     }
 
     public void openManuscript() {
+        Debug.trace();
         if (book == null) return;
         File ms = book.getManuscript();
         if (ms == null) return;
@@ -3815,6 +3989,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void loadManuscript() {
+        Debug.trace();
         if (book == null) return;
 
         JFileChooser jc = new JFileChooser();
@@ -3835,6 +4010,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     //* DocumentListener
 
     public void changedUpdate(DocumentEvent e) {
+        Debug.trace();
         javax.swing.text.Document doc = e.getDocument();
         if (doc == chapterNotesArea.getDocument()) {
             DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
@@ -3857,6 +4033,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void removeUpdate(DocumentEvent e) {
+        Debug.trace();
         javax.swing.text.Document doc = e.getDocument();
         if (doc == chapterNotesArea.getDocument()) {
             DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
@@ -3879,6 +4056,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void insertUpdate(DocumentEvent e) {
+        Debug.trace();
         javax.swing.text.Document doc = e.getDocument();
         if (doc == chapterNotesArea.getDocument()) {
             DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();

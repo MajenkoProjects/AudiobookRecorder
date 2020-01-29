@@ -20,13 +20,13 @@ public class Pan implements Effect {
     }
 
     public void process(double[][] samples) {
-        for (double[] sample : samples) {
+        for (int i = 0; i < samples[Sentence.LEFT].length; i++) {
             if (pan < 0) {
                 double p = 1 + pan;
-                sample[Sentence.RIGHT] *= p;
+                samples[Sentence.RIGHT][i] *= p;
             } else {
                 double p = 1 - pan;
-                sample[Sentence.LEFT] *= p;
+                samples[Sentence.LEFT][i] *= p;
             }
         }
     }

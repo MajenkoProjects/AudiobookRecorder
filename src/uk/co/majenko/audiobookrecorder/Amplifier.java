@@ -20,9 +20,9 @@ public class Amplifier implements Effect {
     }
 
     public void process(double[][] samples) {
-        for (int i = 0; i < samples.length; i++) {
-            samples[i][Sentence.LEFT] *= gain;
-            samples[i][Sentence.RIGHT] *= gain;
+        for (int i = 0; i < samples[Sentence.LEFT].length; i++) {
+            samples[Sentence.LEFT][i] *= gain;
+            samples[Sentence.RIGHT][i] *= gain;
         }
     }
 

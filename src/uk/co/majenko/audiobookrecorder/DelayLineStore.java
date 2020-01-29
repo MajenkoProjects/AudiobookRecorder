@@ -29,16 +29,16 @@ public class DelayLineStore {
             e.process(samples);
         }
 
-        for (double[] sample : samples) {
-            sample[Sentence.LEFT] *= gain;
-            sample[Sentence.RIGHT] *= gain;
+        for (int i = 0; i < samples[Sentence.LEFT].length; i++) {
+            samples[Sentence.LEFT][i] *= gain;
+            samples[Sentence.RIGHT][i] *= gain;
 
             if (pan < 0) {
                 double p = 1 + pan;
-                sample[Sentence.RIGHT] *= p;
+                samples[Sentence.RIGHT][i] *= p;
             } else {
                 double p = 1 - pan;
-                sample[Sentence.LEFT] *= p;
+                samples[Sentence.LEFT][i] *= p;
             }
         }
     }

@@ -91,6 +91,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     boolean effectEthereal = false;
 
     public void setSampleSize(int s) {
+        Debug.trace();
         sampleSize = s;
     }
 
@@ -106,6 +107,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         AudioFormat format;
 
         public RecordingThread(File tf, File wf, AudioFormat af, Sentence s) {
+            Debug.trace();
             tempFile = tf;
             wavFile = wf;
             format = af;
@@ -113,6 +115,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         }
 
         public void run() {
+            Debug.trace();
             try {
                 running = true;
                 recording = true;
@@ -154,16 +157,19 @@ public class Sentence extends BookTreeNode implements Cacheable {
         }
 
         public boolean isRunning() {
+            Debug.trace();
             return running;
         }
 
         public void stopRecording() {
+            Debug.trace();
             recording = false;
         }
     }
 
     public Sentence() {
         super("");
+        Debug.trace();
         id = UUID.randomUUID().toString();
         text = id;
         setUserObject(text);
@@ -172,6 +178,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public Sentence(String i, String t) {
         super("");
+        Debug.trace();
         id = i;
         text = t;
         setUserObject(text);
@@ -180,6 +187,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public Sentence(Element root) {
         super("");
+        Debug.trace();
         id = root.getAttribute("id");
         text = Book.getTextNode(root, "text");
         notes = Book.getTextNode(root, "notes");
@@ -191,7 +199,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         crossEndOffset = Utils.s2i(Book.getTextNode(root, "end-offset", "-1"));
         setLocked(Utils.s2b(Book.getTextNode(root, "locked")));
         setAttentionFlag(Utils.s2b(Book.getTextNode(root, "attention")));
-        setGain(Utils.s2d(Book.getTextNode(root, "gain")));
+        gain = Utils.s2d(Book.getTextNode(root, "gain"));
         setEffectChain(Book.getTextNode(root, "effect"));
         setPostGapType(Book.getTextNode(root, "gaptype"));
         sampleSize = Utils.s2i(Book.getTextNode(root, "samples"));
@@ -200,7 +208,6 @@ public class Sentence extends BookTreeNode implements Cacheable {
         peak = Utils.s2d(Book.getTextNode(root, "peak", "-1.000"));
 
         if ((crossStartOffset == -1) || (crossEndOffset == -1)) {
-            System.err.println("Updating " + id);
             updateCrossings(true);
         }
 
@@ -208,6 +215,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public boolean startRecording() {
+        Debug.trace();
         if (AudiobookRecorder.window.microphone == null) {
             JOptionPane.showMessageDialog(AudiobookRecorder.window, "Microphone not started. Start the microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
@@ -225,6 +233,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void stopRecording() {
+        Debug.trace();
         recordingThread.stopRecording();
         while (recordingThread.isRunning()) {
             try {
@@ -246,10 +255,12 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void autoTrimSample() {
+        Debug.trace();
         autoTrimSample(false);
     }
 
     public void autoTrimSample(boolean useRaw) {
+        Debug.trace();
         String tm = Options.get("audio.recording.trim");
         if (tm.equals("peak")) {
             autoTrimSamplePeak(useRaw);
@@ -261,17 +272,19 @@ public class Sentence extends BookTreeNode implements Cacheable {
             endOffset = sampleSize - 1;
             crossEndOffset = sampleSize - 1;
             processed = false;
-            peak = -1d;
+//            peak = -1d;
         }
     }
 
     public static final int FFTBuckets = 1024;
 
     public void autoTrimSampleFFT() {
+        Debug.trace();
         autoTrimSampleFFT(false);
     }
 
     public void autoTrimSampleFFT(boolean useRaw) {
+        Debug.trace();
         crossStartOffset = -1;
         crossEndOffset = -1;
         double[][] samples;
@@ -286,18 +299,18 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
         int fftSize = Options.getInteger("audio.recording.trim.blocksize");
 
-        int blocks = samples.length / fftSize + 1;
+        int blocks = samples[LEFT].length / fftSize + 1;
 
         int[] intens = new int[blocks];
         int block = 0;
 
-        for (int i = 0; i < samples.length; i+= fftSize) {
+        for (int i = 0; i < samples[LEFT].length; i+= fftSize) {
             double[] real = new double[fftSize];
             double[] imag = new double[fftSize];
 
             for (int j = 0; j < fftSize; j++) {
-                if (i + j < samples.length) {
-                    real[j] = (samples[i+j][LEFT] + samples[i+j][RIGHT]) / 2d;
+                if (i + j < samples[LEFT].length) {
+                    real[j] = (samples[LEFT][i+j] + samples[RIGHT][i+j]) / 2d;
                     imag[j] = 0;
                 } else {
                     real[j] = 0;
@@ -340,7 +353,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
         startOffset = start * fftSize;
         if (startOffset < 0) startOffset = 0;
-        if (startOffset >= samples.length) startOffset = samples.length;
+        if (startOffset >= samples[LEFT].length) startOffset = samples[LEFT].length;
 
         int end = blocks - 1;
         // And last block with > 1 intensity and add one.
@@ -359,7 +372,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
         if (endOffset <= startOffset) endOffset = startOffset + fftSize;
         if (endOffset < 0) endOffset = 0;
-        if (endOffset >= samples.length) endOffset = samples.length;
+        if (endOffset >= samples[LEFT].length) endOffset = samples[LEFT].length;
         updateCrossings(useRaw);
         intens = null;
         samples = null;
@@ -368,10 +381,12 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void autoTrimSamplePeak() {
+        Debug.trace();
         autoTrimSamplePeak(false);
     }
 
     public void autoTrimSamplePeak(boolean useRaw) {
+        Debug.trace();
         crossStartOffset = -1;
         crossEndOffset = -1;
         double[][] samples;
@@ -385,27 +400,27 @@ public class Sentence extends BookTreeNode implements Cacheable {
         noiseFloor *= 1.1;
 
         // Find start
-        for (int i = 0; i < samples.length; i++) {
+        for (int i = 0; i < samples[LEFT].length; i++) {
             startOffset = i;
-            if (Math.abs((samples[i][LEFT] + samples[i][RIGHT])/2d) > noiseFloor) {
+            if (Math.abs((samples[LEFT][i] + samples[RIGHT][i])/2d) > noiseFloor) {
                 startOffset --;
                 if (startOffset < 0) startOffset = 0;
                 break;
             }
         }
 
-        if (startOffset >= samples.length-1) { // Failed! Silence?
+        if (startOffset >= samples[LEFT].length-1) { // Failed! Silence?
             startOffset = 0;
         }
 
         int fftSize = Options.getInteger("audio.recording.trim.blocksize");
         startOffset -= fftSize;
 
-        for (int i = samples.length-1; i >= 0; i--) {
+        for (int i = samples[LEFT].length-1; i >= 0; i--) {
             endOffset = i;
-            if (Math.abs((samples[i][LEFT] + samples[i][RIGHT])/2d) > noiseFloor) {
+            if (Math.abs((samples[LEFT][i] + samples[RIGHT][i])/2d) > noiseFloor) {
                 endOffset ++;
-                if (endOffset >= samples.length-1) endOffset = samples.length-1;
+                if (endOffset >= samples[LEFT].length-1) endOffset = samples[LEFT].length-1;
                 break;
             }
         }
@@ -414,31 +429,35 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
         if (endOffset <= startOffset) endOffset = startOffset + fftSize;
         if (endOffset <= 0) {
-            endOffset = samples.length-1;
+            endOffset = samples[LEFT].length-1;
         }
 
         if (startOffset < 0) startOffset = 0;
-        if (endOffset >= samples.length) endOffset = samples.length-1;
+        if (endOffset >= samples[LEFT].length) endOffset = samples[LEFT].length-1;
         updateCrossings(useRaw);
         processed = true;
         reloadTree();
     }
 
     public String getId() {
+        Debug.trace();
         return id;
     }
 
     public void setText(String t) {
+        Debug.trace();
         overrideText = null;
         text = t;
         reloadTree();
     }
 
     public String getText() {
+        Debug.trace();
         return text;
     }
 
     public File getFile() {
+        Debug.trace();
         File b = new File(AudiobookRecorder.window.getBookFolder(), "files");
         if (!b.exists()) {
             b.mkdirs();
@@ -447,6 +466,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public File getTempFile() {
+        Debug.trace();
         File b = new File(AudiobookRecorder.window.getBookFolder(), "files");
         if (!b.exists()) {
             b.mkdirs();
@@ -455,6 +475,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void editText() {
+        Debug.trace();
         String t = JOptionPane.showInputDialog(null, "Edit Text", text);
 
         if (t != null) {
@@ -464,6 +485,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public String toString() {
+        Debug.trace();
         return text;
 /*
         if (effectChain == null) return text;
@@ -475,10 +497,12 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public boolean isRecording() {
+        Debug.trace();
         return recording;
     }
 
     public void setUserObject(Object o) {
+        Debug.trace();
         if (o instanceof String) {
             String so = (String)o;
             text = so;
@@ -487,14 +511,17 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public int getPostGap() {
+        Debug.trace();
         return postGap;
     }
 
     public void setPostGap(int g) {
+        Debug.trace();
         postGap = g;
     }
 
     public void deleteFiles() {
+        Debug.trace();
         File audioFile = getFile();
         if (audioFile.exists()) {
             audioFile.delete();
@@ -502,18 +529,22 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public int getStartCrossing() {
+        Debug.trace();
         return crossStartOffset;
     }
 
     public int getStartOffset() {
+        Debug.trace();
         return startOffset;
     }
 
     public void updateCrossings() {
+        Debug.trace();
         updateCrossings(false);
     }
 
     public void updateCrossings(boolean useRaw) {
+        Debug.trace();
         updateStartCrossing(useRaw);
         updateEndCrossing(useRaw);
         runtime = -1d;
@@ -521,26 +552,31 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void updateStartCrossing() {
+        Debug.trace();
         updateStartCrossing(false);
     }
 
     public void updateStartCrossing(boolean useRaw) {
+        Debug.trace();
         if (crossStartOffset == -1) {
             crossStartOffset = findNearestZeroCrossing(useRaw, startOffset, 4096);
         }
     }
 
     public void updateEndCrossing() {
+        Debug.trace();
         updateEndCrossing(false);
     }
 
     public void updateEndCrossing(boolean useRaw) {
+        Debug.trace();
         if (crossEndOffset == -1) {
             crossEndOffset = findNearestZeroCrossing(useRaw, endOffset, 4096);
         }
     }
 
     public void setStartOffset(int o) {
+        Debug.trace();
         if (startOffset != o) {
             startOffset = o;
             crossStartOffset = -1;
@@ -549,14 +585,17 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public int getEndCrossing() {
+        Debug.trace();
         return crossEndOffset;
     }
 
     public int getEndOffset() {
+        Debug.trace();
         return endOffset;
     }
 
     public void setEndOffset(int o) {
+        Debug.trace();
         if (endOffset != o) {
             endOffset = o;
             crossEndOffset = -1;
@@ -565,14 +604,17 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void setStartCrossing(int o) {
+        Debug.trace();
         crossStartOffset = o;
     }
 
     public void setEndCrossing(int o) {
+        Debug.trace();
         crossEndOffset = o;
     }
 
     public int getSampleSize() {
+        Debug.trace();
         if (sampleSize == -1) {
             loadFile();
         }
@@ -580,6 +622,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public AudioFormat getAudioFormat() {
+        Debug.trace();
         if (storedFormat != null) return storedFormat; 
 
         File f = getFile();
@@ -595,6 +638,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void doRecognition(StreamSpeechRecognizer recognizer) {
+        Debug.trace();
         try {
             setText("[recognising...]");
             reloadTree();
@@ -619,8 +663,10 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void recognise() {
+        Debug.trace();
         Thread t = new Thread(new Runnable() {
             public void run() {
+                Debug.trace();
                 try {
                     Configuration sphinxConfig = new Configuration();
 
@@ -648,38 +694,46 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void setLocked(boolean l) {
+        Debug.trace();
         if (locked == l) return;
         locked = l;
         reloadTree();
     }
 
     public boolean isLocked() {
+        Debug.trace();
         return locked;
     }
 
     public void setInSample(boolean s) {
+        Debug.trace();
         inSample = s;
     }
 
     public boolean isInSample() { 
+        Debug.trace();
         return inSample;
     }
 
     public void clearCache() {
+        Debug.trace();
         audioData = null;
         processedAudio = null;
         storedFormat = null;
     }
 
     public boolean lockedInCache() {
+        Debug.trace();
         return id.equals("room-noise"); 
     }
 
     public int findNearestZeroCrossing(int pos, int range) {
+        Debug.trace();
         return findNearestZeroCrossing(false, pos, range);
     }
 
     public int findNearestZeroCrossing(boolean useRaw, int pos, int range) {
+        Debug.trace();
         double[][] data = null;
         if (useRaw) {
             data = getRawAudioData();
@@ -687,27 +741,27 @@ public class Sentence extends BookTreeNode implements Cacheable {
             data = getProcessedAudioData();
         }
         if (data == null) return 0;
-        if (data.length == 0) return 0;
+        if (data[LEFT].length == 0) return 0;
 
         if (pos < 0) pos = 0;
-        if (pos >= data.length) pos = data.length-1;
+        if (pos >= data[LEFT].length) pos = data[LEFT].length-1;
 
         int backwards = pos;
         int forwards = pos;
 
-        double backwardsPrev = (data[backwards][LEFT] + data[backwards][RIGHT]) / 2d;
-        double forwardsPrev = (data[forwards][LEFT] + data[forwards][RIGHT]) / 2d;
+        double backwardsPrev = (data[LEFT][backwards] + data[RIGHT][backwards]) / 2d;
+        double forwardsPrev = (data[LEFT][forwards] + data[RIGHT][forwards]) / 2d;
 
-        while (backwards > 0 || forwards < data.length-2) {
+        while (backwards > 0 || forwards < data[LEFT].length-2) {
 
-            if (forwards < data.length-2) forwards++;
+            if (forwards < data[LEFT].length-2) forwards++;
             if (backwards > 0) backwards--;
 
-            if (backwardsPrev >= 0 && ((data[backwards][LEFT] + data[backwards][RIGHT]) / 2d) < 0) { // Found one!
+            if (backwardsPrev >= 0 && ((data[LEFT][backwards] + data[RIGHT][backwards]) / 2d) < 0) { // Found one!
                 return backwards;
             }
 
-            if (forwardsPrev < 0 && ((data[forwards][LEFT] + data[forwards][RIGHT]) / 2d) >= 0) {
+            if (forwardsPrev < 0 && ((data[LEFT][forwards] + data[RIGHT][forwards]) / 2d) >= 0) {
                 return forwards;
             }
 
@@ -716,14 +770,15 @@ public class Sentence extends BookTreeNode implements Cacheable {
                 return pos;
             }
 
-            backwardsPrev = (data[backwards][LEFT] + data[backwards][RIGHT]) / 2d;
-            forwardsPrev = (data[forwards][LEFT] + data[forwards][RIGHT]) / 2d;
+            backwardsPrev = (data[LEFT][backwards] + data[RIGHT][backwards]) / 2d;
+            forwardsPrev = (data[LEFT][forwards] + data[RIGHT][forwards]) / 2d;
         }
         return pos;
     }
 
     /* Get the length of the sample in seconds */
     public double getLength() {
+        Debug.trace();
         if (runtime > 0.01d) return runtime;
         File f = getFile();
         if (!f.exists()) { // Not recorded yet!
@@ -737,6 +792,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public Sentence cloneSentence() throws IOException {
+        Debug.trace();
         Sentence sentence = new Sentence();
         sentence.setPostGap(getPostGap());
         if (!id.equals(text)) {
@@ -756,24 +812,29 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void setAttentionFlag(boolean f) {
+        Debug.trace();
         if (attention == f) return;
         attention = f;
         reloadTree();
     }
 
     public boolean getAttentionFlag() {
+        Debug.trace();
         return attention;
     }
 
     public double getPeakValue() {
+        Debug.trace();
         return getPeakValue(false, true);
     }
 
     public double getPeakValue(boolean useRaw) {
+        Debug.trace();
         return getPeakValue(useRaw, true);
     }
 
     public double getPeakValue(boolean useRaw, boolean applyGain) {
+        Debug.trace();
         double oldGain = gain;
         gain = 1.0d;
         double[][] samples = null;
@@ -787,15 +848,16 @@ public class Sentence extends BookTreeNode implements Cacheable {
             return 0;
         }
         double ms = 0;
-        for (int i = 0; i < samples.length; i++) {
-            if (Math.abs((samples[i][LEFT] + samples[i][RIGHT]) / 2d) > ms) {
-                ms = Math.abs((samples[i][LEFT] + samples[i][RIGHT]) / 2d);
+        for (int i = 0; i < samples[LEFT].length; i++) {
+            if (Math.abs((samples[LEFT][i] + samples[RIGHT][i]) / 2d) > ms) {
+                ms = Math.abs((samples[LEFT][i] + samples[RIGHT][i]) / 2d);
             }
         }
         return ms;
     }
 
     public int getHeadroom() {
+        Debug.trace();
         double r = getPeakValue();
         if (r == 0) return 0;
         double l10 = Math.log10(r);
@@ -805,6 +867,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void setGain(double g) {
+        Debug.trace();
         if (g <= 0.0001d) g = 1.0d;
         if (g == gain) return;
 
@@ -819,26 +882,35 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public double getGain() {
+        Debug.trace();
         return gain;
     }
 
     public double normalize(double low, double high) {
+        Debug.trace();
         if (locked) return gain;
         double max = getPeakValue(true, false);
         double d = 0.708 / max;
         if (d > 1d) d = 1d;
         if (d < low) d = low;
         if (d > high) d = high;
+        peak = -1;
         setGain(d);
+        getPeak();
+        reloadTree();
         return d;
     }
 
     public double normalize() {
+        Debug.trace();
         if (locked) return gain;
         double max = getPeakValue(true, false);
         double d = 0.708 / max;
         if (d > 1d) d = 1d;
         setGain(d);
+        peak = -1;
+        getPeak();
+        reloadTree();
         return d;
     }
 
@@ -849,6 +921,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         }
 
         public void run() {
+            Debug.trace();
             String command = Options.get("editor.external");
             if (command == null) return;
             if (command.equals("")) return;
@@ -877,12 +950,14 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void openInExternalEditor() {
+        Debug.trace();
         ExternalEditor ed = new ExternalEditor(this);
         Thread t = new Thread(ed);
         t.start();
     }
 
     public void backup() throws IOException {
+        Debug.trace();
         File whereto = getFile().getParentFile();
         String name = getFile().getName();
 
@@ -911,11 +986,13 @@ public class Sentence extends BookTreeNode implements Cacheable {
         int number;
         
         public ExternalProcessor(Sentence s, int num) {
+            Debug.trace();
             sentence = s;
             number = num;
         }
 
         public void run() {
+            Debug.trace();
             String command = Options.get("editor.processor." + number + ".command");
             if (command == null) return;
             if (command.equals("")) return;
@@ -967,6 +1044,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void runExternalProcessor(int num) {
+        Debug.trace();
         if (isLocked()) return;
         ExternalProcessor ed = new ExternalProcessor(this, num);
         Thread t = new Thread(ed);
@@ -974,6 +1052,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void undo() {
+        Debug.trace();
         File whereto = getFile().getParentFile();
         String name = getFile().getName();
 
@@ -1009,12 +1088,13 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public double[][] getDoubleDataS16LE(AudioInputStream s, AudioFormat format) throws IOException {
+        Debug.trace();
         long len = s.getFrameLength();
         int frameSize = format.getFrameSize();
         int chans = format.getChannels();
 
         byte[] frame = new byte[frameSize];
-        double[][] samples = new double[(int)len][2];
+        double[][] samples = new double[2][(int)len];
 
         for (long fno = 0; fno < len; fno++) {
 
@@ -1028,15 +1108,15 @@ public class Sentence extends BookTreeNode implements Cacheable {
                 int right = (rh << 8) | rl;
                 if ((left & 0x8000) == 0x8000) left |= 0xFFFF0000;
                 if ((right & 0x8000) == 0x8000) right |= 0xFFFF0000;
-                samples[(int)fno][LEFT] = (double)left / 32767d;
-                samples[(int)fno][RIGHT] = (double)right / 32767d;
+                samples[LEFT][(int)fno] = (double)left / 32767d;
+                samples[RIGHT][(int)fno] = (double)right / 32767d;
             } else {
                 int l = frame[0] >= 0 ? frame[0] : 256 + frame[0];
                 int h = frame[1] >= 0 ? frame[1] : 256 + frame[1];
                 int mono = (h << 8) | l;
                 if ((mono & 0x8000) == 0x8000) mono |= 0xFFFF0000;
-                samples[(int)fno][LEFT] = (double)mono / 32767d;
-                samples[(int)fno][RIGHT] = (double)mono / 32767d;
+                samples[LEFT][(int)fno] = (double)mono / 32767d;
+                samples[RIGHT][(int)fno] = (double)mono / 32767d;
             }
         }
 
@@ -1044,9 +1124,10 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void writeDoubleDataS16LE(double[][] samples, AudioFormat format) throws IOException {
+        Debug.trace();
         int chans = format.getChannels();
 
-        int frames = samples.length;
+        int frames = samples[LEFT].length;
 
         byte[] buffer;
         
@@ -1055,8 +1136,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
             buffer = new byte[buflen];
 
             for (int i = 0; i < frames; i++) {
-                double left = samples[i][LEFT];
-                double right = samples[i][RIGHT];
+                double left = samples[LEFT][i];
+                double right = samples[RIGHT][i];
                 int off = i * 4;
                 left *= 32767d;
                 right *= 32767d;
@@ -1078,8 +1159,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
             buffer = new byte[buflen];
 
             for (int i = 0; i < frames; i++) {
-                double left = samples[i][LEFT];
-                double right = samples[i][RIGHT];
+                double left = samples[LEFT][i];
+                double right = samples[RIGHT][i];
                 double mono = (left + right) / 2d;
                 int off = i * 2;
                 mono *= 32767d;
@@ -1104,9 +1185,10 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void writeDoubleDataS24LE(double[][] samples, AudioFormat format) throws IOException {
+        Debug.trace();
         int chans = format.getChannels();
 
-        int frames = samples.length;
+        int frames = samples[LEFT].length;
 
         byte[] buffer;
 
@@ -1115,8 +1197,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
             buffer = new byte[buflen];
 
             for (int i = 0; i < frames; i++) {
-                double left = samples[i][LEFT];
-                double right = samples[i][RIGHT];
+                double left = samples[LEFT][i];
+                double right = samples[RIGHT][i];
                 int off = i * 6;
                 left *= 8388607d;
                 right *= 8388607d;
@@ -1140,8 +1222,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
             buffer = new byte[buflen];
 
             for (int i = 0; i < frames; i++) {
-                double left = samples[i][LEFT];
-                double right = samples[i][RIGHT];
+                double left = samples[LEFT][i];
+                double right = samples[RIGHT][i];
                 double mono = (left + right) / 2d;
                 int off = i * 3;
                 mono *= 8388607d;
@@ -1167,6 +1249,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void writeAudioData(double[][] samples) throws IOException {
+        Debug.trace();
         AudioFormat format = getAudioFormat();
 
         switch (format.getSampleSizeInBits()) {
@@ -1182,18 +1265,21 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public double[][] getDoubleDataS24LE(AudioInputStream s, AudioFormat format) throws IOException {
+        Debug.trace();
         long len = s.getFrameLength();
         int frameSize = format.getFrameSize();
         int chans = format.getChannels();
 
         byte[] frame = new byte[frameSize];
-        double[][] samples = new double[(int)len][2];
+        double[][] samples = new double[2][(int)len];
 
-        for (long fno = 0; fno < len; fno++) {
+        int pos = 0;
 
-            s.read(frame);
-            int sample = 0;
-            if (chans == 2) { // Stereo
+        Debug.d("Starting processing");
+        if (chans == 2) { // Stereo
+            for (long fno = 0; fno < len; fno++) {
+                s.read(frame);
+                int sample = 0;
                 int ll = frame[0] >= 0 ? frame[0] : 256 + frame[0];
                 int lm = frame[1] >= 0 ? frame[1] : 256 + frame[1];
                 int lh = frame[2] >= 0 ? frame[2] : 256 + frame[2];
@@ -1204,23 +1290,28 @@ public class Sentence extends BookTreeNode implements Cacheable {
                 int right = (rh << 16) | (rm << 8) | rl;
                 if ((left & 0x800000) == 0x800000) left |= 0xFF000000;
                 if ((right & 0x800000) == 0x800000) right |= 0xFF000000;
-                samples[(int)fno][LEFT] = (double)left / 8388607d;
-                samples[(int)fno][RIGHT] = (double)right / 8388607d;
-            } else {
+                samples[LEFT][(int)fno] = (double)left / 8388607d;
+                samples[RIGHT][(int)fno] = (double)right / 8388607d;
+            }
+        } else {
+            for (long fno = 0; fno < len; fno++) {
+                s.read(frame);
                 int l = frame[0] >= 0 ? frame[0] : 256 + frame[0];
                 int m = frame[1] >= 0 ? frame[1] : 256 + frame[1];
                 int h = frame[2] >= 0 ? frame[2] : 256 + frame[2];
                 int mono = (h << 16) | (m << 8) | l;
                 if ((mono & 0x800000) == 0x800000) mono |= 0xFF000000;
-                samples[(int)fno][LEFT] = (double)mono / 8388607d;
-                samples[(int)fno][RIGHT] = (double)mono / 8388607d;
+                samples[LEFT][(int)fno] = (double)mono / 8388607d;
+                samples[RIGHT][(int)fno] = (double)mono / 8388607d;
             }
         }
+        Debug.d("Finished processing");
 
         return samples;
     }
 
     public void loadFile() {
+        Debug.trace();
         if (audioData != null) {
             return;
         }
@@ -1246,8 +1337,9 @@ public class Sentence extends BookTreeNode implements Cacheable {
             }
 
             s.close();
-            sampleSize = samples.length;
+            sampleSize = samples[LEFT].length;
             audioData = samples;
+            getPeak();
             CacheManager.addToCache(this);
         } catch (Exception e) {
             e.printStackTrace();
@@ -1255,29 +1347,33 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     synchronized public double[][] getRawAudioData() {
+        Debug.trace();
         loadFile();
         return audioData;
     }
 
     synchronized public double[][] getProcessedAudioData() {
+        Debug.trace();
         return getProcessedAudioData(true, true);
     }
 
     synchronized public double[][] getProcessedAudioData(boolean effectsEnabled) {
+        Debug.trace();
         return getProcessedAudioData(effectsEnabled, true);
     }
 
     synchronized public double[][] getProcessedAudioData(boolean effectsEnabled, boolean applyGain) {
+        Debug.trace();
         loadFile();
         if (processedAudio != null) {
             return processedAudio;
         }
 
         if (audioData == null) return null;
-        processedAudio = new double[audioData.length][2];
-        for (int i = 0; i < audioData.length; i++) {
-            processedAudio[i][LEFT] = audioData[i][LEFT];
-            processedAudio[i][RIGHT] = audioData[i][RIGHT];
+        processedAudio = new double[2][audioData[LEFT].length];
+        for (int i = 0; i < audioData[LEFT].length; i++) {
+            processedAudio[LEFT][i] = audioData[LEFT][i];
+            processedAudio[RIGHT][i] = audioData[RIGHT][i];
         }
         // Add processing in here.
 
@@ -1305,9 +1401,9 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
         if (applyGain) {
             // Add final master gain stage
-            for (int i = 0; i < processedAudio.length; i++) {
-                processedAudio[i][LEFT] *= gain;
-                processedAudio[i][RIGHT] *= gain;
+            for (int i = 0; i < processedAudio[LEFT].length; i++) {
+                processedAudio[LEFT][i] *= gain;
+                processedAudio[RIGHT][i] *= gain;
             }
         }
 
@@ -1315,49 +1411,55 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public double[][] getDoubleAudioData() {
+        Debug.trace();
         return getDoubleAudioData(true);
     }
 
     public double[][] getDoubleAudioData(boolean effectsEnabled) {
+        Debug.trace();
         return getProcessedAudioData(effectsEnabled);
     }
 
     public double[][] getCroppedAudioData() {
+        Debug.trace();
         return getCroppedAudioData(true);
     }
 
     public double[][] getCroppedAudioData(boolean effectsEnabled) {
+        Debug.trace();
         double[][] inSamples = getDoubleAudioData(effectsEnabled);
         if (inSamples == null) return null;
         updateCrossings();
 
         int length = crossEndOffset - crossStartOffset;
 
-        double[][] samples = new double[length][2];
+        double[][] samples = new double[2][length];
         for (int i = 0; i < length; i++) {
-            samples[i][LEFT] = inSamples[crossStartOffset + i][LEFT];
-            samples[i][RIGHT] = inSamples[crossStartOffset + i][RIGHT];
+            samples[LEFT][i] = inSamples[LEFT][crossStartOffset + i];
+            samples[RIGHT][i] = inSamples[RIGHT][crossStartOffset + i];
         }
         return samples;
     }
 
     public byte[] getPCMData() {
+        Debug.trace();
         return getPCMData(true);
     }
 
     public byte[] getPCMData(boolean effectsEnabled) {
+        Debug.trace();
         double[][] croppedData = getCroppedAudioData(effectsEnabled);
         if (croppedData == null) return null;
-        int length = croppedData.length;
+        int length = croppedData[LEFT].length;
         byte[] pcmData = new byte[length * 4];
         for (int i = 0; i < length; i++) {
-            double sd = croppedData[i][LEFT] * 32767d;
+            double sd = croppedData[LEFT][i] * 32767d;
             int si = (int)sd;
             if (si > 32767) si = 32767;
             if (si < -32767) si = -32767;
             pcmData[i * 4] = (byte)(si & 0xFF);
             pcmData[(i * 4) + 1] = (byte)((si & 0xFF00) >> 8);
-            sd = croppedData[i][RIGHT] * 32767d;
+            sd = croppedData[RIGHT][i] * 32767d;
             si = (int)sd;
             if (si > 32767) si = 32767;
             if (si < -32767) si = -32767;
@@ -1368,6 +1470,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void setEffectChain(String key) {
+        Debug.trace();
         if ((effectChain != null) && (effectChain.equals(key))) {
             return;
         }
@@ -1379,15 +1482,18 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public String getEffectChain() {
+        Debug.trace();
         if (effectChain == null) return "none";
         return effectChain;
     }
 
     public String getPostGapType() {
+        Debug.trace();
         return postGapType;
     }
 
     public void setPostGapType(String t) {
+        Debug.trace();
         if (t == null || t.equals("none")) {
             if (getPostGap() == Options.getInteger("catenation.short-sentence")) {
                 t = "continuation";
@@ -1406,6 +1512,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void resetPostGap() {
+        Debug.trace();
         if (postGapType == null) {
             postGapType = "sentence";
         }
@@ -1422,10 +1529,12 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void debug(String txt) {
+        Debug.trace();
         Debug.debug(String.format("%s: %s", id, txt));
     }
 
     public TreeMap<String, String> getSentenceData() {
+        Debug.trace();
 
         TreeMap<String, String> out = new TreeMap<String, String>();
 
@@ -1445,6 +1554,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void purgeBackups() {
+        Debug.trace();
         File whereto = getFile().getParentFile();
         String name = getFile().getName();
 
@@ -1458,6 +1568,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public Element getSentenceXML(Document doc) {
+        Debug.trace();
         Element sentenceNode = doc.createElement("sentence");
         sentenceNode.setAttribute("id", getId());
         sentenceNode.appendChild(Book.makeTextNode(doc, "text", getText()));
@@ -1480,33 +1591,40 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public boolean isProcessed() {
+        Debug.trace();
         return processed;
     }
 
     public void setProcessed(boolean p) {
+        Debug.trace();
         processed = p;
         reloadTree();
     }
 
     public void setNotes(String n) {
+        Debug.trace();
         notes = n;
     }
 
     public String getNotes() {
+        Debug.trace();
         return notes;
     }
 
     public void onSelect() {
+        Debug.trace();
         AudiobookRecorder.window.setSentenceNotes(notes);
     }
 
     void reloadTree() {
+        Debug.trace();
         if (id.equals("room-noise")) return;
         if (getParent() == null) return;
         AudiobookRecorder.window.bookTreeModel.reload(this);
     }
 
     public double getPeak() {
+        Debug.trace();
         if (peak > -1) return peak;
         double[][] samples = getDoubleAudioData();
         if (samples == null) {
@@ -1514,9 +1632,10 @@ public class Sentence extends BookTreeNode implements Cacheable {
             return 0;
         }
         double ms = 0;
-        for (int i = 0; i < samples.length; i++) {
-            if (Math.abs((samples[i][Sentence.LEFT] + samples[i][Sentence.RIGHT]) / 2d) > ms) {
-                ms = Math.abs((samples[i][Sentence.LEFT] + samples[i][Sentence.RIGHT]) / 2d);
+        for (int i = 0; i < samples[LEFT].length; i++) {
+            double n = Math.abs((samples[LEFT][i] + samples[RIGHT][i]) / 2d);
+            if (n > ms) {
+                ms = n;
             }
         }
 
@@ -1527,6 +1646,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public int getPeakDB() {
+        Debug.trace();
         double r = getPeak();
         if (r == 0) return 0;
         double l10 = Math.log10(r);

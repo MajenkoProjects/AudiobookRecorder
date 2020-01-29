@@ -48,7 +48,7 @@ public class LFO implements Effect {
     }
 
     public void process(double[][] samples) {
-        for (double[] sample : samples) {
+        for (int i = 0; i < samples[Sentence.LEFT].length; i++) {
             double v = 0;
             switch (waveform) {
                 case SINE: v = Math.sin(phase); break;
@@ -68,12 +68,12 @@ public class LFO implements Effect {
             // Apply it to the sample
             switch (mode) {
                 case REPLACE:
-                    sample[Sentence.LEFT] = (sample[Sentence.LEFT] * v);
-                    sample[Sentence.RIGHT] = (sample[Sentence.RIGHT] * v);
+                    samples[Sentence.LEFT][i] = (samples[Sentence.LEFT][i] * v);
+                    samples[Sentence.RIGHT][i] = (samples[Sentence.RIGHT][i] * v);
                     break;
                 case ADD:
-                    sample[Sentence.LEFT] += (sample[Sentence.LEFT] * v);
-                    sample[Sentence.RIGHT] += (sample[Sentence.RIGHT] * v);
+                    samples[Sentence.LEFT][i] += (samples[Sentence.LEFT][i] * v);
+                    samples[Sentence.RIGHT][i] += (samples[Sentence.RIGHT][i] * v);
                     break;
             }
         }

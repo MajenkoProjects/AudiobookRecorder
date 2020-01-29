@@ -94,19 +94,19 @@ public class Biquad implements Effect {
         lz2 = 0d;
         rz1 = 0d;
         rz2 = 0d;
-        for (double[] in : samples) {
-            double lout = in[Sentence.LEFT] * a0 + lz1;
+        for (int i = 0; i < samples[Sentence.LEFT].length; i++) {
+            double lout = samples[Sentence.LEFT][i] * a0 + lz1;
 
-            lz1 = in[Sentence.LEFT] * a1 + lz2 - b1 * lout;
-            lz2 = in[Sentence.LEFT] * a2 - b2 * lout;
+            lz1 = samples[Sentence.LEFT][i] * a1 + lz2 - b1 * lout;
+            lz2 = samples[Sentence.LEFT][i] * a2 - b2 * lout;
 
-            double rout = in[Sentence.RIGHT] * a0 + rz1;
+            double rout = samples[Sentence.RIGHT][i] * a0 + rz1;
 
-            rz1 = in[Sentence.RIGHT] * a1 + rz2 - b1 * rout;
-            rz2 = in[Sentence.RIGHT] * a2 - b2 * rout;
+            rz1 = samples[Sentence.RIGHT][i] * a1 + rz2 - b1 * rout;
+            rz2 = samples[Sentence.RIGHT][i] * a2 - b2 * rout;
 
-            in[Sentence.LEFT] = lout;
-            in[Sentence.RIGHT] = rout;
+            samples[Sentence.LEFT][i] = lout;
+            samples[Sentence.RIGHT][i] = rout;
         }
     }
     

@@ -17,60 +17,50 @@ public class DelayLine implements Effect {
     }
 
     public void process(double[][] samples) {
-        double[][] savedSamples = new double[samples.length][2];
-        for (int i = 0; i < samples.length; i++) {
-            savedSamples[i][Sentence.LEFT] = samples[i][Sentence.LEFT];
-            savedSamples[i][Sentence.RIGHT] = samples[i][Sentence.RIGHT];
+        double[][] savedSamples = new double[2][samples[Sentence.LEFT].length];
+        for (int i = 0; i < samples[Sentence.LEFT].length; i++) {
+            savedSamples[Sentence.LEFT][i] = samples[Sentence.LEFT][i];
+            savedSamples[Sentence.RIGHT][i] = samples[Sentence.RIGHT][i];
         }
         if (wetOnly) {
-            for (int i = 0; i < samples.length; i++) {
-                samples[i][Sentence.LEFT] = 0d;
-                samples[i][Sentence.RIGHT] = 0d;
+            for (int i = 0; i < samples[Sentence.LEFT].length; i++) {
+                samples[Sentence.LEFT][i] = 0d;
+                samples[Sentence.RIGHT][i] = 0d;
             }
         }
 
-        double[][] subSamples = new double[samples.length][2];
-        for (int i = 0; i < samples.length; i++) {
-            subSamples[i][Sentence.LEFT] = savedSamples[i][Sentence.LEFT];
-            subSamples[i][Sentence.RIGHT] = savedSamples[i][Sentence.RIGHT];
+        double[][] subSamples = new double[2][samples[Sentence.LEFT].length];
+        for (int i = 0; i < samples[Sentence.LEFT].length; i++) {
+            subSamples[Sentence.LEFT][i] = savedSamples[Sentence.LEFT][i];
+            subSamples[Sentence.RIGHT][i] = savedSamples[Sentence.RIGHT][i];
         }
         for (DelayLineStore d : delayLines) {
-            for (int i = 0; i < samples.length; i++) {
-                subSamples[i][Sentence.LEFT] = savedSamples[i][Sentence.LEFT];
-                subSamples[i][Sentence.RIGHT] = savedSamples[i][Sentence.RIGHT];
+            for (int i = 0; i < samples[Sentence.LEFT].length; i++) {
+                subSamples[Sentence.LEFT][i] = savedSamples[Sentence.LEFT][i];
+                subSamples[Sentence.RIGHT][i] = savedSamples[Sentence.RIGHT][i];
             }
 
             d.process(subSamples);
 
-            for (int i = 0; i < subSamples.length; i++) {
+            for (int i = 0; i < subSamples[Sentence.LEFT].length; i++) {
                 int off = i + d.getSamples();
-                if ((off < samples.length) && (off > 0)) {
-
-                    double[] ns = mix(samples[off], subSamples[i]);
-                    samples[off][Sentence.LEFT] = ns[Sentence.LEFT];
-                    samples[off][Sentence.RIGHT] = ns[Sentence.RIGHT];
+                if ((off < samples[Sentence.LEFT].length) && (off > 0)) {
+                    samples[Sentence.LEFT][off] = mix(samples[Sentence.LEFT][off], subSamples[Sentence.LEFT][i]);
+                    samples[Sentence.RIGHT][off] = mix(samples[Sentence.RIGHT][off], subSamples[Sentence.RIGHT][i]);
                 }
             }
         }
     }
 
-    double[] mix(double[] a, double[] b) {
-        double[] out = new double[2];
+    double mix(double a, double b) {
+        double out;
 
-        if ((a[Sentence.LEFT] < 0) && (b[Sentence.LEFT] < 0)) {
-            out[Sentence.LEFT] = (a[Sentence.LEFT] + b[Sentence.LEFT]) - (a[Sentence.LEFT] * b[Sentence.LEFT]);
-        } else if ((a[Sentence.LEFT] > 0) && (b[Sentence.LEFT] > 0)) {
-            out[Sentence.LEFT] = (a[Sentence.LEFT] + b[Sentence.LEFT]) - (a[Sentence.LEFT] * b[Sentence.LEFT]);
+        if ((a < 0) && (b < 0)) {
+            out = (a + b) - (a * b);
+        } else if ((a > 0) && (b > 0)) {
+            out = (a + b) - (a * b);
         } else {
-            out[Sentence.LEFT] = a[Sentence.LEFT] + b[Sentence.LEFT];
-        }
-
-        if ((a[Sentence.RIGHT] < 0) && (b[Sentence.RIGHT] < 0)) {
-            out[Sentence.RIGHT] = (a[Sentence.RIGHT] + b[Sentence.RIGHT]) - (a[Sentence.RIGHT] * b[Sentence.RIGHT]);
-        } else if ((a[Sentence.RIGHT] > 0) && (b[Sentence.RIGHT] > 0)) {
-            out[Sentence.RIGHT] = (a[Sentence.RIGHT] + b[Sentence.RIGHT]) - (a[Sentence.RIGHT] * b[Sentence.RIGHT]);
-        } else {
-            out[Sentence.RIGHT] = a[Sentence.RIGHT] + b[Sentence.RIGHT];
+            out = a + b;
         }
 
         return out;

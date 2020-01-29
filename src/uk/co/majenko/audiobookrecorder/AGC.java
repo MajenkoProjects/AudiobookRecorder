@@ -27,9 +27,9 @@ public class AGC implements Effect {
 
     public void process(double[][] samples) {
         gain = 1d;
-        for (int i = 0; i < samples.length; i++) {
-            double absSampleLeft = Math.abs(samples[i][Sentence.LEFT]) * gain;
-            double absSampleRight = Math.abs(samples[i][Sentence.RIGHT]) * gain;
+        for (int i = 0; i < samples[Sentence.LEFT].length; i++) {
+            double absSampleLeft = Math.abs(samples[Sentence.LEFT][i]) * gain;
+            double absSampleRight = Math.abs(samples[Sentence.RIGHT][i]) * gain;
 
             double factor = 0.0d;
 
@@ -49,8 +49,8 @@ public class AGC implements Effect {
             if (gain > limit) gain = limit;
             if (gain < 0) gain = 0;
 
-            samples[i][Sentence.LEFT] *= gain;
-            samples[i][Sentence.RIGHT] *= gain;
+            samples[Sentence.LEFT][i] *= gain;
+            samples[Sentence.RIGHT][i] *= gain;
         }
     }
 
