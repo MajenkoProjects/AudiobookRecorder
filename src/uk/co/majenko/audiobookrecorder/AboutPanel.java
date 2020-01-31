@@ -6,6 +6,7 @@ import java.awt.*;
 public class AboutPanel extends JPanel {
 
     public AboutPanel() {
+        Debug.trace();
         setLayout(new BorderLayout());
         JLabel icon = new JLabel(Icons.appIcon);
         add(icon, BorderLayout.WEST);

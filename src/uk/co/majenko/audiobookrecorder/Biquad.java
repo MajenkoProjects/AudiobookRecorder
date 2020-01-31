@@ -37,6 +37,7 @@ public class Biquad implements Effect {
     double sampleFrequency;
 
     public Biquad() {
+        Debug.trace();
         type = Lowpass;
         a0 = 1.0d;
         a1 = 0.0d;
@@ -54,6 +55,7 @@ public class Biquad implements Effect {
     }
 
     public Biquad(int type, double Fc, double Q, double peakGainDB) {
+        Debug.trace();
         setBiquad(type, Fc, Q, peakGainDB);
         lz1 = 0.0;
         lz2 = 0.0;
@@ -63,26 +65,31 @@ public class Biquad implements Effect {
     }
 
     public void setType(int typei) {
+        Debug.trace();
         type = typei;
         calcBiquad();
     }
 
     public void setQ(double Qi) {
+        Debug.trace();
         Q = Qi;
         calcBiquad();
     }
 
     public void setFc(double Fci) {
+        Debug.trace();
         Fc = Fci;
         calcBiquad();
     }
 
     public void setPeakGain(double peakGainDB) {
+        Debug.trace();
         peakGain = peakGainDB;
         calcBiquad();
     }
 
     public void setBiquad(int typei, double Fci, double Qi, double peakGainDB) {
+        Debug.trace();
         type = typei;
         Q = Qi;
         Fc = Fci;
@@ -90,6 +97,7 @@ public class Biquad implements Effect {
     }
 
     public void process(double[][] samples) {
+        Debug.trace();
         lz1 = 0d;
         lz2 = 0d;
         rz1 = 0d;
@@ -111,6 +119,7 @@ public class Biquad implements Effect {
     }
     
     public void init(double sf) {
+        Debug.trace();
         sampleFrequency = sf;
         lz1 = 0d;
         lz2 = 0d;
@@ -120,6 +129,7 @@ public class Biquad implements Effect {
     }
     
     void calcBiquad() {
+        Debug.trace();
 
         double norm;
         double V = Math.pow(10, Math.abs(peakGain) / 20.0);
@@ -221,6 +231,7 @@ public class Biquad implements Effect {
     }
 
     public String getName() {
+        Debug.trace();
         String n = "Biquad Filter (";
         switch (type) {
             case Lowpass: n += "Lowpass"; break;
@@ -242,14 +253,17 @@ public class Biquad implements Effect {
     }
 
     public ArrayList<Effect> getChildEffects() {
+        Debug.trace();
         return null;
     }
 
     public String toString() {
+        Debug.trace();
         return getName();
     }
 
     public void dump() {
+        Debug.trace();
         System.out.println(toString());
     }
 }

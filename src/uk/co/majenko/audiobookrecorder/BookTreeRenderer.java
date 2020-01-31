@@ -145,7 +145,33 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
             p.setOpaque(false);
             return p;
         } else if (value instanceof Book) {
-            ret.setIcon(((Book)value).getIcon());
+            Book b = (Book)value;
+
+            JPanel p = new JPanel();
+            p.setLayout(new GridBagLayout());
+            GridBagConstraints ctx = new GridBagConstraints();
+
+            ctx.gridx = 0;
+            ctx.gridy = 0;
+            ctx.fill = GridBagConstraints.HORIZONTAL;
+            ctx.anchor = GridBagConstraints.LINE_START;
+            ctx.weightx = 1.0d;
+
+            ret.setIcon(b.getIcon());
+            p.add(ret, ctx);
+
+            JLabel author = new JLabel(b.getAuthor());
+            ctx.gridy++;
+            author.setBorder(new EmptyBorder(0, 27, 0, 0));
+            Font f = author.getFont();
+            Font nf = f.deriveFont(Font.ITALIC, (int)(f.getSize() * 0.75));
+            author.setFont(nf);
+            author.setForeground(author.getForeground().darker());
+            p.add(author, ctx);
+
+            p.setOpaque(false);
+            return p;
+            
         }
         return ret;
     }

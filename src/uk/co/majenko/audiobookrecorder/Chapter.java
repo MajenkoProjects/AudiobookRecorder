@@ -38,7 +38,7 @@ public class Chapter extends BookTreeNode {
 
     public Chapter(String i, String chaptername) {
         super(chaptername);
-
+        Debug.trace();
         id = i;
         name = chaptername;
         preGap = Options.getInteger("catenation.pre-chapter");
@@ -46,7 +46,7 @@ public class Chapter extends BookTreeNode {
     }
 
     public Chapter(Element root, DefaultTreeModel model) {
-
+        Debug.trace();
         name = Book.getTextNode(root, "name");
         id = root.getAttribute("id");
         preGap = Utils.s2i(Book.getTextNode(root, "pre-gap"));
@@ -65,24 +65,29 @@ public class Chapter extends BookTreeNode {
     }
 
     public String getId() {
+        Debug.trace();
         return id;
     }
 
     public void setId(String i) {
+        Debug.trace();
         id = i;
     }
 
     public Sentence getLastSentence() {
+        Debug.trace();
         DefaultMutableTreeNode ls = getLastLeaf();
         if (ls instanceof Sentence) return (Sentence)ls;
         return null;
     }
 
     public String toString() {
+        Debug.trace();
         return name;
     }
 
     public void setUserObject(Object o) {
+        Debug.trace();
         if (o instanceof String) {
             String so = (String)o;
             name = so;
@@ -90,26 +95,32 @@ public class Chapter extends BookTreeNode {
     }
 
     public String getName() {
+        Debug.trace();
         return name;
     }
 
     public void setName(String n) {
+        Debug.trace();
         name = n;
     }
 
     public void setPreGap(int g) {
+        Debug.trace();
         preGap = g;
     }
 
     public int getPreGap() {
+        Debug.trace();
         return preGap;
     }
 
     public void setPostGap(int g) {
+        Debug.trace();
         postGap = g;
     }
 
     public int getPostGap() {
+        Debug.trace();
         return postGap;
     }
 
@@ -117,6 +128,7 @@ public class Chapter extends BookTreeNode {
     public void exportChapter(ProgressDialog exportDialog) throws 
                     FileNotFoundException, IOException, InputFormatException, NotSupportedException,
                     EncoderException, UnsupportedTagException, InvalidDataException {
+        Debug.trace();
 
         if (getChildCount() == 0) return;
 
@@ -235,6 +247,7 @@ public class Chapter extends BookTreeNode {
     }
 
     public double getChapterLength() {
+        Debug.trace();
         double totalTime = Options.getInteger("audio.recording.pre-chapter") / 1000d;
         for (Enumeration s = children(); s.hasMoreElements();) {
             Sentence sentence = (Sentence)s.nextElement();
@@ -249,6 +262,7 @@ public class Chapter extends BookTreeNode {
     }
 
     public ArrayList<String> getUsedEffects() {
+        Debug.trace();
 
         ArrayList<String> out = new ArrayList<String>();
 
@@ -266,6 +280,7 @@ public class Chapter extends BookTreeNode {
     }
 
     public void resetPostGaps() {
+        Debug.trace();
         for (Enumeration s = children(); s.hasMoreElements();) {
             Sentence snt = (Sentence)s.nextElement();
             snt.resetPostGap();
@@ -273,6 +288,7 @@ public class Chapter extends BookTreeNode {
     }
 
     public void purgeBackups() {
+        Debug.trace();
         for (Enumeration o = children(); o.hasMoreElements();) {
             Object ob = (Object)o.nextElement();
             if (ob instanceof Sentence) {
@@ -283,6 +299,7 @@ public class Chapter extends BookTreeNode {
     }
 
     public Element getChapterXML(Document doc) {
+        Debug.trace();
         Element chapterNode = doc.createElement("chapter");
         chapterNode.setAttribute("id", id);
         chapterNode.appendChild(Book.makeTextNode(doc, "name", name));
@@ -305,18 +322,22 @@ public class Chapter extends BookTreeNode {
     }
 
     public String getNotes() {
+        Debug.trace();
         return notes;
     }
 
     public void setNotes(String t) {
+        Debug.trace();
         notes = t;
     }
 
     public void onSelect() {
+        Debug.trace();
         AudiobookRecorder.window.setChapterNotes(notes);
     }
 
     public double getLength() {
+        Debug.trace();
         double len = 0;
         for (Enumeration o = children(); o.hasMoreElements();) {
             Object ob = (Object)o.nextElement();

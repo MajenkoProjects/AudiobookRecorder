@@ -16,6 +16,7 @@ public class BookInfoPanel extends JPanel {
 
     public BookInfoPanel(String t, String a, String g, String c, String x) {
         super();
+        Debug.trace();
         setLayout(new GridBagLayout());
         GridBagConstraints con = new GridBagConstraints();
 
@@ -69,12 +70,13 @@ public class BookInfoPanel extends JPanel {
 
     }
 
-    public String getTitle() { return title.getText(); }
-    public String getAuthor() { return author.getText(); }
-    public String getGenre() { return genre.getText(); }
-    public String getComment() { return comment.getText(); }
+    public String getTitle() { Debug.trace(); return title.getText(); }
+    public String getAuthor() { Debug.trace(); return author.getText(); }
+    public String getGenre() { Debug.trace(); return genre.getText(); }
+    public String getComment() { Debug.trace(); return comment.getText(); }
 
     public String getACX() { 
+        Debug.trace();
         Pattern p = Pattern.compile("\\/titleview\\/([A-Z0-9]{14})");
         Matcher m = p.matcher(acx.getText());
         if (m.find()) {
@@ -84,10 +86,10 @@ public class BookInfoPanel extends JPanel {
         return acx.getText();
     }
 
-    public void setTitle(String t) { title.setText(t); }
-    public void setAuthor(String a) { author.setText(a); }
-    public void setGenre(String g) { genre.setText(g); }
-    public void setComment(String c) { comment.setText(c); }
-    public void setACX(String a) { acx.setText(a); }
+    public void setTitle(String t) { Debug.trace(); title.setText(t); }
+    public void setAuthor(String a) { Debug.trace(); author.setText(a); }
+    public void setGenre(String g) { Debug.trace(); genre.setText(g); }
+    public void setComment(String c) { Debug.trace(); comment.setText(c); }
+    public void setACX(String a) { Debug.trace(); acx.setText(a); }
 
 }

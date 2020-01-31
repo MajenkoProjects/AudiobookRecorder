@@ -10,6 +10,7 @@ public class AGC implements Effect {
     double attack;
 
     public AGC(double c, double a, double d, double l) {
+        Debug.trace();
         ceiling = c;
         attack = a;
         decay = d;
@@ -18,14 +19,17 @@ public class AGC implements Effect {
     }
 
     public String getName() {
+        Debug.trace();
         return "AGC (Ceiling = " + ceiling + " attack = " + attack + " decay = " + decay + " limit = " + limit;
     }
 
     public String toString() {
+        Debug.trace();
         return getName();
     }
 
     public void process(double[][] samples) {
+        Debug.trace();
         gain = 1d;
         for (int i = 0; i < samples[Sentence.LEFT].length; i++) {
             double absSampleLeft = Math.abs(samples[Sentence.LEFT][i]) * gain;
@@ -55,14 +59,17 @@ public class AGC implements Effect {
     }
 
     public void init(double sr) {
+        Debug.trace();
         gain = 1d;
     }
 
     public void dump() {
+        Debug.trace();
         System.out.println(toString());
     }
 
     public ArrayList<Effect> getChildEffects() {
+        Debug.trace();
         return null;
     }
 }

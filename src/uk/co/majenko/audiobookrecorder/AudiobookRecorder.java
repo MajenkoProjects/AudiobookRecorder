@@ -2244,13 +2244,14 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 ImageIcon i = new ImageIcon(cf.getAbsolutePath());
                 Image ri = Utils.getScaledImage(i.getImage(), 22, 22);
                 book.setIcon(new ImageIcon(ri));
-                bookTreeModel.reload(book);
+            } else {
+                book.setIcon(Icons.book);
             }
+            bookTreeModel.reload(book);
 
             bookTree.expandPath(new TreePath(book.getPath()));
 
             statusLabel.setText("Noise floor: " + getNoiseFloorDB() + "dB");
-            book.setIcon(Icons.book);
 
         } catch (Exception ex) {
             ex.printStackTrace();
