@@ -18,7 +18,7 @@ public class AboutPanel extends JPanel {
 
         JLabel l1 = new JLabel("AudiobookRecorder");
         JLabel l2 = new JLabel("Version " + AudiobookRecorder.config.getProperty("version"));
-        JLabel l3 = new JLabel("(c) 2018 Majenko Technologies");
+        JLabel l3 = new JLabel("(c) 2020 Majenko Technologies");
 
         l1.setAlignmentX(JComponent.CENTER_ALIGNMENT);
         l2.setAlignmentX(JComponent.CENTER_ALIGNMENT);
