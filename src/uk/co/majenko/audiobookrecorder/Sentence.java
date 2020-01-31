@@ -21,10 +21,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
-import edu.cmu.sphinx.api.*;
-import edu.cmu.sphinx.decoder.adaptation.*;
-import edu.cmu.sphinx.result.*;
-
 import org.json.*;
 
 import java.util.Timer;
@@ -685,23 +681,35 @@ public class Sentence extends BookTreeNode implements Cacheable {
         return null;
     }
 
-    public void doRecognition(StreamSpeechRecognizer recognizer) {
+    public Runnable getRecognitionRunnable() {
+        Runnable r = new Runnable() {
+            public void run() {
+                Debug.d("Starting recognition of", getId());
+                doRecognition();
+            }
+        };
+        return r;
+    }
+
+    public void doRecognition() {
         Debug.trace();
         try {
             setText("[recognising...]");
             reloadTree();
 
-            byte[] inData = getPCMData();
+            String command = Options.get("process.command");
+            Debug.d("Recognizing with command", command);
 
-            ByteArrayInputStream bas = new ByteArrayInputStream(inData);
-            recognizer.startRecognition(bas);
-            SpeechResult result;
+            ProcessBuilder builder = new ProcessBuilder(command, getFile().getCanonicalPath());
+            Process process = builder.start();
+            InputStream is = process.getInputStream();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+
             String res = "";
-            while ((result = recognizer.getResult()) != null) {
-                res += result.getHypothesis();
-                res += " ";
+            String line = null;
+            while ((line = reader.readLine()) != null) {
+                res += line;
             }
-            recognizer.stopRecognition();
 
             setText(res);
             reloadTree();
@@ -712,32 +720,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public void recognise() {
         Debug.trace();
-        Thread t = new Thread(new Runnable() {
-            public void run() {
-                Debug.trace();
-                try {
-                    Configuration sphinxConfig = new Configuration();
-
-                    sphinxConfig.setAcousticModelPath(AudiobookRecorder.SPHINX_MODEL);
-                    sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
-                    sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
-
-                    AudioInputStream s = AudioSystem.getAudioInputStream(getFile());
-                    AudioFormat format = getAudioFormat();
-
-                    sphinxConfig.setSampleRate((int)(format.getSampleRate()));
-
-                    StreamSpeechRecognizer recognizer;
-
-                    recognizer = new StreamSpeechRecognizer(sphinxConfig);
-
-                    doRecognition(recognizer);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
+        Thread t = new Thread(getRecognitionRunnable());
         t.start();
     }
 
@@ -1668,7 +1651,9 @@ public class Sentence extends BookTreeNode implements Cacheable {
         Debug.trace();
         if (id.equals("room-noise")) return;
         if (getParent() == null) return;
-        AudiobookRecorder.window.bookTreeModel.reload(this);
+        synchronized (AudiobookRecorder.window.bookTreeModel) {
+            AudiobookRecorder.window.bookTreeModel.reload(this);
+        }
     }
 
     public double getPeak() {

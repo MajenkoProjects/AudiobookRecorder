@@ -21,9 +21,6 @@ import javax.imageio.*;
 import org.w3c.dom.*;
 import javax.xml.parsers.*;
 import java.io.*;
-import edu.cmu.sphinx.api.*;
-import edu.cmu.sphinx.decoder.adaptation.*;
-import edu.cmu.sphinx.result.*;
 import org.w3c.dom.Node;
 import java.util.concurrent.*;
 
@@ -44,8 +41,6 @@ import java.beans.PropertyChangeEvent;
 public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     // Settings - tweakable
-
-    public static final String SPHINX_MODEL = "resource:/edu/cmu/sphinx/models/en-us/en-us";
 
     static Properties config = new Properties();
     TreeMap<String, EffectGroup> effects;
@@ -147,25 +142,9 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     public TargetDataLine microphone = null;
     public AudioInputStream microphoneStream = null;
 
-    public Configuration sphinxConfig;
-    public StreamSpeechRecognizer recognizer;
-
     public static AudiobookRecorder window;
 
-    void initSphinx() {
-        Debug.trace();
-        sphinxConfig = new Configuration();
-
-        sphinxConfig.setAcousticModelPath(AudiobookRecorder.SPHINX_MODEL);
-        sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
-        sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
-
-        try {
-            recognizer = new StreamSpeechRecognizer(sphinxConfig);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+    public Queue<Runnable>speechProcessQueue = null;
 
     void buildToolbar(Container ob) {
         Debug.trace();
@@ -381,6 +360,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         Debug.debugEnabled = CLI.isSet("debug");
         Debug.traceEnabled = CLI.isSet("trace");
 
+        speechProcessQueue = new ArrayDeque<Runnable>();
+
         try {
 
             String clsname = "com.jtattoo.plaf.hifi.HiFiLookAndFeel";
@@ -403,6 +384,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
 
         Options.loadPreferences();
+
+        for (int i = 0; i < Options.getInteger("process.threads"); i++) {
+            WorkerThread worker = new WorkerThread(speechProcessQueue);
+            worker.start();
+        }
+
 
         execScript(Options.get("scripts.startup"));
 
@@ -1136,24 +1123,11 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         public void run() {
             Debug.trace();
             try {
-                Configuration sphinxConfig = new Configuration();
-
-                sphinxConfig.setAcousticModelPath(AudiobookRecorder.SPHINX_MODEL);
-                sphinxConfig.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
-                sphinxConfig.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
-
-                sphinxConfig.setSampleRate((int)(book.getAudioFormat().getSampleRate() / 4f));
-
-                StreamSpeechRecognizer recognizer;
-
-                recognizer = new StreamSpeechRecognizer(sphinxConfig);
-
-
                 for (Enumeration s = chapter.children(); s.hasMoreElements();) {
                     Sentence snt = (Sentence)s.nextElement();
                     if (!snt.isLocked()) {
                         if (snt.getId().equals(snt.getText())) {
-                            snt.doRecognition(recognizer);
+                            snt.doRecognition();
                         }
                     }
                 }
@@ -1629,9 +1603,20 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter c = (Chapter)o.getObject();
-                        BatchConversionThread r = new BatchConversionThread(c);
-                        Thread t = new Thread(r);
-                        t.start();
+
+                        for (Enumeration s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = (Sentence)s.nextElement();
+                            if (!snt.isLocked()) {
+                                if (snt.getId().equals(snt.getText())) {
+                                    Debug.d("Queueing recognition of", snt.getId());
+                                    synchronized(speechProcessQueue) {
+                                        Runnable r = snt.getRecognitionRunnable();
+                                        speechProcessQueue.add(r);
+                                        speechProcessQueue.notify();
+                                    }
+                                }
+                            }
+                        }
                     }
                 });
 

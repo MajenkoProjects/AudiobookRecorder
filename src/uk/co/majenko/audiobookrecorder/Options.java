@@ -50,6 +50,9 @@ public class Options extends JDialog {
 
     JTextField externalEditor;
 
+    JTextField speechCommand;
+    JSpinner workerThreads;
+
     JTextArea startupScript;
 
     ArrayList<JTextField[]> processorList;
@@ -331,7 +334,9 @@ public class Options extends JDialog {
 
         addSeparator(optionsPanel);
 
-        enableParsing = addCheckBox(optionsPanel, "Enable automatic sphinx speech-to-text (**SLOW**)", getBoolean("process.sphinx"));
+        enableParsing = addCheckBox(optionsPanel, "Enable automatic speech-to-text (**SLOW**)", getBoolean("process.sphinx"));
+        speechCommand = addTextField(optionsPanel, "Speech to text command (must take 1 filename parameter):", get("process.command"));
+        workerThreads = addSpinner(optionsPanel, "Worker threads:", 1, 100, 1, getInteger("process.threads"), "");
     
         addSeparator(optionsPanel);
 
@@ -594,6 +599,8 @@ public class Options extends JDialog {
         defaultPrefs.put("audio.export.channels", "2");
         defaultPrefs.put("audio.export.samplerate", "44100");
         defaultPrefs.put("process.sphinx", "false");
+        defaultPrefs.put("process.command", "speech-to-text \"%f\"");
+        defaultPrefs.put("process.threads", "10");
 
         defaultPrefs.put("editor.external", "");
 
@@ -718,6 +725,8 @@ public class Options extends JDialog {
         set("audio.export.channels", ((KVPair)channels.getSelectedItem()).key);
         set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
         set("process.sphinx", enableParsing.isSelected());
+        set("process.command", speechCommand.getText());
+        set("process.threads", workerThreads.getValue());
         set("editor.external", externalEditor.getText());
         set("cache.size", cacheSize.getValue());
         set("audio.recording.trim.fft", fftThreshold.getValue());
