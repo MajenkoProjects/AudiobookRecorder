@@ -1,8 +1,9 @@
 package uk.co.majenko.audiobookrecorder;
 
-import java.util.*;
-import javax.swing.*;
-import javax.swing.event.*;
+import javax.swing.SpinnerModel;
+import java.util.ArrayList;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
 
 public class SteppedNumericSpinnerModel implements SpinnerModel {
     int min;

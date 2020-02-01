@@ -1,7 +1,11 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 
 public class AboutPanel extends JPanel {
 

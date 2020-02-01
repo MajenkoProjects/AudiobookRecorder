@@ -1,10 +1,13 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.border.*;
-import java.net.*;
+import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.JTextArea;
+import javax.swing.border.EmptyBorder;
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class DonationPanel extends JPanel {
     public DonationPanel() {

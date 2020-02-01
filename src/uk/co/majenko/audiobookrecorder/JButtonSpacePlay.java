@@ -1,9 +1,11 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.*;
-import java.awt.event.*;
+import javax.swing.JButton;
+import javax.swing.ImageIcon;
+import javax.swing.JComponent;
+import javax.swing.KeyStroke;
+import java.awt.event.KeyEvent;
+import java.awt.event.ActionListener;
 
 public class JButtonSpacePlay extends JButton {
     public JButtonSpacePlay(ImageIcon i, String tt, ActionListener al) {

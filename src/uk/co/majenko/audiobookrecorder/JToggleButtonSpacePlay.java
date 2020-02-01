@@ -1,9 +1,11 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import javax.swing.JToggleButton;
+import javax.swing.JComponent;
+import javax.swing.KeyStroke;
+import javax.swing.ImageIcon;
 
 public class JToggleButtonSpacePlay extends JToggleButton {
     public JToggleButtonSpacePlay(ImageIcon i, String tt, ActionListener al) {

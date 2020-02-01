@@ -1,10 +1,13 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
-import javax.swing.tree.*;
-import javax.swing.plaf.*;
-import javax.swing.plaf.basic.*;
-import java.awt.*;
+import javax.swing.JComponent;
+import javax.swing.JScrollPane;
+import javax.swing.tree.AbstractLayoutCache;
+import javax.swing.tree.TreePath;
+import javax.swing.plaf.basic.BasicTreeUI;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.Graphics;
 
 public class CustomTreeUI extends BasicTreeUI {
 

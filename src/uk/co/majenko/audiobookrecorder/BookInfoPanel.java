@@ -1,10 +1,13 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.regex.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.awt.Dimension;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
+import javax.swing.JPanel;
 
 public class BookInfoPanel extends JPanel {
 

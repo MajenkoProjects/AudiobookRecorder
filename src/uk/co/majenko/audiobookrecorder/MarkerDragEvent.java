@@ -1,7 +1,5 @@
 package uk.co.majenko.audiobookrecorder;
 
-import java.awt.event.*;
-
 public class MarkerDragEvent {
 
     Object src;

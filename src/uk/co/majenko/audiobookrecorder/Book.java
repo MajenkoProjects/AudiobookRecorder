@@ -1,15 +1,15 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
-import java.io.*;
-import java.nio.file.*;
-import javax.swing.tree.*;
-import javax.sound.sampled.*;
-
+import java.io.File;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.UUID;
+import java.util.Properties;
+import javax.sound.sampled.AudioFormat;
+import javax.swing.JOptionPane;
+import javax.swing.ImageIcon;
+import javax.swing.tree.DefaultTreeModel;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
@@ -44,6 +44,8 @@ public class Book extends BookTreeNode {
     ImageIcon icon;
 
     Properties prefs;
+
+    File location;
 
     public Book(Properties p, String bookname) {
         super(bookname);
@@ -438,5 +440,11 @@ public class Book extends BookTreeNode {
         notes = n;
     }
 
-    
+    public File getLocation() { 
+        return location;
+    }
+
+    public void setLocation(File l) {
+        location = l;
+    }
 }

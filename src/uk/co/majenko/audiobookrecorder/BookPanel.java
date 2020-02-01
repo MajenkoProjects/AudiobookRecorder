@@ -1,14 +1,17 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
-import javax.swing.border.*;
-import java.util.*;
-import java.io.*;
-
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Properties;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Image;
+import javax.swing.BoxLayout;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.ImageIcon;
+import javax.swing.border.EmptyBorder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;

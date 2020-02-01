@@ -1,9 +1,12 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.Color;
+import javax.swing.JToggleButton;
+import javax.swing.JComboBox;
+import javax.swing.JToolBar;
+import javax.swing.JLabel;
 
 public class MainToolBar extends JToolBar {
 

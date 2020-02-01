@@ -1,5 +1,6 @@
 package uk.co.majenko.audiobookrecorder;
-import javax.swing.*;
+
+import javax.swing.JTextField;
 
 public class JTextFieldOb extends JTextField {
     Object object;

@@ -1,16 +1,42 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.sound.sampled.*;
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
-import java.util.prefs.*;
-import java.io.*;
-import javax.swing.tree.*;
-
+import java.io.File;
+import java.util.TreeSet;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.prefs.Preferences;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.BorderLayout;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.Dimension;
+import java.awt.Insets;
+import java.awt.Font;
+import java.awt.Dialog;
+import java.awt.event.WindowEvent;
 import javax.swing.border.EmptyBorder;
+import javax.swing.JDialog;
+import javax.swing.JTabbedPane;
+import javax.swing.JComboBox;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JSpinner;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JPanel;
+import javax.swing.JFrame;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.Mixer;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JSeparator;
+import javax.swing.SwingConstants;
+import javax.swing.JScrollPane;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.TargetDataLine;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.SourceDataLine;
 
 public class Options extends JDialog {
 

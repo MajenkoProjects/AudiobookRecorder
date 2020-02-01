@@ -1,15 +1,5 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
-import java.io.*;
-import java.nio.file.*;
-import javax.swing.tree.*;
-import javax.sound.sampled.*;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -20,11 +10,7 @@ import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-
-import org.json.*;
-
 import java.util.Timer;
-
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
@@ -36,6 +22,25 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
+import javax.sound.sampled.TargetDataLine;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioFormat;
+import java.io.File;
+import java.io.IOException;
+import java.util.TreeMap;
+import java.io.FileOutputStream;
+import java.io.FileInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.AudioFileFormat;
+import javax.swing.JOptionPane;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.util.UUID;
+import java.nio.file.Files;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.io.ByteArrayInputStream;
+
 
 public class Sentence extends BookTreeNode implements Cacheable {
 

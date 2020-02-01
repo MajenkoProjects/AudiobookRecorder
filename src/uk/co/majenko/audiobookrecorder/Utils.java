@@ -1,16 +1,14 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
-import javax.swing.border.*;
-import java.util.*;
-import java.io.*;
-import java.net.*;
-
 import java.text.SimpleDateFormat;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.awt.RenderingHints;
+import java.net.URI;
+import java.awt.Graphics2D;
+import java.awt.Desktop;
+import java.util.Date;
+import java.util.TimeZone;
 
 public class Utils {
     public static Image getScaledImage(Image srcImg, int w, int h){

@@ -1,6 +1,6 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
+import javax.swing.ImageIcon;
 
 public class Overlays {
     static public final ImageIcon locked      = new ImageIcon(Overlays.class.getResource("overlays/locked.png"));

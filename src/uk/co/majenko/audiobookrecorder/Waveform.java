@@ -1,11 +1,14 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
-import java.io.*;
-import javax.sound.sampled.*;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import javax.swing.JPanel;
+import java.util.ArrayList;
+import java.awt.Graphics;
+import java.awt.event.MouseEvent;
+import java.awt.Dimension;
+import java.awt.Color;
+import java.awt.Cursor;
 
 public class Waveform extends JPanel implements MouseListener, MouseMotionListener {
 

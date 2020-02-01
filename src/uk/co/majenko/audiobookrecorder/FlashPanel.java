@@ -1,19 +1,24 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
-import java.awt.*;
-import java.util.*;
+import java.util.TimerTask;
+import java.util.Timer;
+import javax.swing.JPanel;
+import javax.swing.JComponent;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.Color;
+import java.awt.Dimension;
 
 public class FlashPanel extends JPanel {
 
     boolean flash = false;
     boolean col = false;
 
-    java.util.Timer ticker;
+    Timer ticker;
     
     public FlashPanel() {
         super();
-        ticker = new java.util.Timer(true);
+        ticker = new Timer(true);
         ticker.scheduleAtFixedRate(new TimerTask() {
             public void run() {
                 if (flash) {

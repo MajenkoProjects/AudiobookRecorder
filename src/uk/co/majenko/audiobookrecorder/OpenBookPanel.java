@@ -1,12 +1,18 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
-import javax.swing.table.*;
-import javax.swing.event.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.util.*;
+import javax.swing.JPanel;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.JTable;
+import javax.swing.table.AbstractTableModel;
+import java.util.ArrayList;
+import javax.swing.JScrollPane;
+import java.io.File;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import javax.swing.ListSelectionModel;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import javax.swing.JOptionPane;
 
 public class OpenBookPanel extends JPanel {
 

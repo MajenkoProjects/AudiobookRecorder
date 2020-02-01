@@ -1,12 +1,15 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.border.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
-import it.sauronsoftware.jave.*;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JProgressBar;
+import java.awt.BorderLayout;
+import it.sauronsoftware.jave.MultimediaInfo;
+import it.sauronsoftware.jave.EncoderProgressListener;
+import java.awt.Dialog;
+import javax.swing.border.EmptyBorder;
+import java.awt.Dimension;
+import java.awt.event.WindowEvent;
 
 public class ProgressDialog extends JDialog implements EncoderProgressListener {
     JLabel message;

@@ -1,6 +1,6 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
+import javax.swing.ImageIcon;
 
 public class Icons {
     static public final ImageIcon book        = new ImageIcon(Icons.class.getResource("icons/book.png"));

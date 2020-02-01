@@ -1,9 +1,16 @@
 package uk.co.majenko.audiobookrecorder;
 
-import javax.swing.*;
-import javax.swing.tree.*;
-import java.awt.*;
-import javax.swing.border.*;
+import java.awt.Component;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTree;
+import javax.swing.border.EmptyBorder;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 public class BookTreeRenderer extends DefaultTreeCellRenderer {
 
