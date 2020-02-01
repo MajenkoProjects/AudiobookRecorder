@@ -4106,7 +4106,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             String filename = f.getName();
             if (filename.startsWith(".")) continue;
             if (filename.startsWith("backup")) continue;
-            if (filename.equals("room-noise")) continue;
+            if (filename.equals("room-noise.wav")) continue;
             if (filename.endsWith(".wav")) {
                 String id = filename.substring(0, filename.length() - 4);
                 Debug.d("Testing orphanicity of", id);

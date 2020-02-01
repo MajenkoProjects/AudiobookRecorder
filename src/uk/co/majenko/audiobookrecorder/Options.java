@@ -10,13 +10,13 @@ import java.util.prefs.*;
 import java.io.*;
 import javax.swing.tree.*;
 
+import javax.swing.border.EmptyBorder;
+
 public class Options extends JDialog {
 
     JTabbedPane tabs;
 
     GridBagConstraints constraint;
-
-    public static ArrayList<EffectGroup> effectChains;
 
     JComboBox<KVPair> mixerList;
     JComboBox<KVPair> playbackList;
@@ -72,7 +72,7 @@ public class Options extends JDialog {
         }
     }
 
-    JComboBox<KVPair> addDropdown(JPanel panel, String label, KVPair[] options, String def) {
+    JComboBox<KVPair> addDropdown(JPanel panel, String label, KVPair[] options, String def, String tip) {
         JLabel l = new JLabel(label);
         constraint.gridx = 0;
         constraint.gridwidth = 1;
@@ -83,6 +83,9 @@ public class Options extends JDialog {
         JComboBox<KVPair> o = new JComboBox<KVPair>(options);
         constraint.gridx = 1;
         panel.add(o, constraint);
+        Tip t = new Tip(tip);
+        constraint.gridx = 2;
+        panel.add(t, constraint);
 
         for (KVPair p : options) {
             if (p.key.equals(def)) {
@@ -113,7 +116,7 @@ public class Options extends JDialog {
         constraint.gridy++;
     }
         
-    JTextField addTextField(JPanel panel, String label, String def) {
+    JTextField addTextField(JPanel panel, String label, String def, String tip) {
         JLabel l = new JLabel(label);
         constraint.gridx = 0;
         constraint.gridwidth = 1;
@@ -127,13 +130,18 @@ public class Options extends JDialog {
         constraint.fill = GridBagConstraints.HORIZONTAL;
         panel.add(a, constraint);
 
+        Tip t = new Tip(tip);
+        constraint.gridx = 2;
+        panel.add(t, constraint);
+
+
         constraint.fill = GridBagConstraints.NONE;
 
         constraint.gridy++;
         return a;
     }
 
-    JTextField[] addTwoField(JPanel panel, String def1, String def2) {
+    JTextField[] addTwoField(JPanel panel, String def1, String def2, String tip) {
         JTextField a = new JTextField(def1);
         constraint.gridx = 0;
         constraint.fill = GridBagConstraints.HORIZONTAL;
@@ -144,13 +152,18 @@ public class Options extends JDialog {
         panel.add(b, constraint);
         constraint.fill = GridBagConstraints.NONE;
 
+        Tip t = new Tip(tip);
+        constraint.gridx = 2;
+        panel.add(t, constraint);
+
+
         constraint.gridy++;
         return new JTextField[] { a, b };
     }
 
         
 
-    JTextField addFilePath(JPanel panel, String label, String path, boolean dironly) {
+    JTextField addFilePath(JPanel panel, String label, String path, boolean dironly, String tip) {
         JLabel l = new JLabel(label);
         constraint.gridx = 0;
         constraint.gridwidth = 1;
@@ -212,6 +225,10 @@ public class Options extends JDialog {
         constraint.fill = GridBagConstraints.HORIZONTAL;
         panel.add(p, constraint);
 
+        Tip t = new Tip(tip);
+        constraint.gridx = 2;
+        panel.add(t, constraint);
+
         constraint.fill = GridBagConstraints.NONE;
 
         constraint.gridy++;
@@ -238,7 +255,7 @@ public class Options extends JDialog {
         constraint.gridy++;
     }
 
-    JSpinner addSpinner(JPanel panel, String label, int min, int max, int step, int value, String suffix) {
+    JSpinner addSpinner(JPanel panel, String label, int min, int max, int step, int value, String suffix, String tip) {
         JLabel l = new JLabel(label);
         constraint.gridx = 0;
         constraint.gridwidth = 1;
@@ -258,6 +275,10 @@ public class Options extends JDialog {
 
         constraint.fill = GridBagConstraints.HORIZONTAL;
         panel.add(p, constraint);
+        Tip t = new Tip(tip);
+        constraint.gridx = 2;
+        panel.add(t, constraint);
+
 
         constraint.fill = GridBagConstraints.NONE;
 
@@ -266,11 +287,16 @@ public class Options extends JDialog {
 
     }
 
-    JCheckBox addCheckBox(JPanel panel, String label, boolean state) {
+    JCheckBox addCheckBox(JPanel panel, String label, boolean state, String tip) {
         constraint.gridx = 1;
         JCheckBox cb = new JCheckBox(label);
         cb.setSelected(state);
         panel.add(cb, constraint);
+        Tip t = new Tip(tip);
+        constraint.gridx = 2;
+        panel.add(t, constraint);
+
+
         constraint.gridy++;
         return cb;
     }
@@ -298,94 +324,70 @@ public class Options extends JDialog {
 
         addSeparator(optionsPanel);
 
-        mixerList = addDropdown(optionsPanel, "Recording device:", getRecordingMixerList(), get("audio.recording.device"));
-        channelList = addDropdown(optionsPanel, "Channels:", getChannelCountList(), get("audio.recording.channels"));
-        rateList = addDropdown(optionsPanel, "Sample rate:", getSampleRateList(), get("audio.recording.samplerate"));
-        bitDepth = addDropdown(optionsPanel, "Sample resolution:", getResolutionList(), get("audio.recording.resolution"));
-        trimMethod = addDropdown(optionsPanel, "Auto-trim method:", getTrimMethods(), get("audio.recording.trim"));
-        fftThreshold = addSpinner(optionsPanel, "FFT threshold:", 0, 100, 1, getInteger("audio.recording.trim.fft"), "");
-        fftBlockSize = addDropdown(optionsPanel, "FFT Block size:", getFFTBlockSizes(), get("audio.recording.trim.blocksize"));
-        maxGainVariance = addSpinner(optionsPanel, "Maximum gain variance:", 0, 100, 1, getInteger("audio.recording.variance"), "");
+        mixerList = addDropdown(optionsPanel, "Recording device:", getRecordingMixerList(), get("audio.recording.device"), "This is the system device to record through");
+        channelList = addDropdown(optionsPanel, "Channels:", getChannelCountList(), get("audio.recording.channels"), "How many channels do you want to record - stereo or mono?");
+        rateList = addDropdown(optionsPanel, "Sample rate:", getSampleRateList(), get("audio.recording.samplerate"), "The higher the sample rate the better the quality, but the bigger the files.");
+        bitDepth = addDropdown(optionsPanel, "Sample resolution:", getResolutionList(), get("audio.recording.resolution"), "The higher the resolution the better the quality, but the bigger the files.");
+        trimMethod = addDropdown(optionsPanel, "Auto-trim method:", getTrimMethods(), get("audio.recording.trim"), "None: don't auto-trim. FFT: Compare the FFT profile of blocks to the room noise profile and trim silent blocks, Peak: Look for the start and end rise and fall points");
+        fftThreshold = addSpinner(optionsPanel, "FFT threshold:", 0, 100, 1, getInteger("audio.recording.trim.fft"), "", "This specifies the difference (in hundredths) between the power of FFT buckets in a sample block compared to the overall power of the same FFT bucket in the room noise. Raising this number makes the FFT trimming less sensitive.");
+        fftBlockSize = addDropdown(optionsPanel, "FFT Block size:", getFFTBlockSizes(), get("audio.recording.trim.blocksize"), "How large an FFT block should be when processing. Larger values increase sensitivity but at the epxense of resolution.");
+        maxGainVariance = addSpinner(optionsPanel, "Maximum gain variance:", 0, 100, 1, getInteger("audio.recording.variance"), "", "This is how much the gain is allowed to vary by from phrase to phrase when normalizing an entire chapter.");
 
         addSeparator(optionsPanel);
 
-        playbackList = addDropdown(optionsPanel, "Playback device:", getPlaybackMixerList(), get("audio.playback.device"));
-        playbackBlockSize = addDropdown(optionsPanel, "Playback Block size:", getPlaybackBlockSizes(), get("audio.playback.blocksize"));
+        playbackList = addDropdown(optionsPanel, "Playback device:", getPlaybackMixerList(), get("audio.playback.device"), "Which device to play back through");
+        playbackBlockSize = addDropdown(optionsPanel, "Playback Block size:", getPlaybackBlockSizes(), get("audio.playback.blocksize"), "How big the playback buffer should be. Larger is smoother playback but the playback marker in the waveform becomes more out of sync");
         addSeparator(optionsPanel);
-        storageFolder = addFilePath(optionsPanel, "Storage folder:", get("path.storage"), true);
-        archiveFolder = addFilePath(optionsPanel, "Archive folder:", get("path.archive"), true);
-
-        addSeparator(optionsPanel);
-
-        preChapterGap = addSpinner(optionsPanel, "Default pre-chapter gap:", 0, 5000, 100, getInteger("catenation.pre-chapter"), "ms");
-        postChapterGap = addSpinner(optionsPanel, "Default post-chapter gap:", 0, 5000, 100, getInteger("catenation.post-chapter"), "ms");
-        postSentenceGap = addSpinner(optionsPanel, "Default post-sentence gap:", 0, 5000, 100, getInteger("catenation.post-sentence"), "ms");
-        shortSentenceGap = addSpinner(optionsPanel, "Short post-sentence gap:", 0, 5000, 100, getInteger("catenation.short-sentence"), "ms");
-        postParagraphGap = addSpinner(optionsPanel, "Default post-paragraph gap:", 0, 5000, 100, getInteger("catenation.post-paragraph"), "ms");
-        postSectionGap = addSpinner(optionsPanel, "Default post-section gap:", 0, 5000, 100, getInteger("catenation.post-section"), "ms");
+        storageFolder = addFilePath(optionsPanel, "Storage folder:", get("path.storage"), true, "This is where all your working audiobooks are stored.");
+        archiveFolder = addFilePath(optionsPanel, "Archive folder:", get("path.archive"), true, "This is where audiobooks are archived to.");
 
         addSeparator(optionsPanel);
 
-        ffmpegLocation = addFilePath(optionsPanel, "FFMPEG location:", get("path.ffmpeg"), false);
-        bitRate = addDropdown(optionsPanel, "Export bitrate:", getBitrates(), get("audio.export.bitrate"));
-        channels = addDropdown(optionsPanel, "Export channels:", getChannelCountList(), get("audio.export.channels"));
-        exportRate = addDropdown(optionsPanel, "Export sample rate:", getSampleRateList(), get("audio.export.samplerate"));
+        preChapterGap = addSpinner(optionsPanel, "Default pre-chapter gap:", 0, 5000, 100, getInteger("catenation.pre-chapter"), "ms", "How much room noise to add at the beginning of a chapter.");
+        postChapterGap = addSpinner(optionsPanel, "Default post-chapter gap:", 0, 5000, 100, getInteger("catenation.post-chapter"), "ms", "How much room noise to add to the end of a chapter.");
+        postSentenceGap = addSpinner(optionsPanel, "Default post-sentence gap:", 0, 5000, 100, getInteger("catenation.post-sentence"), "ms", "How much room noise to add between normal sentences.");
+        shortSentenceGap = addSpinner(optionsPanel, "Short post-sentence gap:", 0, 5000, 100, getInteger("catenation.short-sentence"), "ms", "How much room noise to add between 'continuations'.");
+        postParagraphGap = addSpinner(optionsPanel, "Default post-paragraph gap:", 0, 5000, 100, getInteger("catenation.post-paragraph"), "ms", "How much room noise to add between paragraphs.");
+        postSectionGap = addSpinner(optionsPanel, "Default post-section gap:", 0, 5000, 100, getInteger("catenation.post-section"), "ms", "How much room noise to add between sections.");
+
+        addSeparator(optionsPanel);
+
+        ffmpegLocation = addFilePath(optionsPanel, "FFMPEG location:", get("path.ffmpeg"), false, "Path to your ffmpeg executable.");
+        bitRate = addDropdown(optionsPanel, "Export bitrate:", getBitrates(), get("audio.export.bitrate"), "The MP3 bitrate to produce");
+        channels = addDropdown(optionsPanel, "Export channels:", getChannelCountList(), get("audio.export.channels"), "Mono or stereo MP3 production");
+        exportRate = addDropdown(optionsPanel, "Export sample rate:", getSampleRateList(), get("audio.export.samplerate"), "Sample frequency of the produced MP3");
         
 
         addSeparator(optionsPanel);
 
-        enableParsing = addCheckBox(optionsPanel, "Enable automatic speech-to-text (**SLOW**)", getBoolean("process.sphinx"));
-        speechCommand = addTextField(optionsPanel, "Speech to text command (must take 1 filename parameter):", get("process.command"));
-        workerThreads = addSpinner(optionsPanel, "Worker threads:", 1, 100, 1, getInteger("process.threads"), "");
+        enableParsing = addCheckBox(optionsPanel, "Enable automatic speech-to-text (**SLOW**)", getBoolean("process.sphinx"), "This will automatically start recognising the speech in every sentence you record. This can really slow down recording though so it's recommended to leave it turned off and do your recognition afterwards as a batch operation.");
+        speechCommand = addTextField(optionsPanel, "Speech to text command (must take 1 filename parameter):", get("process.command"), "This specifies what command to run to recognize the speech. This command must take only one parameter, which is the full path of the WAV file. It should return (on standard output) the recognised speech.");
+        workerThreads = addSpinner(optionsPanel, "Worker threads:", 1, 100, 1, getInteger("process.threads"), "", "How many concurrent threads to run when processing speech. This should ideally be no more than the number of CPU cores you have in your computer.");
     
         addSeparator(optionsPanel);
 
-        externalEditor = addTextField(optionsPanel, "External Editor Command", get("editor.external"));
+        externalEditor = addTextField(optionsPanel, "External Editor Command", get("editor.external"), "The program to run when you select 'Open in external editor'.");
 
         addSeparator(optionsPanel);
 
-        cacheSize = addSpinner(optionsPanel, "Cache size:", 2, 100, 1, getInteger("cache.size"), "");
+        cacheSize = addSpinner(optionsPanel, "Cache size:", 2, 100, 1, getInteger("cache.size"), "", "How many phrases to keep cached in memory at once. More gives a smoother editing experience, but you can easily run out of memory if you are not careful.");
 
         addSeparator(optionsPanel);
         tabs.add("Options", new JScrollPane(optionsPanel));
 
-        JPanel effectChains = new JPanel();
-        effectChains.setLayout(new BorderLayout());
 
-        JPanel effectDetails = new JPanel() {
-            public Dimension getPreferredSize() {
-                return new Dimension(200, 400);
-            }
-        };
 
-        DefaultTreeModel m = new DefaultTreeModel(new DefaultMutableTreeNode("Effect Chains"));
-
-        JTree effectChainTree = new JTree(m);
-        effectChains.add(effectChainTree, BorderLayout.CENTER);
-        effectChains.add(effectDetails, BorderLayout.EAST);
-
-        tabs.add("Effects Chains", new JScrollPane(effectChains));
 
         JPanel startScript = new JPanel();
         startScript.setLayout(new BorderLayout());
+        startScript.setBorder(new EmptyBorder(15, 15, 15, 15));
         startupScript = new JTextArea(get("scripts.startup"));
+        startupScript.setBorder(new EmptyBorder(5, 5, 5, 5));
+        startupScript.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         startScript.add(startupScript, BorderLayout.CENTER);
         tabs.add("Startup Script", startScript);
 
 
-
-        JPanel effects = new JPanel();
-        effects.setLayout(new GridBagLayout());
-        constraint.gridx = 0;
-        constraint.gridy = 0;
-        constraint.gridwidth = 1;
-        constraint.gridheight = 1;
-
-        etherealOffset = addSpinner(effects, "Ethereal Voice Offset", 0, 2000, 10, getInteger("effects.ethereal.offset"), "ms");
-        etherealIterations = addSpinner(effects, "Ethereal Voice Iterations", 1, 10, 1, getInteger("effects.ethereal.iterations"), "");
-        etherealAttenuation = addSpinner(effects, "Ethereal Voice Attenuation", 0, 100, 1, getInteger("effects.ethereal.attenuation"), "%");
-
-        tabs.add("Effects", effects);
 
 
         JPanel processors = new JPanel();
@@ -411,18 +413,15 @@ public class Options extends JDialog {
             String command = get("editor.processor." + i + ".command");
             if (name == null || command == null) break;
             if (name.equals("") || command.equals("")) break;
-            JTextField[] f = addTwoField(processorListPanel, name, command);
+            JTextField[] f = addTwoField(processorListPanel, name, command, "Specify the name of the operation (which will appear in context menus) and the command to run for that operation. The command should have parameters separated with :: and %f for the input filename and %o for the output filename.");
             processorList.add(f);
         }
 
-        JTextField[] f = addTwoField(processorListPanel, "", "");
+        JTextField[] f = addTwoField(processorListPanel, "", "", "Specify the name of the operation (which will appear in context menus) and the command to run for that operation. The command should have parameters separated with :: and %f for the input filename and %o for the output filename.");
         processorList.add(f);
 
         tabs.add("Processors", processors);
         
-
-
-
 
         add(tabs, BorderLayout.CENTER);
 
@@ -608,10 +607,6 @@ public class Options extends JDialog {
 
         defaultPrefs.put("scripts.startup", "");
 
-        defaultPrefs.put("effects.ethereal.offset", "50");
-        defaultPrefs.put("effects.ethereal.iterations", "3");
-        defaultPrefs.put("effects.ethereal.attenuation", "50");
-
         if (prefs == null) {
             prefs = Preferences.userNodeForPackage(AudiobookRecorder.class);
         }
@@ -734,10 +729,6 @@ public class Options extends JDialog {
         set("audio.recording.trim.blocksize", ((KVPair)fftBlockSize.getSelectedItem()).key);
         set("audio.playback.blocksize", ((KVPair)playbackBlockSize.getSelectedItem()).key);
 
-        set("effects.ethereal.offset", etherealOffset.getValue());
-        set("effects.ethereal.iterations", etherealIterations.getValue());
-        set("effects.ethereal.attenuation", etherealAttenuation.getValue());
-
         set("scripts.startup", startupScript.getText());
 
         int procNo = 0;
@@ -831,52 +822,5 @@ public class Options extends JDialog {
         pairs[6] = new KVPair<String, String>("65536", "65537");
         pairs[7] = new KVPair<String, String>("131072", "131072");
         return pairs;
-    }
-
-    public static void createEffectChains() {
-        effectChains = new ArrayList<EffectGroup>();
-
-        for (int i = 0; i < 999999; i++) {
-            if (get("effects." + i + ".name") == null) {
-                EffectGroup e = new EffectGroup(get("effects." + i + ".name"));
-                for (int j = 0; i < 999999; j++) {
-                    String type = get("effects." + i + ".children." + j + ".type");
-                    if (type == null) break;
-
-                    if (type.equals("biquad")) {
-                        int bqt = getInteger("effects." + i + ".children." + j + ".filtertype");
-                        double fc = getDouble("effects." + i + ".children." + j + ".fc");
-                        double q = getDouble("effects." + i + ".children." + j + ".q");
-                        double gain = getDouble("effects." + i + ".children." + j + ".gain");
-                        Biquad b = new Biquad(bqt, fc, q, gain);
-                        e.addEffect(b);
-                        continue;
-                    } 
-
-                    if (type.equals("amplifier")) {
-                        double gain = getDouble("effects." + i + ".children." + j + ".gain");
-                        Amplifier a = new Amplifier(gain);
-                        e.addEffect(a);
-                        continue;
-                    }
-
-                    if (type.equals("delayline")) {
-                        DelayLine l = new DelayLine();
-                        for (int c = 0; c < 999999; c++) {
-                            if (get("effects." + i + ".children." + j + ".lines." + c + ".samples") == null) break;
-                            int samples = getInteger("effects." + i + ".children." + j + ".lines." + c + ".samples");
-                            double gain = getDouble("effects." + i + ".children." + j + ".lines." + c + ".gain");
-                            l.addDelayLine(samples, gain);
-                        }
-                        e.addEffect(l);
-                        continue;
-                    }
-
-
-                }
-                effectChains.add(e);
-                break;
-            }
-        }
     }
 }
