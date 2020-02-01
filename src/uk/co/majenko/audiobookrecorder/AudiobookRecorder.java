@@ -1012,15 +1012,16 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             newbook.setComment(info.getComment().trim());
             newbook.setACX(info.getACX().trim());
 
-            Chapter caud = new Chapter("audition", "Audition");
-            Chapter copen = new Chapter("open", "Opening Credits");
-            Chapter cone = new Chapter("0001", "Chapter 1");
-            Chapter cclose = new Chapter("close", "Closing Credits");
+            Chapter caud = new Chapter(UUID.randomUUID().toString(), "Audition");
+            Chapter copen = new Chapter(UUID.randomUUID().toString(), "Opening Credits");
+            Chapter cclose = new Chapter(UUID.randomUUID().toString(), "Closing Credits");
+            Chapter cone = new Chapter(UUID.randomUUID().toString(), "Chapter 1");
 
             newbook.add(caud);
             newbook.add(copen);
-            newbook.add(cone);
             newbook.add(cclose);
+
+            newbook.add(cone);
 
             File bookRoot = new File(Options.get("path.storage"), newbook.getName());
             if (!bookRoot.exists()) {
@@ -1030,6 +1031,10 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             File xml = new File(bookRoot, "audiobook.abx");
             Document doc = newbook.buildDocument();
 
+            File backup = new File(bookRoot, "audiobook.bak");
+            if (xml.exists()) {
+                xml.renameTo(backup);
+            }
 
             // write the content into xml file
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -1127,7 +1132,10 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     Sentence snt = (Sentence)s.nextElement();
                     if (!snt.isLocked()) {
                         if (snt.getId().equals(snt.getText())) {
-                            snt.doRecognition();
+                            Runnable r = snt.getRecognitionRunnable();
+                            snt.setQueued();
+                            speechProcessQueue.add(r);
+                            speechProcessQueue.notify();
                         }
                     }
                 }
@@ -1477,20 +1485,11 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         Chapter chap = (Chapter)o.getObject();
                         int pos = bookTreeModel.getIndexOfChild(book, chap);
                         if (pos > 0) pos--;
-
-                        int id = Utils.s2i(chap.getId());
-                        if (id > 0) {
-                            Chapter prevChap = (Chapter)bookTreeModel.getChild(book, pos);
-                            id = Utils.s2i(prevChap.getId());
-                            if (id > 0) {
-                                bookTreeModel.removeNodeFromParent(chap);
-                                bookTreeModel.insertNodeInto(chap, book, pos);
-                            }
-                        }
-                        book.renumberChapters();
+                        Chapter prevChap = (Chapter)bookTreeModel.getChild(book, pos);
+                        bookTreeModel.removeNodeFromParent(chap);
+                        bookTreeModel.insertNodeInto(chap, book, pos);
                     }
                 });
-                moveUp.setEnabled(idNumber > 0);
 
                 JMenuObject moveDown = new JMenuObject("Move Down", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
@@ -1499,21 +1498,13 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         Chapter chap = (Chapter)o.getObject();
                         int pos = bookTreeModel.getIndexOfChild(book, chap);
                         pos++;
-                        int id = Utils.s2i(chap.getId());
-                        if (id > 0) {
-                            Chapter nextChap = (Chapter)bookTreeModel.getChild(book, pos);
-                            if (nextChap != null) {
-                                id = Utils.s2i(nextChap.getId());
-                                if (id > 0) {
-                                    bookTreeModel.removeNodeFromParent(chap);
-                                    bookTreeModel.insertNodeInto(chap, book, pos);
-                                }
-                            }
+                        Chapter nextChap = (Chapter)bookTreeModel.getChild(book, pos);
+                        if (nextChap != null) {
+                            bookTreeModel.removeNodeFromParent(chap);
+                            bookTreeModel.insertNodeInto(chap, book, pos);
                         }
-                        book.renumberChapters();
                     }
                 });
-                moveDown.setEnabled(idNumber > 0);
 
                 JMenu mergeWith = new JMenu("Merge chapter with");
                 for (Enumeration bc = book.children(); bc.hasMoreElements();) {
@@ -1607,10 +1598,11 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         for (Enumeration s = c.children(); s.hasMoreElements();) {
                             Sentence snt = (Sentence)s.nextElement();
                             if (!snt.isLocked()) {
-                                if (snt.getId().equals(snt.getText())) {
+                                if (!snt.beenDetected()) {
                                     Debug.d("Queueing recognition of", snt.getId());
                                     synchronized(speechProcessQueue) {
                                         Runnable r = snt.getRecognitionRunnable();
+                                        snt.setQueued();
                                         speechProcessQueue.add(r);
                                         speechProcessQueue.notify();
                                     }
@@ -2241,6 +2233,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+
+        gatherOrphans();
     }
 
     public void loadBookStructure(File f) {
@@ -4088,5 +4082,48 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     // DocumentListener *//
+
+    public boolean sentenceIdExists(String id) {
+        for (Enumeration c = book.children(); c.hasMoreElements();) {
+            Chapter chp = (Chapter)c.nextElement();
+            for (Enumeration s = chp.children(); s.hasMoreElements();) {
+                Sentence snt = (Sentence)s.nextElement();
+                if (snt.getId().equals(id)) return true;
+            }
+        }
+        return false;
+    }
+
+    public void gatherOrphans() {
+        Chapter orphans = getChapterById("orphans");
+        if (orphans == null) {
+            orphans = new Chapter("orphans", "Orphan Files");
+            bookTreeModel.insertNodeInto(orphans, book, book.getChildCount());
+        }
+        File bookRoot = new File(Options.get("path.storage"), book.getName());
+        File[] files = new File(bookRoot, "files").listFiles();
+        for (File f : files) {
+            String filename = f.getName();
+            if (filename.startsWith(".")) continue;
+            if (filename.startsWith("backup")) continue;
+            if (filename.equals("room-noise")) continue;
+            if (filename.endsWith(".wav")) {
+                String id = filename.substring(0, filename.length() - 4);
+                Debug.d("Testing orphanicity of", id);
+                if (!sentenceIdExists(id)) {
+                    Sentence newSentence = new Sentence(id, id);
+                    bookTreeModel.insertNodeInto(newSentence, orphans, orphans.getChildCount());
+                }
+            }
+        }
+    }
+
+    public Chapter getChapterById(String id) {
+        for (Enumeration c = book.children(); c.hasMoreElements();) {
+            Chapter chp = (Chapter)c.nextElement();
+            if (chp.getId().equals(id)) return chp;
+        }
+        return null;
+    }
 
 }

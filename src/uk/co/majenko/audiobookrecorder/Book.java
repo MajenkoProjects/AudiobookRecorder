@@ -168,18 +168,8 @@ public class Book extends BookTreeNode {
 
     public Chapter addChapter() {
         Debug.trace();
-        Chapter lc = getLastChapter();
-        if (lc == null) return new Chapter("1", "Chapter 1");
-        try {
-            int lcid = Integer.parseInt(lc.getId());
-            lcid++;
-
-            Chapter nc = new Chapter(String.format("%04d", lcid), "Chapter " + lcid);
-            return nc;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+        String uuid = UUID.randomUUID().toString();
+        return new Chapter(uuid, uuid);
     }
 
     public String getName() {

@@ -81,29 +81,37 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
 
             ctx.gridx = 0;
             ctx.gridy = 0;
+            ctx.weightx = 1.0d;
             ctx.fill = GridBagConstraints.HORIZONTAL;
             ctx.anchor = GridBagConstraints.LINE_START;
+            p.add(ret, ctx);
 
-            String effectChain = s.getEffectChain();
-            if ((effectChain == null) || (effectChain.equals("none"))) {
-                ctx.weightx = 1.0d;
-                ctx.gridwidth = 2;
-                p.add(ret, ctx);
-            } else {
-                ctx.weightx = 1.0d;
-                ctx.gridwidth = 1;
-                p.add(ret, ctx);
-                Effect e = AudiobookRecorder.window.effects.get(effectChain);
-                JLabel eff = new JLabel(e.toString() + " ");
+            if (s.isDetecting()) {
+                JLabel eff = new JLabel(" recognising... ");
                 ctx.weightx = 0.0d;
-                ctx.gridwidth = 1;
                 ctx.gridx = 1;
                 p.add(eff);
+            } else if (s.isQueued()) {
+                JLabel eff = new JLabel(" queued ");
+                ctx.weightx = 0.0d;
+                ctx.gridx = 1;
+                p.add(eff);
+            } else if (s.isQueued()) {
             }
 
-            ctx.gridwidth = 1;
+            String effectChain = s.getEffectChain();
+            if ((effectChain != null) && (!effectChain.equals("none"))) {
+                Effect e = AudiobookRecorder.window.effects.get(effectChain);
+                if (e != null) {
+                    JLabel eff = new JLabel(e.toString() + " ");
+                    ctx.weightx = 0.0d;
+                    ctx.gridx = 2;
+                    p.add(eff);
+                }
+            }
+
             ctx.weightx = 0.0d;
-            ctx.gridx = 2;
+            ctx.gridx = 3;
             ctx.anchor = GridBagConstraints.LINE_END;
             int peak = s.getPeakDB();
             JLabel peakLabel = new JLabel(peak + "dB ");
@@ -113,7 +121,7 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
             p.add(peakLabel, ctx);
 
             ctx.weightx = 0.0d;
-            ctx.gridx = 3;
+            ctx.gridx = 4;
             ctx.anchor = GridBagConstraints.LINE_END;
             p.add(time, ctx);
 

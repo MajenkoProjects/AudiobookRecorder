@@ -59,6 +59,9 @@ public class Sentence extends BookTreeNode implements Cacheable {
     boolean inSample;
     boolean attention = false;
     boolean processed = false;
+    boolean isDetected = false;
+    boolean detecting = false;
+    boolean queued = false;
 
     String effectChain = null;
 
@@ -204,6 +207,10 @@ public class Sentence extends BookTreeNode implements Cacheable {
         processed = Utils.s2b(Book.getTextNode(root, "processed"));
         runtime = Utils.s2d(Book.getTextNode(root, "time", "-1.000"));
         peak = Utils.s2d(Book.getTextNode(root, "peak", "-1.000"));
+        isDetected = Utils.s2b(Book.getTextNode(root, "detected"));
+
+        if (text == null) text = id;
+        if (text.equals("")) text = id;
 
         if ((crossStartOffset == -1) || (crossEndOffset == -1)) {
             updateCrossings(true);
@@ -497,6 +504,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public String getText() {
         Debug.trace();
+        if (text == null) return id;
         return text;
     }
 
@@ -693,8 +701,9 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public void doRecognition() {
         Debug.trace();
+        detecting = true;
+        queued = false;
         try {
-            setText("[recognising...]");
             reloadTree();
 
             String command = Options.get("process.command");
@@ -712,10 +721,13 @@ public class Sentence extends BookTreeNode implements Cacheable {
             }
 
             setText(res);
+            isDetected = true;
+            detecting = false;
             reloadTree();
         } catch (Exception e) {
             e.printStackTrace();
         }
+        detecting = false;
     }
 
     public void recognise() {
@@ -1502,6 +1514,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public void setEffectChain(String key) {
         Debug.trace();
+        if (key == null) key = "none";
         if ((effectChain != null) && (effectChain.equals(key))) {
             return;
         }
@@ -1618,6 +1631,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         sentenceNode.appendChild(Book.makeTextNode(doc, "notes", getNotes()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "time", getLength()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "peak", getPeak()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "detected", beenDetected()));
         return sentenceNode;
     }
 
@@ -1688,5 +1702,20 @@ public class Sentence extends BookTreeNode implements Cacheable {
         return (int)db;
     }
 
+    public boolean isDetecting() {
+        return detecting;
+    }
+
+    public boolean beenDetected() {
+        return isDetected;
+    }
+
+    public boolean isQueued() {
+        return queued;
+    }
+
+    public void setQueued() {
+        queued = true;
+    }
 
 }
