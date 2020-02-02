@@ -11,6 +11,7 @@ import java.util.Enumeration;
 import java.util.Properties;
 import java.util.Queue;
 import java.util.Random;
+import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -177,6 +178,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     JSpinner postSentenceGap;
     JSpinner gainPercent;
+    Timer waveformUpdater = new Timer();
     JCheckBox locked;
     JCheckBox attention;
     JCheckBox rawAudio;
@@ -203,7 +205,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     public static AudiobookRecorder window;
 
-    public Queue<Runnable>speechProcessQueue = null;
+    public Queue<Runnable>processQueue = null;
 
     void buildToolbar(Container ob) {
         Debug.trace();
@@ -419,7 +421,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         Debug.debugEnabled = CLI.isSet("debug");
         Debug.traceEnabled = CLI.isSet("trace");
 
-        speechProcessQueue = new ArrayDeque<Runnable>();
+        processQueue = new ArrayDeque<Runnable>();
 
         try {
 
@@ -445,7 +447,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         Options.loadPreferences();
 
         for (int i = 0; i < Options.getInteger("process.threads"); i++) {
-            WorkerThread worker = new WorkerThread(speechProcessQueue);
+            WorkerThread worker = new WorkerThread(processQueue);
             worker.start();
         }
 
@@ -1039,6 +1041,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     public static void main(String args[]) {
         Debug.trace();
+        Properties props = System.getProperties();
+        props.setProperty("sun.java2d.opengl", "true");
         try {
             config.load(AudiobookRecorder.class.getResourceAsStream("config.txt"));
         } catch (Exception e) {
@@ -1193,8 +1197,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         if (snt.getId().equals(snt.getText())) {
                             Runnable r = snt.getRecognitionRunnable();
                             snt.setQueued();
-                            speechProcessQueue.add(r);
-                            speechProcessQueue.notify();
+                            queueJob(r);
                         }
                     }
                 }
@@ -1659,12 +1662,9 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                             if (!snt.isLocked()) {
                                 if (!snt.beenDetected()) {
                                     Debug.d("Queueing recognition of", snt.getId());
-                                    synchronized(speechProcessQueue) {
-                                        Runnable r = snt.getRecognitionRunnable();
-                                        snt.setQueued();
-                                        speechProcessQueue.add(r);
-                                        speechProcessQueue.notify();
-                                    }
+                                    Runnable r = snt.getRecognitionRunnable();
+                                    snt.setQueued();
+                                    queueJob(r);
                                 }
                             }
                         }
@@ -3516,16 +3516,35 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         updateWaveform(false);
     }
 
-    public void updateWaveform(boolean force) {
+    TimerTask waveformUpdaterTask = null;
+
+    synchronized public void updateWaveform(boolean force) {
         Debug.trace();
         if (selectedSentence != null) {
             if ((!force) && (sampleWaveform.getId() != null) && (sampleWaveform.getId().equals(selectedSentence.getId()))) return;
-            sampleWaveform.setId(selectedSentence.getId());
-            if (rawAudio.isSelected()) {
-                sampleWaveform.setData(selectedSentence.getRawAudioData());
-            } else {
-                sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
+    
+            synchronized (waveformUpdater) {
+                try {
+                    if (waveformUpdaterTask != null) {
+                        waveformUpdaterTask.cancel();
+                    }
+                } catch (Exception ex) {
+                }
+
+                waveformUpdaterTask = new TimerTask() {
+                    public void run() {
+                        sampleWaveform.setId(selectedSentence.getId());
+                        if (rawAudio.isSelected()) {
+                            sampleWaveform.setData(selectedSentence.getRawAudioData());
+                        } else {
+                            sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
+                        }
+                    }
+                };
+
+                waveformUpdater.schedule(waveformUpdaterTask, 20);
             }
+
         }
     }
 
@@ -4185,4 +4204,10 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         return null;
     }
 
+    public void queueJob(Runnable r) {
+        synchronized(processQueue) {
+            processQueue.add(r);
+            processQueue.notify();
+        }
+    }
 }
