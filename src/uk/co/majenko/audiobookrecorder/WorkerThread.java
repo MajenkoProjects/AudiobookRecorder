@@ -5,9 +5,13 @@ import java.util.Queue;
 public class WorkerThread extends Thread {
     private static int instance = 0;
     private final Queue<Runnable> queue;
+    private final QueueMonitor monitor;
+
+    private boolean running = false;
      
-    public WorkerThread(Queue<Runnable> queue) {
+    public WorkerThread(Queue<Runnable> queue, QueueMonitor mon) {
         this.queue = queue;
+        monitor = mon;
         setName("Worker Thread " + (instance++));
     }
      
@@ -30,8 +34,19 @@ public class WorkerThread extends Thread {
                     work = queue.remove();
                 }
  
-                // Process the work item
+                running = true;
+                monitor.repaint();
+                if (work instanceof SentenceJob) {
+                    SentenceJob sj = (SentenceJob)work;
+                    sj.setProcessing();
+                }
                 work.run();
+                if (work instanceof SentenceJob) {
+                    SentenceJob sj = (SentenceJob)work;
+                    sj.setDequeued();
+                }
+                running = false;
+                monitor.repaint();
             }
             catch ( InterruptedException ie ) {
                 ie.printStackTrace();
@@ -39,5 +54,9 @@ public class WorkerThread extends Thread {
             }
         }
         Debug.d(getName(), "died");
+    }
+
+    public boolean isRunning() {
+        return running;
     }
 }

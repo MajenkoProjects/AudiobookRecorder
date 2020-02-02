@@ -2,9 +2,11 @@ package uk.co.majenko.audiobookrecorder;
 
 import java.awt.Component;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import javax.swing.SwingConstants;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTree;
@@ -84,7 +86,8 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
             }
 
 
-            JLabel time = new JLabel(Utils.secToTime(s.getLength(), "mm:ss.SSS") + "     ");
+            JLabel time = new JLabelFixedWidth(75, " " + Utils.secToTime(s.getLength(), "ss.SSS") + "     ");
+            time.setHorizontalAlignment(SwingConstants.RIGHT);
 
             ctx.gridx = 0;
             ctx.gridy = 0;
@@ -93,17 +96,18 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
             ctx.anchor = GridBagConstraints.LINE_START;
             p.add(ret, ctx);
 
-            if (s.isDetecting()) {
-                JLabel eff = new JLabel(" recognising... ");
+            if (s.isProcessing()) {
+                JLabel eff = new JLabel();
+                eff.setIcon(Icons.processing);
                 ctx.weightx = 0.0d;
                 ctx.gridx = 1;
                 p.add(eff);
             } else if (s.isQueued()) {
-                JLabel eff = new JLabel(" queued ");
+                JLabel eff = new JLabel();
+                eff.setIcon(Icons.queued);
                 ctx.weightx = 0.0d;
                 ctx.gridx = 1;
                 p.add(eff);
-            } else if (s.isQueued()) {
             }
 
             String effectChain = s.getEffectChain();
@@ -121,7 +125,8 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
             ctx.gridx = 3;
             ctx.anchor = GridBagConstraints.LINE_END;
             int peak = s.getPeakDB();
-            JLabel peakLabel = new JLabel(peak + "dB ");
+            JLabel peakLabel = new JLabelFixedWidth(50, peak + "dB ");
+            peakLabel.setHorizontalAlignment(SwingConstants.RIGHT);
             if (peak > 0) {
                 peakLabel.setForeground(new Color(0xCC, 0x00, 0x00));
             }

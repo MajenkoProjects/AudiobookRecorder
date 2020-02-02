@@ -19,6 +19,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import java.lang.reflect.Method;
+import java.awt.FlowLayout;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Desktop;
@@ -206,6 +207,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     public static AudiobookRecorder window;
 
     public Queue<Runnable>processQueue = null;
+    public QueueMonitor queueMonitor = null;
 
     void buildToolbar(Container ob) {
         Debug.trace();
@@ -446,8 +448,11 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         Options.loadPreferences();
 
+        queueMonitor = new QueueMonitor(processQueue);
+
         for (int i = 0; i < Options.getInteger("process.threads"); i++) {
-            WorkerThread worker = new WorkerThread(processQueue);
+            WorkerThread worker = new WorkerThread(processQueue, queueMonitor);
+            queueMonitor.addThread(worker);
             worker.start();
         }
 
@@ -531,11 +536,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
                 if (selectedSentence != null) {
-                    selectedSentence.autoTrimSampleFFT();
-                    sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
-                    sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
-                    postSentenceGap.setValue(selectedSentence.getPostGap());
-                    gainPercent.setValue((int)(selectedSentence.getGain() * 100d));
+                    queueJob(new SentenceJob(selectedSentence) {
+                        public void run() {
+                            sentence.autoTrimSampleFFT();
+                            updateWaveformMarkers();
+                        }
+                    });
                 }
             }
         });
@@ -544,11 +550,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
                 if (selectedSentence != null) {
-                    selectedSentence.autoTrimSamplePeak();
-                    sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
-                    sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
-                    postSentenceGap.setValue(selectedSentence.getPostGap());
-                    gainPercent.setValue((int)(selectedSentence.getGain() * 100d));
+                    queueJob(new SentenceJob(selectedSentence) {
+                        public void run() {
+                            sentence.autoTrimSamplePeak();
+                            updateWaveformMarkers();
+                        }
+                    });
                 }
             }
         });
@@ -656,8 +663,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 doCutSplit.setEnabled(false);
                 selectCutMode.setSelected(false);
                 selectSplitMode.setSelected(false);
-
-                bookTreeModel.reload(selectedSentence);
+                selectedSentence.reloadTree();
             }
         });
         controlsTop.add(locked);
@@ -678,7 +684,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         selectedSentence.setAttentionFlag(false);
                     }
                 }
-                bookTreeModel.reload(selectedSentence);
+                selectedSentence.reloadTree();
             }
         });
 
@@ -746,10 +752,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         centralPanel.add(sampleControl, BorderLayout.SOUTH);
 
         statusBar = new JPanel();
+        statusBar.setLayout(new FlowLayout(FlowLayout.CENTER));
         add(statusBar, BorderLayout.SOUTH);
 
         statusLabel = new JLabel("Noise floor: " + getNoiseFloorDB() + "dB");
         statusBar.add(statusLabel);
+        statusBar.add(queueMonitor);
 
         buildToolbar(centralPanel);
 
@@ -933,12 +941,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 Debug.trace();
                 if (ev.getPropertyName().equals("dividerLocation")) {
                     if ((bookTreeModel != null) && (book != null)) {
-                        SwingUtilities.invokeLater(new Runnable() {
-                            public void run() {
-                                Debug.trace();
-                                bookTreeModel.reload(book);
-                            }
-                        });
+                        Debug.trace();
+                        book.reloadTree();
                     }
                 }
             }
@@ -1195,9 +1199,11 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     Sentence snt = (Sentence)s.nextElement();
                     if (!snt.isLocked()) {
                         if (snt.getId().equals(snt.getText())) {
-                            Runnable r = snt.getRecognitionRunnable();
-                            snt.setQueued();
-                            queueJob(r);
+                            queueJob(new SentenceJob(snt) {
+                                public void run() {
+                                    sentence.doRecognition();
+                                }
+                            });
                         }
                     }
                 }
@@ -1230,7 +1236,11 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence s = (Sentence)o.getObject();
                         if (!s.isLocked()) {
-                            s.recognise();
+                            queueJob(new SentenceJob(s) {
+                                public void run() {
+                                    sentence.doRecognition();
+                                }
+                            });
                         }
                     }
                 });
@@ -1307,7 +1317,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         String type = (String)o.getObject2();
                         sent.setPostGapType(type);
                         sent.setPostGap(Options.getInteger("catenation.post-sentence"));
-                        bookTreeModel.reload(sent);
+                        sent.reloadTree();
                     }
                 });
                 setGapType.add(gapTypeSentence);
@@ -1320,7 +1330,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         String type = (String)o.getObject2();
                         sent.setPostGapType(type);
                         sent.setPostGap(Options.getInteger("catenation.short-sentence"));
-                        bookTreeModel.reload(sent);
+                        sent.reloadTree();
                     }
                 });
                 setGapType.add(gapTypeContinuation);
@@ -1333,7 +1343,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         String type = (String)o.getObject2();
                         sent.setPostGapType(type);
                         sent.setPostGap(Options.getInteger("catenation.post-paragraph"));
-                        bookTreeModel.reload(sent);
+                        sent.reloadTree();
                     }
                 });
                 setGapType.add(gapTypeParagraph);
@@ -1346,7 +1356,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         String type = (String)o.getObject2();
                         sent.setPostGapType(type);
                         sent.setPostGap(Options.getInteger("catenation.post-section"));
-                        bookTreeModel.reload(sent);
+                        sent.reloadTree();
                     }
                 });
                 setGapType.add(gapTypeSection);
@@ -1475,14 +1485,19 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     public void actionPerformed(ActionEvent e) {
                         Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
-                        Chapter chap = (Chapter)o.getObject();
+                        Chapter c = (Chapter)o.getObject();
+                        for (Enumeration s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = (Sentence)s.nextElement();
+                            if (!snt.isProcessed()) {
+                                    queueJob(new SentenceJob(snt) {
+                                    public void run() {
+                                        sentence.autoTrimSampleFFT();
+                                        updateWaveformMarkers();
+                                    }
+                                });
+                            }
+                        }
 
-                        ProgressDialog ed = new ProgressDialog("Auto-trimming " + chap.getName());
-
-                        AutoTrimThread t = new AutoTrimThread(chap, ed, AutoTrimThread.Peak, AutoTrimThread.NewOnly);
-                        Thread nt = new Thread(t);
-                        nt.start();
-                        ed.setVisible(true);
                     }
                 });
 
@@ -1490,14 +1505,18 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     public void actionPerformed(ActionEvent e) {
                         Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
-                        Chapter chap = (Chapter)o.getObject();
-
-                        ProgressDialog ed = new ProgressDialog("Auto-trimming " + chap.getName());
-
-                        AutoTrimThread t = new AutoTrimThread(chap, ed, AutoTrimThread.FFT, AutoTrimThread.NewOnly);
-                        Thread nt = new Thread(t);
-                        nt.start();
-                        ed.setVisible(true);
+                        Chapter c = (Chapter)o.getObject();
+                        for (Enumeration s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = (Sentence)s.nextElement();
+                            if (!snt.isProcessed()) {
+                                queueJob(new SentenceJob(snt) {
+                                    public void run() {
+                                        sentence.autoTrimSampleFFT();
+                                        updateWaveformMarkers();
+                                    }
+                                });
+                            }
+                        }
                     }
                 });
 
@@ -1505,14 +1524,16 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     public void actionPerformed(ActionEvent e) {
                         Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
-                        Chapter chap = (Chapter)o.getObject();
-
-                        ProgressDialog ed = new ProgressDialog("Auto-trimming " + chap.getName());
-
-                        AutoTrimThread t = new AutoTrimThread(chap, ed, AutoTrimThread.Peak, AutoTrimThread.All);
-                        Thread nt = new Thread(t);
-                        nt.start();
-                        ed.setVisible(true);
+                        Chapter c = (Chapter)o.getObject();
+                        for (Enumeration s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = (Sentence)s.nextElement();
+                            queueJob(new SentenceJob(snt) {
+                                public void run() {
+                                    sentence.autoTrimSamplePeak();
+                                    updateWaveformMarkers();
+                                }
+                            });
+                        }
                     }
                 });
 
@@ -1520,14 +1541,16 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     public void actionPerformed(ActionEvent e) {
                         Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
-                        Chapter chap = (Chapter)o.getObject();
-
-                        ProgressDialog ed = new ProgressDialog("Auto-trimming " + chap.getName());
-
-                        AutoTrimThread t = new AutoTrimThread(chap, ed, AutoTrimThread.FFT, AutoTrimThread.All);
-                        Thread nt = new Thread(t);
-                        nt.start();
-                        ed.setVisible(true);
+                        Chapter c = (Chapter)o.getObject();
+                        for (Enumeration s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = (Sentence)s.nextElement();
+                            queueJob(new SentenceJob(snt) {
+                                public void run() {
+                                    sentence.autoTrimSampleFFT();
+                                    updateWaveformMarkers();
+                                }
+                            });
+                        }
                     }
                 });
 
@@ -1600,7 +1623,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         for (Enumeration s = c.children(); s.hasMoreElements();) {
                             Sentence snt = (Sentence)s.nextElement();
                             snt.setLocked(true);
-                            bookTreeModel.reload(snt);
+                            snt.reloadTree();
                         }
                     }
                 });
@@ -1613,7 +1636,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         for (Enumeration s = c.children(); s.hasMoreElements();) {
                             Sentence snt = (Sentence)s.nextElement();
                             snt.setLocked(false);
-                            bookTreeModel.reload(snt);
+                            snt.reloadTree();
                         }
                     }
                 });
@@ -2073,7 +2096,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         if (recording == null) return;
         recording.stopRecording();
 
-        bookTreeModel.reload(book);
+        book.reloadTree();
 
         bookTree.expandPath(new TreePath(((DefaultMutableTreeNode)recording.getParent()).getPath()));
         bookTree.setSelectionPath(new TreePath(recording.getPath()));
@@ -2188,8 +2211,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             bookTree.setEditable(true);
             bookTree.setUI(new CustomTreeUI(mainScroll));
 
-            bookTree.setCellRenderer(new BookTreeRenderer());
-
+            try {
+                bookTree.setCellRenderer(new BookTreeRenderer());
+            } catch (Exception ex) {    
+                ex.printStackTrace();
+                bookTree.setCellRenderer(new BookTreeRenderer());
+            }
 
             InputMap im = bookTree.getInputMap(JComponent.WHEN_FOCUSED);
             im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "startStopPlayback");
@@ -2283,7 +2310,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             } else {
                 book.setIcon(Icons.book);
             }
-            bookTreeModel.reload(book);
+            book.reloadTree();
 
             bookTree.expandPath(new TreePath(book.getPath()));
 
@@ -2319,7 +2346,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 ImageIcon i = new ImageIcon(cf.getAbsolutePath());
                 Image ri = Utils.getScaledImage(i.getImage(), 22, 22);
                 book.setIcon(new ImageIcon(ri));
-                bookTreeModel.reload(book);
+                book.reloadTree();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -2718,55 +2745,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             dialog.closeDialog();
         }
     }
-
-    class AutoTrimThread implements Runnable {
-        ProgressDialog dialog;
-        Chapter chapter;
-        int type;
-        int scope;
-
-        public final static int FFT = 0;
-        public final static int Peak = 1;
-        public final static int NewOnly = 0;
-        public final static int All = 1;
-   
-        public AutoTrimThread(Chapter c, ProgressDialog e, int t, int sc) {
-            super();
-            Debug.trace();
-            dialog = e;
-            chapter = c;
-            type = t;
-            scope = sc;
-        }
-
-        @SuppressWarnings("unchecked")
-        public void run() {
-            Debug.trace();
-
-            int numKids = chapter.getChildCount();
-            int kidCount = 0;
-            for (Enumeration s = chapter.children(); s.hasMoreElements();) {
-                kidCount++;
-                dialog.setProgress(kidCount * 2000 / numKids);
-                Sentence snt = (Sentence)s.nextElement();
-                if (scope == NewOnly) {
-                    if (snt.isProcessed()) continue;
-                }
-                switch (type) {
-                    case FFT:
-                        snt.autoTrimSampleFFT();
-                        break;
-                    case Peak:
-                        snt.autoTrimSamplePeak();
-                        break;
-                } 
-            }
-
-            dialog.closeDialog();
-        }
-    }
-
-
 
     class ExportThread implements Runnable {
         ProgressDialog exportDialog;
@@ -3503,7 +3481,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     ImageIcon i = new ImageIcon(dest.getAbsolutePath());
                     Image ri = Utils.getScaledImage(i.getImage(), 22, 22);
                     book.setIcon(new ImageIcon(ri));
-                    bookTreeModel.reload(book);
+                    book.reloadTree();
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -3545,6 +3523,13 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 waveformUpdater.schedule(waveformUpdaterTask, 20);
             }
 
+        }
+    }
+
+    synchronized public void updateWaveformMarkers() {
+        if (selectedSentence != null) {
+            sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
+            sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
         }
     }
 
@@ -4207,6 +4192,10 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     public void queueJob(Runnable r) {
         synchronized(processQueue) {
             processQueue.add(r);
+            if (r instanceof SentenceJob) {
+                SentenceJob sj = (SentenceJob)r;
+                sj.setQueued();
+            }
             processQueue.notify();
         }
     }

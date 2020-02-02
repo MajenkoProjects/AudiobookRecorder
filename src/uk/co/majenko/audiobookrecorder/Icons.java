@@ -40,4 +40,6 @@ public class Icons {
     static public final ImageIcon disable     = new ImageIcon(Icons.class.getResource("icons/disable-effects.png"));
     static public final ImageIcon manuscript  = new ImageIcon(Icons.class.getResource("icons/manuscript.png"));
     static public final ImageIcon tooltip     = new ImageIcon(Icons.class.getResource("icons/tooltip.png"));
+    static public final ImageIcon queued      = new ImageIcon(Icons.class.getResource("icons/queued.png"));
+    static public final ImageIcon processing  = new ImageIcon(Icons.class.getResource("icons/processing.png"));
 }

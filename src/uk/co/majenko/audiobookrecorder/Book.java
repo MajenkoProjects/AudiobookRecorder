@@ -8,6 +8,7 @@ import java.util.UUID;
 import java.util.Properties;
 import javax.sound.sampled.AudioFormat;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import javax.swing.ImageIcon;
 import javax.swing.tree.DefaultTreeModel;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -217,7 +218,7 @@ public class Book extends BookTreeNode {
             oldDir.renameTo(newDir);
             name = newName;
             AudiobookRecorder.window.saveBookStructure();
-            AudiobookRecorder.window.bookTreeModel.reload(this);
+            reloadTree();
             Options.set("path.last-book", name);
             Options.savePreferences();
             AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name);
@@ -446,5 +447,13 @@ public class Book extends BookTreeNode {
 
     public void setLocation(File l) {
         location = l;
+    }
+
+    public void reloadTree() {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                AudiobookRecorder.window.bookTreeModel.reload(Book.this);
+            }
+        });
     }
 }

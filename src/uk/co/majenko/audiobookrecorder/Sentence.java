@@ -33,6 +33,7 @@ import java.io.FileInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.AudioFileFormat;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.util.UUID;
@@ -65,8 +66,11 @@ public class Sentence extends BookTreeNode implements Cacheable {
     boolean attention = false;
     boolean processed = false;
     boolean isDetected = false;
-    boolean detecting = false;
-    boolean queued = false;
+
+    int state = IDLE;
+    static final int IDLE = 0;
+    static final int QUEUED = 1;
+    static final int PROCESSING = 2;
 
     String effectChain = null;
 
@@ -706,8 +710,6 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public void doRecognition() {
         Debug.trace();
-        detecting = true;
-        queued = false;
         try {
             reloadTree();
 
@@ -727,12 +729,10 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
             setText(res);
             isDetected = true;
-            detecting = false;
             reloadTree();
         } catch (Exception e) {
             e.printStackTrace();
         }
-        detecting = false;
     }
 
     public void recognise() {
@@ -1670,9 +1670,11 @@ public class Sentence extends BookTreeNode implements Cacheable {
         Debug.trace();
         if (id.equals("room-noise")) return;
         if (getParent() == null) return;
-        synchronized (AudiobookRecorder.window.bookTreeModel) {
-            AudiobookRecorder.window.bookTreeModel.reload(this);
-        }
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                AudiobookRecorder.window.bookTreeModel.reload(Sentence.this);
+            }
+        });
     }
 
     public double getPeak() {
@@ -1707,20 +1709,31 @@ public class Sentence extends BookTreeNode implements Cacheable {
         return (int)db;
     }
 
-    public boolean isDetecting() {
-        return detecting;
-    }
-
     public boolean beenDetected() {
         return isDetected;
     }
 
+    public boolean isProcessing() {
+        return state == PROCESSING;
+    }
+
     public boolean isQueued() {
-        return queued;
+        return state == QUEUED;
+    }
+
+    public void setProcessing() {
+        state = PROCESSING;
+        reloadTree();
     }
 
     public void setQueued() {
-        queued = true;
+        state = QUEUED;
+        reloadTree();
+    }
+
+    public void setDequeued() {
+        state = IDLE;
+        reloadTree();
     }
 
 }
