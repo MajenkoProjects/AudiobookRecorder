@@ -78,3 +78,26 @@ Building
 5. Build with `ant build`
 6. Run with `java -jar ./AudiobookRecorder.jar`
 
+
+----
+
+Extra Resources
+===============
+
+* DeepSpeech wrapper script
+
+This is a small script that will convert the audio into a format DeepSpeech likes and call the `deepspeech` executable, removing any extra rubbish from the output. It
+also requires `sox` to be installed for the audio conversion.
+
+```
+#!/bin/bash
+
+ID=$$
+FILE=$1
+BINPATH=${HOME}/local/bin
+MODELS=${HOME}/ds/deepspeech-0.6.1-models
+
+sox "$FILE" -r 16000 -c 1 -b 16 "/tmp/ds-${ID}.wav"
+${BINPATH}/deepspeech --model ${MODELS}/output_graph.pbmm --lm ${MODELS}/lm.binary --trie ${MODELS}/trie --audio "/tmp/ds-${ID}.wav" 2>/dev/null
+rm /tmp/ds-${ID}.wav
+```
