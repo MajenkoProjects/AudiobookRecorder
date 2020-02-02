@@ -2155,9 +2155,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     public void addChapter() {
         Debug.trace();
         Chapter c = book.addChapter();   
-        Chapter lc = book.getLastChapter();
-        int i = bookTreeModel.getIndexOfChild(book, lc);
-        bookTreeModel.insertNodeInto(c, book, i+1);
+        bookTreeModel.insertNodeInto(c, book, book.getChildCount());
         bookTree.scrollPathToVisible(new TreePath(c.getPath()));
     } 
 
