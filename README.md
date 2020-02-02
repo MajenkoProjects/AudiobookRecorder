@@ -29,12 +29,13 @@ From here on much is controlled by key presses.
   appended to the currently selected chapter, or to the last chapter if none is selected.
 * Press and hold "T" to record a new phrase that is the start of a new paragraph.  This adds the "post paragraph" gap to the previous sentence. Otherwise it does the same as "R".
 * Press and hold "F" to record a "continuation" phrase. This sets the previous phrase's post-gap to be the "short" gap instead of the normal length gap.
+* Press and hold "Y" to record a new phrase that is the start of a new section. This add the "post section" gap to the previous sentence. Otherwise it does the same as "R".
 * Press "D" to delete the last phrase you recorded.
 * Press "E" to re-record the currently selected phrase.
 
-Each phrase you record will be briefly analysed using FFT to find the start and end of the audio and set
+Each phrase you record can be automatically analysed to find the start and end of the audio and set
 crop marks appropriately.  These can be adjusted in the waveform display when a phrase is selected. You can also
-re-run the analysis using either the default FFT method or using a peak detector method (finding the first and last points
+re-run the analysis using either FFT or a peak detector method (finding the first and last points
 where the audio amplitude rises above the backround noise).
 
 The phrases also have a "post gap" associated with them.  This is the amount of room noise (in milliseconds) to place between
@@ -53,18 +54,14 @@ edit the text of this ID to identify the recordings. You
 may, for instance, change it to have the same text as the
 audio contains.  
 
-To help with this the Haven On-Demand online speech recognition
-service is integrated with the system and can be used to try and convert the 
-audio into text.  Right clicking on a recording brings
-up a menu which includes the option to try and convert
-the audio into text.  The detected text is then used to
-replace the current recording ID / text.
+The audio can also be automatically converted to text if you have an suitable command-line
+executable that will work. One example is (on Linux) [DeepSpeech](https://github.com/mozilla/DeepSpeech) by Mozilla.
 
 File layout
 -----------
 
 All data is stored in your "storage" directory (specified in Options).  Each book (which is a directory named after the
-title of the book) has an associated XML file (audiobook.abk) and a directory "files" where all the audio (stored as WAV
+title of the book) has an associated XML file (audiobook.abx) and a directory "files" where all the audio (stored as WAV
 files) is placed.
 
 When you export the book as MP3 a new folder "export" is created within the book's folder where the MP3 files are placed.
