@@ -1684,10 +1684,11 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                             Sentence snt = (Sentence)s.nextElement();
                             if (!snt.isLocked()) {
                                 if (!snt.beenDetected()) {
-                                    Debug.d("Queueing recognition of", snt.getId());
-                                    Runnable r = snt.getRecognitionRunnable();
-                                    snt.setQueued();
-                                    queueJob(r);
+                                    queueJob(new SentenceJob(snt) {
+                                        public void run() {
+                                            sentence.doRecognition();
+                                        }
+                                    });
                                 }
                             }
                         }
@@ -2096,7 +2097,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         if (recording == null) return;
         recording.stopRecording();
 
-        book.reloadTree();
+//        book.reloadTree();
 
         bookTree.expandPath(new TreePath(((DefaultMutableTreeNode)recording.getParent()).getPath()));
         bookTree.setSelectionPath(new TreePath(recording.getPath()));

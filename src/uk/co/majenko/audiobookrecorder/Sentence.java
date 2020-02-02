@@ -222,7 +222,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         if (text.equals("")) text = id;
 
         if ((crossStartOffset == -1) || (crossEndOffset == -1)) {
-            updateCrossings(true);
+            updateCrossings();
         }
 
         if (runtime <= 0.01d) getLength();
@@ -260,26 +260,40 @@ public class Sentence extends BookTreeNode implements Cacheable {
         CacheManager.removeFromCache(this);
 
         if (!id.equals("room-noise")) {
-            autoTrimSample(true);
+            autoTrimSample();
             if (Options.getBoolean("process.sphinx")) {
-                recognise();
+                AudiobookRecorder.window.queueJob(new SentenceJob(this) {
+                    public void run() {
+                        sentence.doRecognition();
+                    }
+                });
             }
         }
 
     }
 
-    public void autoTrimSample() {
+    public void autoTrimSample(boolean ignored) {
         Debug.trace();
-        autoTrimSample(false);
+        autoTrimSample();
     }
 
-    public void autoTrimSample(boolean useRaw) {
+    public void autoTrimSample() {
         Debug.trace();
         String tm = Options.get("audio.recording.trim");
         if (tm.equals("peak")) {
-            autoTrimSamplePeak(useRaw);
+            AudiobookRecorder.window.queueJob(new SentenceJob(this) {
+                public void run() {
+                    sentence.autoTrimSamplePeak();
+                    AudiobookRecorder.window.updateWaveformMarkers();
+                }
+            });
         } else if (tm.equals("fft")) {
-            autoTrimSampleFFT(useRaw);
+            AudiobookRecorder.window.queueJob(new SentenceJob(this) {
+                public void run() {
+                    sentence.autoTrimSampleFFT();
+                    AudiobookRecorder.window.updateWaveformMarkers();
+                }
+            });
         } else {
             startOffset = 0;
             crossStartOffset = 0;
@@ -288,13 +302,13 @@ public class Sentence extends BookTreeNode implements Cacheable {
             processed = false;
 //            peak = -1d;
         }
+        AudiobookRecorder.window.updateWaveform(true);
     }
 
     public static final int FFTBuckets = 1024;
 
-    public void autoTrimSampleFFT() {
+    public void autoTrimSampleFFT(boolean ignored) {
         Debug.trace();
-        autoTrimSampleFFT(false);
     }
     
     public double bucketDifference(double[] a, double[] b) {
@@ -308,16 +322,12 @@ public class Sentence extends BookTreeNode implements Cacheable {
         return diff;
     }
 
-    public void autoTrimSampleFFT(boolean useRaw) {
+    public void autoTrimSampleFFT() {
         Debug.trace();
         crossStartOffset = -1;
         crossEndOffset = -1;
         double[][] samples;
-        if (useRaw) {
-            samples = getRawAudioData();
-        } else {
-            samples = getProcessedAudioData();
-        }
+        samples = getProcessedAudioData();
         if (samples == null) {
             return;
         }
@@ -389,7 +399,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         if (endOffset <= startOffset) endOffset = startOffset + fftSize;
         if (endOffset < 0) endOffset = 0;
         if (endOffset >= samples[LEFT].length) endOffset = samples[LEFT].length;
-        updateCrossings(useRaw);
+        updateCrossings();
         intens = null;
         samples = null;
         processed = true;
@@ -440,21 +450,17 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
 
-    public void autoTrimSamplePeak() {
+    public void autoTrimSamplePeak(boolean ignored) {
         Debug.trace();
-        autoTrimSamplePeak(false);
+        autoTrimSamplePeak();
     }
 
-    public void autoTrimSamplePeak(boolean useRaw) {
+    public void autoTrimSamplePeak() {
         Debug.trace();
         crossStartOffset = -1;
         crossEndOffset = -1;
         double[][] samples;
-        if (useRaw) {
-            samples = getRawAudioData();
-        } else {
-            samples = getProcessedAudioData();
-        }
+        samples = getProcessedAudioData();
         if (samples == null) return;
         double noiseFloor = AudiobookRecorder.window.getNoiseFloor();
         noiseFloor *= 1.1;
@@ -494,7 +500,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
         if (startOffset < 0) startOffset = 0;
         if (endOffset >= samples[LEFT].length) endOffset = samples[LEFT].length-1;
-        updateCrossings(useRaw);
+        updateCrossings();
         processed = true;
         reloadTree();
     }
@@ -601,38 +607,23 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public void updateCrossings() {
         Debug.trace();
-        updateCrossings(false);
-    }
-
-    public void updateCrossings(boolean useRaw) {
-        Debug.trace();
-        updateStartCrossing(useRaw);
-        updateEndCrossing(useRaw);
+        updateStartCrossing();
+        updateEndCrossing();
         runtime = -1d;
         getLength();
     }
 
     public void updateStartCrossing() {
         Debug.trace();
-        updateStartCrossing(false);
-    }
-
-    public void updateStartCrossing(boolean useRaw) {
-        Debug.trace();
         if (crossStartOffset == -1) {
-            crossStartOffset = findNearestZeroCrossing(useRaw, startOffset, 4096);
+            crossStartOffset = findNearestZeroCrossing(startOffset, 4096);
         }
     }
 
     public void updateEndCrossing() {
         Debug.trace();
-        updateEndCrossing(false);
-    }
-
-    public void updateEndCrossing(boolean useRaw) {
-        Debug.trace();
         if (crossEndOffset == -1) {
-            crossEndOffset = findNearestZeroCrossing(useRaw, endOffset, 4096);
+            crossEndOffset = findNearestZeroCrossing(endOffset, 4096);
         }
     }
 
@@ -698,16 +689,6 @@ public class Sentence extends BookTreeNode implements Cacheable {
         return null;
     }
 
-    public Runnable getRecognitionRunnable() {
-        Runnable r = new Runnable() {
-            public void run() {
-                Debug.d("Starting recognition of", getId());
-                doRecognition();
-            }
-        };
-        return r;
-    }
-
     public void doRecognition() {
         Debug.trace();
         try {
@@ -733,12 +714,6 @@ public class Sentence extends BookTreeNode implements Cacheable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public void recognise() {
-        Debug.trace();
-        Thread t = new Thread(getRecognitionRunnable());
-        t.start();
     }
 
     public void setLocked(boolean l) {
@@ -777,17 +752,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public int findNearestZeroCrossing(int pos, int range) {
         Debug.trace();
-        return findNearestZeroCrossing(false, pos, range);
-    }
-
-    public int findNearestZeroCrossing(boolean useRaw, int pos, int range) {
-        Debug.trace();
         double[][] data = null;
-        if (useRaw) {
-            data = getRawAudioData();
-        } else {
-            data = getProcessedAudioData();
-        }
+        data = getProcessedAudioData();
         if (data == null) return 0;
         if (data[LEFT].length == 0) return 0;
 
@@ -855,7 +821,6 @@ public class Sentence extends BookTreeNode implements Cacheable {
         File to = sentence.getFile();
         Files.copy(from.toPath(), to.toPath());
 
-//        sentence.updateCrossings();
         return sentence;
     }
 
@@ -873,24 +838,15 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public double getPeakValue() {
         Debug.trace();
-        return getPeakValue(false, true);
+        return getPeakValue(true);
     }
 
-    public double getPeakValue(boolean useRaw) {
-        Debug.trace();
-        return getPeakValue(useRaw, true);
-    }
-
-    public double getPeakValue(boolean useRaw, boolean applyGain) {
+    public double getPeakValue(boolean applyGain) {
         Debug.trace();
         double oldGain = gain;
         gain = 1.0d;
         double[][] samples = null;
-        if (useRaw) {
-            samples = getRawAudioData();
-        } else {
-            samples = getProcessedAudioData(true, applyGain);
-        }
+        samples = getProcessedAudioData(true, applyGain);
         gain = oldGain;
         if (samples == null) {
             return 0;
@@ -937,7 +893,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     public double normalize(double low, double high) {
         Debug.trace();
         if (locked) return gain;
-        double max = getPeakValue(true, false);
+        double max = getPeakValue(false);
         double d = 0.708 / max;
         if (d > 1d) d = 1d;
         if (d < low) d = low;
@@ -952,7 +908,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     public double normalize() {
         Debug.trace();
         if (locked) return gain;
-        double max = getPeakValue(true, false);
+        double max = getPeakValue(false);
         double d = 0.708 / max;
         if (d > 1d) d = 1d;
         setGain(d);
@@ -1427,21 +1383,23 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
 
         String def = AudiobookRecorder.window.getDefaultEffectsChain();
-        Effect eff = AudiobookRecorder.window.effects.get(def);
-    
-        if (effectsEnabled) {
-            if (eff != null) {
-                eff.init(getAudioFormat().getFrameRate());
-                eff.process(processedAudio);
-            }
+        if ((def != null) && (AudiobookRecorder.window.effects != null)) {
+            Effect eff = AudiobookRecorder.window.effects.get(def);
+        
+            if (effectsEnabled) {
+                if (eff != null) {
+                    eff.init(getAudioFormat().getFrameRate());
+                    eff.process(processedAudio);
+                }
 
-            if (effectChain != null) {
-                // Don't double up the default chain
-                if (!effectChain.equals(def)) {
-                    eff = AudiobookRecorder.window.effects.get(effectChain);
-                    if (eff != null) {
-                        eff.init(getAudioFormat().getFrameRate());
-                        eff.process(processedAudio);
+                if (effectChain != null) {
+                    // Don't double up the default chain
+                    if (!effectChain.equals(def)) {
+                        eff = AudiobookRecorder.window.effects.get(effectChain);
+                        if (eff != null) {
+                            eff.init(getAudioFormat().getFrameRate());
+                            eff.process(processedAudio);
+                        }
                     }
                 }
             }

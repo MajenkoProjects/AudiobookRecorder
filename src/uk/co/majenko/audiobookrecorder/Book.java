@@ -450,6 +450,7 @@ public class Book extends BookTreeNode {
     }
 
     public void reloadTree() {
+        Debug.trace();
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 AudiobookRecorder.window.bookTreeModel.reload(Book.this);
