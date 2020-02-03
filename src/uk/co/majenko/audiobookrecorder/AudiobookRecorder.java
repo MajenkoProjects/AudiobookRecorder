@@ -4193,6 +4193,9 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 }
             }
         }
+        if (orphans.getChildCount() == 0) {
+            bookTreeModel.removeNodeFromParent(orphans);
+        }
     }
 
     public Chapter getChapterById(String id) {
