@@ -68,6 +68,7 @@ import javax.swing.JTree;
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 import javax.swing.SwingUtilities;
+import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
@@ -139,6 +140,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     JMenuItem toolsArchive;
     JMenuItem toolsCoverArt;
     JMenuItem toolsManuscript;
+    JMenuItem toolsReloadEffects;
     JMenuItem toolsOptions;
 
     JMenuItem helpAbout;
@@ -372,6 +374,18 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 loadManuscript();
             }
         });
+
+        toolsReloadEffects = new JMenuItem("Reload effects");
+        toolsReloadEffects.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Debug.trace();
+                queueJob(new Runnable() {
+                    public void run() {
+                        loadEffects();
+                    }
+                });
+            }
+        });
         
         toolsOptions = new JMenuItem("Options");
         toolsOptions.addActionListener(new ActionListener() {
@@ -385,6 +399,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         toolsMenu.add(toolsArchive);
         toolsMenu.add(toolsCoverArt);
         toolsMenu.add(toolsManuscript);
+        toolsMenu.add(toolsReloadEffects);
         toolsMenu.addSeparator();
         toolsMenu.add(toolsOptions);
 
@@ -2210,11 +2225,11 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             bookTree.setEditable(true);
             bookTree.setUI(new CustomTreeUI(mainScroll));
 
+            TreeCellRenderer renderer = new BookTreeRenderer();
             try {
-                bookTree.setCellRenderer(new BookTreeRenderer());
+                bookTree.setCellRenderer(renderer);
             } catch (Exception ex) {    
-                ex.printStackTrace();
-                bookTree.setCellRenderer(new BookTreeRenderer());
+                bookTree.setCellRenderer(renderer);
             }
 
             InputMap im = bookTree.getInputMap(JComponent.WHEN_FOCUSED);

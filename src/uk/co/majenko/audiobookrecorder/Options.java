@@ -388,7 +388,7 @@ public class Options extends JDialog {
 
         enableParsing = addCheckBox(optionsPanel, "Enable automatic speech-to-text (**SLOW**)", getBoolean("process.sphinx"), "This will automatically start recognising the speech in every sentence you record. This can really slow down recording though so it's recommended to leave it turned off and do your recognition afterwards as a batch operation.");
         speechCommand = addTextField(optionsPanel, "Speech to text command (must take 1 filename parameter):", get("process.command"), "This specifies what command to run to recognize the speech. This command must take only one parameter, which is the full path of the WAV file. It should return (on standard output) the recognised speech.");
-        workerThreads = addSpinner(optionsPanel, "Worker threads:", 1, 100, 1, getInteger("process.threads"), "", "How many concurrent threads to run when processing speech. This should ideally be no more than the number of CPU cores you have in your computer.");
+        workerThreads = addSpinner(optionsPanel, "Worker threads:", 1, 100, 1, getInteger("process.threads"), "", "How many concurrent threads to run when processing speech. This should ideally be no more than the number of CPU cores you have in your computer minus one.");
     
         addSeparator(optionsPanel);
 

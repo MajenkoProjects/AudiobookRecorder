@@ -155,12 +155,7 @@ public class Book extends BookTreeNode {
 
     public Chapter getLastChapter() {
         Debug.trace();
-        Chapter cc = getClosingCredits();
-        if (cc == null) return null;
-        Chapter c = (Chapter)getChildBefore(cc);
-        if (c == null) return null;
-        if (c.getId().equals("open")) return null;
-        return c;
+        return (Chapter)getLastLeaf();
     }
 
     public Chapter getChapter(int n) {
@@ -453,6 +448,8 @@ public class Book extends BookTreeNode {
         Debug.trace();
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
+                if (AudiobookRecorder.window == null) return;
+                if (AudiobookRecorder.window.bookTreeModel == null) return;
                 AudiobookRecorder.window.bookTreeModel.reload(Book.this);
             }
         });

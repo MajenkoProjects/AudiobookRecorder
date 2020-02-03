@@ -19,7 +19,6 @@ public class MainToolBar extends JToolBar {
     JButtonSpacePlay playonSentence;
     JButtonSpacePlay playtoSentence;
     JButtonSpacePlay stopPlaying;
-    JButtonSpacePlay eq;
     JButtonSpacePlay openManuscript;
     JToggleButtonSpacePlay mic;
 
@@ -101,16 +100,6 @@ public class MainToolBar extends JToolBar {
             }
         });
         add(stopPlaying);
-
-        addSeparator();
-        eq = new JButtonSpacePlay(Icons.eq, "Reload Effects", new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                root.loadEffects();
-                CacheManager.purgeCache();
-            }
-        });
-
-        add(eq);
 
         addSeparator();
 
