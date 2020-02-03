@@ -7,15 +7,18 @@ import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.Dimension;
 import java.awt.Color;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
-public class QueueMonitor extends JPanel {
+public class QueueMonitor extends JPanel implements MouseListener {
 
     ArrayList<WorkerThread> threadList = new ArrayList<WorkerThread>();
-    Queue queue;
+    Queue<Runnable> queue;
 
-    public QueueMonitor(Queue q) {
+    public QueueMonitor(Queue<Runnable> q) {
         super();
         queue = q;
+        addMouseListener(this);
     }
 
     public void addThread(WorkerThread t) {
@@ -23,15 +26,22 @@ public class QueueMonitor extends JPanel {
     }
 
     public void purgeQueue() {
+        Runnable work;
         synchronized (queue) {
-            queue.clear();
+            while (queue.size() > 0) {
+                work = queue.remove();
+                if (work instanceof SentenceJob) {
+                    SentenceJob sj = (SentenceJob)work;
+                    sj.setDequeued();
+                }
+            }
             repaint();
         }
     }
 
     @Override
     public Dimension getPreferredSize() {
-        return new Dimension(100 + (24 * threadList.size()), 24);
+        return new Dimension(150 + (24 * threadList.size()), 24);
     }
 
     @Override
@@ -65,6 +75,35 @@ public class QueueMonitor extends JPanel {
 
         g.setColor(getForeground());
         g.drawString("Queued: " + queue.size(), threadList.size() * 24 + 4, 16);
+
+        if (queue.size() > 0) {
+            Icons.close.paintIcon(this, g, size.width - 23, 1);
+        }
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent evt) {   
+    }
+
+    @Override
+    public void mouseExited(MouseEvent evt) {   
+    }
+
+    @Override
+    public void mousePressed(MouseEvent evt) {   
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent evt) {   
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent evt) {   
+        if (queue.size() == 0) return; // No button - ignore it
+        Dimension size = getPreferredSize();
+        if (evt.getX() > (size.width - 24)) {
+            purgeQueue();
+        }
     }
 
 }

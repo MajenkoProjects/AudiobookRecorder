@@ -42,4 +42,5 @@ public class Icons {
     static public final ImageIcon tooltip     = new ImageIcon(Icons.class.getResource("icons/tooltip.png"));
     static public final ImageIcon queued      = new ImageIcon(Icons.class.getResource("icons/queued.png"));
     static public final ImageIcon processing  = new ImageIcon(Icons.class.getResource("icons/processing.png"));
+    static public final ImageIcon close       = new ImageIcon(Icons.class.getResource("icons/close.png"));
 }
