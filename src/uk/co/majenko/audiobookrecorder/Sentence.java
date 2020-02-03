@@ -956,8 +956,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     public void openInExternalEditor() {
         Debug.trace();
         ExternalEditor ed = new ExternalEditor(this);
-        Thread t = new Thread(ed);
-        t.start();
+        ed.run();
     }
 
     public void backup() throws IOException {
@@ -1051,8 +1050,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         Debug.trace();
         if (isLocked()) return;
         ExternalProcessor ed = new ExternalProcessor(this, num);
-        Thread t = new Thread(ed);
-        t.start();
+        ed.run();
     }
 
     public void undo() {

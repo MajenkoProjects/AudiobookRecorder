@@ -1429,7 +1429,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                             Debug.trace();
                             JMenuObject o = (JMenuObject)e.getSource();
                             Sentence s = (Sentence)o.getObject();
-                            s.runExternalProcessor(Utils.s2i(o.getActionCommand()));
+                            queueJob(new SentenceExternalJob(s, Utils.s2i(o.getActionCommand())));
                         }
                     });
                     ob.setActionCommand(Integer.toString(i));
@@ -1725,7 +1725,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                             for (Enumeration s = c.children(); s.hasMoreElements();) {
                                 Sentence snt = (Sentence)s.nextElement();
                                 if (!snt.isLocked()) {
-                                    snt.runExternalProcessor(Utils.s2i(o.getActionCommand()));
+                                    queueJob(new SentenceExternalJob(snt, Utils.s2i(o.getActionCommand())));
                                 }
                             }
                         }
