@@ -46,9 +46,6 @@ public class VersionChecker implements Runnable {
             String[] availableParts = available.split("\\.");
             // Must be x.y.z
 
-            System.err.println(installedParts.length);
-            System.err.println(availableParts.length);
-
             if (installedParts.length != 3) return;
             if (availableParts.length != 3) return;
 
