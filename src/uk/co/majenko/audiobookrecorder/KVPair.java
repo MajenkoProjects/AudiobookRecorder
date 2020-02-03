@@ -14,10 +14,6 @@ public class KVPair<K,V> implements Comparable {
     }
 
     public int compareTo(Object o) {
-//        if (o instanceof KVPair) {
-//            KVPair ko = (KVPair)o;
-//            return key.compareTo(ko.key);
-//        }
         return 0;
     }
 

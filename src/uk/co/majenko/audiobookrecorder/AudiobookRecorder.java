@@ -149,7 +149,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     JPanel statusBar;
 
-    JLabel statusLabel;
+    NoiseFloor noiseFloorLabel;
 
     JScrollPane mainScroll;
 
@@ -767,11 +767,13 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         centralPanel.add(sampleControl, BorderLayout.SOUTH);
 
         statusBar = new JPanel();
-        statusBar.setLayout(new FlowLayout(FlowLayout.CENTER));
+        statusBar.setLayout(new FlowLayout(FlowLayout.RIGHT));
         add(statusBar, BorderLayout.SOUTH);
 
-        statusLabel = new JLabel("Noise floor: " + getNoiseFloorDB() + "dB");
-        statusBar.add(statusLabel);
+        noiseFloorLabel = new NoiseFloor();
+
+        statusBar.add(noiseFloorLabel);
+//        statusBar.add(Box.createHorizontalStrut(2));
         statusBar.add(queueMonitor);
 
         buildToolbar(centralPanel);
@@ -1009,6 +1011,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             Options.set("interface.donations.count", numruns);
             Options.savePreferences();
         }
+
+        queueJob(new VersionChecker());
 
     }
 
@@ -2328,7 +2332,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
             bookTree.expandPath(new TreePath(book.getPath()));
 
-            statusLabel.setText("Noise floor: " + getNoiseFloorDB() + "dB");
+            noiseFloorLabel.setNoiseFloor(getNoiseFloorDB());
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -2586,7 +2590,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         bookTree.expandPath(new TreePath(book.getPath()));
 
-        statusLabel.setText("Noise floor: " + getNoiseFloorDB() + "dB");
+        noiseFloorLabel.setNoiseFloor(getNoiseFloorDB());
         book.setIcon(Icons.book);
     }
 
@@ -2659,7 +2663,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     Debug.trace();
                     roomNoise.stopRecording();
                     centralPanel.setFlash(false);
-                    statusLabel.setText("Noise floor: " + getNoiseFloorDB() + "dB");
+                    noiseFloorLabel.setNoiseFloor(getNoiseFloorDB());
                 }
             }, 5000); // 5 seconds of recording
         }
@@ -4194,7 +4198,10 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
         }
         if (orphans.getChildCount() == 0) {
-            bookTreeModel.removeNodeFromParent(orphans);
+            try {
+                bookTreeModel.removeNodeFromParent(orphans);
+            } catch (Exception ignored) {
+            }
         }
     }
 

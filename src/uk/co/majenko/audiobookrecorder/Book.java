@@ -450,7 +450,10 @@ public class Book extends BookTreeNode {
             public void run() {
                 if (AudiobookRecorder.window == null) return;
                 if (AudiobookRecorder.window.bookTreeModel == null) return;
-                AudiobookRecorder.window.bookTreeModel.reload(Book.this);
+                try {
+                    AudiobookRecorder.window.bookTreeModel.reload(Book.this);
+                } catch (Exception ignored) {
+                }
             }
         });
     }
