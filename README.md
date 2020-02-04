@@ -10,6 +10,8 @@ A system for easing the task of recording and editing audiobooks.
 * Chapter management
 * Audio effect chains (biquad, delay line, etc)
 
+# [Manual and Tutorial](https://majenkoprojects.github.io/AudiobookRecorder)
+
 Usage
 -----
 
