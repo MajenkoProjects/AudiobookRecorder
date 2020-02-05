@@ -121,7 +121,7 @@ public class OpenBookPanel extends JPanel {
                             c = c.getParent();
                         }
                         if (c == null) {
-                            System.err.println("Could not get option pane!");
+                            Debug.d("Could not get option pane!");
                         } else {
                             JOptionPane op = (JOptionPane)c;
                             op.setValue(JOptionPane.OK_OPTION);

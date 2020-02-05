@@ -55,10 +55,6 @@ public class VersionChecker implements Runnable {
 
             if (Utils.s2i(installedVersion) >= Utils.s2i(availableVersion)) return;
             
-            System.err.println("Version installed: " + installed);
-            System.err.println("Version available: " + available);
-            System.err.println("URL: " + website);
-
             JButton upgrade = new JButton("A new version is available.");
             upgrade.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent evt) {

@@ -722,7 +722,7 @@ public class Options extends JDialog {
         } else if (value instanceof Boolean) {
             set(key, (Boolean)value);
         } else {
-            System.err.println("Bad type for key " + key);
+            Debug.d("Bad type for key", key);
         }
     }
 

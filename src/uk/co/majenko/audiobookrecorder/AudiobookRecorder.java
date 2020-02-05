@@ -3252,7 +3252,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 }
 
                 File archiveFile = new File(archiveDir, name + ".abz");
-                System.err.println("Archiving to " + archiveFile.getAbsolutePath());
+                Debug.d("Archiving to", archiveFile.getAbsolutePath());
                 if (archiveFile.exists()) {
                     archiveFile.delete();
                 }
@@ -3674,7 +3674,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         } else if (type.equals("highshelf")) {
             bq.setType(Biquad.Highshelf);
         } else {
-            System.err.println("Bad Biquad type: " + type);
+            Debug.d("Bad Biquad type:", type);
             return null;
         }
 
@@ -3969,7 +3969,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         Debug.trace();
         try {
             if (selectedSentence == null) {
-                System.err.println("Selected sentence is NULL in split. That CANNOT happen!");
+                Debug.d("Selected sentence is NULL in split. That CANNOT happen!");
                 return;
             }
             Chapter c = (Chapter)selectedSentence.getParent();
@@ -4027,7 +4027,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     public void setEffectsEnabled(boolean b) {
         Debug.trace();
         effectsEnabled = b;
-        System.err.println("Effects Enabled: " + b);
+        Debug.d("Effects Enabled:", b);
     }
 
     public void setBookNotes(String text) {

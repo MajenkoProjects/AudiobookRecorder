@@ -83,7 +83,6 @@ public class BookInfoPanel extends JPanel {
         Pattern p = Pattern.compile("\\/titleview\\/([A-Z0-9]{14})");
         Matcher m = p.matcher(acx.getText());
         if (m.find()) {
-            System.err.println(m);
             return m.group(1);
         }
         return acx.getText();

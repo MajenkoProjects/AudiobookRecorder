@@ -70,7 +70,7 @@ public class Utils {
         long t = System.currentTimeMillis();
         long d = t - millis;
         millis = t;
-        System.err.println(String.format("%10d - %10s : %8d | %8d | %8d", d, tag,
+        Debug.d(String.format("%10d - %10s : %8d | %8d | %8d", d, tag,
             Runtime.getRuntime().totalMemory(),
             Runtime.getRuntime().maxMemory(),
             Runtime.getRuntime().freeMemory()
