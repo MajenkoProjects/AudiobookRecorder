@@ -15,6 +15,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -2133,7 +2135,20 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     public void addChapter() {
         Debug.trace();
+        Chapter last = getBook().getLastChapter();
+        String name = "Chapter " + (getBook().getChildCount() + 1);
+        if (last != null) {
+            String lastname = last.getName();
+            Pattern p = Pattern.compile("^([^\\d]+)(\\d+)$");
+            Matcher m = p.matcher(lastname);
+            if (m.find()) {
+                String chapname = m.group(1);
+                int chapnum = Utils.s2i(m.group(2));
+                name = chapname + (chapnum + 1);
+            }
+        }
         Chapter c = getBook().addChapter();   
+        c.setName(name);
         bookTreeModel.insertNodeInto(c, getBook(), getBook().getChildCount());
         bookTree.scrollPathToVisible(new TreePath(c.getPath()));
     } 
@@ -2281,7 +2296,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             ex.printStackTrace();
         }
 
-        gatherOrphans();
+//        gatherOrphans();
     }
 
     public void loadBookStructure(File f) {
