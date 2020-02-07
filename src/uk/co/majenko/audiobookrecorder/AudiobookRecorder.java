@@ -105,7 +105,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     // Settings - tweakable
 
     static Properties config = new Properties();
-    TreeMap<String, EffectGroup> effects;
 
     public final static int IDLE = 0;
     public final static int RECORDING = 1;
@@ -160,7 +159,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     Sentence recording = null;
     Sentence playing = null;
-    Sentence roomNoise = null;
     Sentence selectedSentence = null;
 
     JPanel sampleControl;
@@ -202,9 +200,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     SourceDataLine play = null;
 
     boolean effectsEnabled = true;
-
-    public TargetDataLine microphone = null;
-    public AudioInputStream microphoneStream = null;
 
     public static AudiobookRecorder window;
 
@@ -299,7 +294,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         bookPurgeBackups.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
-                book.purgeBackups();
+                getBook().purgeBackups();
             }
         });
 
@@ -314,7 +309,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         bookVisitTitle.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
-                Utils.browse("https://www.acx.com/titleview/" + book.getACX());
+                Utils.browse("https://www.acx.com/titleview/" + getBook().getACX());
             }
         });
         bookVisitACX.add(bookVisitTitle);
@@ -323,7 +318,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         bookVisitAudition.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
-                Utils.browse("https://www.acx.com/titleview/" + book.getACX() + "?bucket=AUDITION_READY");
+                Utils.browse("https://www.acx.com/titleview/" + getBook().getACX() + "?bucket=AUDITION_READY");
             }
         });
         bookVisitACX.add(bookVisitAudition);
@@ -332,7 +327,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         bookVisitProduce.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
-                Utils.browse("https://www.acx.com/titleview/" + book.getACX() + "?bucket=PRODUCE");
+                Utils.browse("https://www.acx.com/titleview/" + getBook().getACX() + "?bucket=PRODUCE");
             }
         });
         bookVisitACX.add(bookVisitProduce);
@@ -381,7 +376,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 Debug.trace();
                 queueJob(new Runnable() {
                     public void run() {
-                        loadEffects();
+                        getBook().loadEffects();
                     }
                 });
             }
@@ -790,7 +785,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     freeLock();
                     return;
                 }
-                if (getNoiseFloor() == 0) {
+                if (getBook().getNoiseFloor() == 0) {
                     freeLock();
                     alertNoRoomNoise();
                     return;
@@ -809,7 +804,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     freeLock();
                     return;
                 }
-                if (getNoiseFloor() == 0) {
+                if (getBook().getNoiseFloor() == 0) {
                     freeLock();
                     alertNoRoomNoise();
                     return;
@@ -828,7 +823,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     freeLock();
                     return;
                 }
-                if (getNoiseFloor() == 0) {
+                if (getBook().getNoiseFloor() == 0) {
                     alertNoRoomNoise();
                     freeLock();
                     return;
@@ -847,7 +842,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     freeLock();
                     return;
                 }
-                if (getNoiseFloor() == 0) {
+                if (getBook().getNoiseFloor() == 0) {
                     freeLock();
                     alertNoRoomNoise();
                     return;
@@ -866,7 +861,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     freeLock();
                     return;
                 }
-                if (getNoiseFloor() == 0) {
+                if (getBook().getNoiseFloor() == 0) {
                     freeLock();
                     alertNoRoomNoise();
                     return;
@@ -959,7 +954,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 if (ev.getPropertyName().equals("dividerLocation")) {
                     if ((bookTreeModel != null) && (book != null)) {
                         Debug.trace();
-                        book.reloadTree();
+                        getBook().reloadTree();
                     }
                 }
             }
@@ -1204,35 +1199,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         }
     }
 
-    class BatchConversionThread implements Runnable {
-        Chapter chapter;
-
-        public BatchConversionThread(Chapter c) {
-            Debug.trace();
-            chapter = c;
-        }
-        public void run() {
-            Debug.trace();
-            try {
-                for (Enumeration s = chapter.children(); s.hasMoreElements();) {
-                    Sentence snt = (Sentence)s.nextElement();
-                    if (!snt.isLocked()) {
-                        if (snt.getId().equals(snt.getText())) {
-                            queueJob(new SentenceJob(snt) {
-                                public void run() {
-                                    sentence.doRecognition();
-                                }
-                            });
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-
     @SuppressWarnings("unchecked")
     void treePopup(MouseEvent e) {
         Debug.trace();
@@ -1269,7 +1235,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 JMenu moveMenu = new JMenu("Move phrase to...");
 
 
-                for (Enumeration c = book.children(); c.hasMoreElements();) {
+                for (Enumeration c = getBook().children(); c.hasMoreElements();) {
                     Chapter chp = (Chapter)c.nextElement();
                     JMenuObject2 m = new JMenuObject2(chp.getName(), s, chp, new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -1587,11 +1553,11 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter chap = (Chapter)o.getObject();
-                        int pos = bookTreeModel.getIndexOfChild(book, chap);
+                        int pos = bookTreeModel.getIndexOfChild(getBook(), chap);
                         if (pos > 0) pos--;
-                        Chapter prevChap = (Chapter)bookTreeModel.getChild(book, pos);
+                        Chapter prevChap = (Chapter)bookTreeModel.getChild(getBook(), pos);
                         bookTreeModel.removeNodeFromParent(chap);
-                        bookTreeModel.insertNodeInto(chap, book, pos);
+                        bookTreeModel.insertNodeInto(chap, getBook(), pos);
                     }
                 });
 
@@ -1600,18 +1566,18 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter chap = (Chapter)o.getObject();
-                        int pos = bookTreeModel.getIndexOfChild(book, chap);
+                        int pos = bookTreeModel.getIndexOfChild(getBook(), chap);
                         pos++;
-                        Chapter nextChap = (Chapter)bookTreeModel.getChild(book, pos);
+                        Chapter nextChap = (Chapter)bookTreeModel.getChild(getBook(), pos);
                         if (nextChap != null) {
                             bookTreeModel.removeNodeFromParent(chap);
-                            bookTreeModel.insertNodeInto(chap, book, pos);
+                            bookTreeModel.insertNodeInto(chap, getBook(), pos);
                         }
                     }
                 });
 
                 JMenu mergeWith = new JMenu("Merge chapter with");
-                for (Enumeration bc = book.children(); bc.hasMoreElements();) {
+                for (Enumeration bc = getBook().children(); bc.hasMoreElements();) {
                     Chapter chp = (Chapter)bc.nextElement();
                     if (chp.getId().equals(c.getId())) {
                         continue;
@@ -1689,7 +1655,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                             }
                         }
                         bookTreeModel.removeNodeFromParent(c);
-                        book.renumberChapters();
+                        getBook().renumberChapters();
                     }
                 });
                         
@@ -1787,11 +1753,11 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         Debug.trace();
                         JTabbedPane tabs = new JTabbedPane();
                         BookInfoPanel info = new BookInfoPanel(
-                            book.getName(),
-                            book.getAuthor(),
-                            book.getGenre(),
-                            book.getComment(),
-                            book.getACX()
+                            getBook().getName(),
+                            getBook().getAuthor(),
+                            getBook().getGenre(),
+                            getBook().getComment(),
+                            getBook().getACX()
                         );
                         tabs.add("Data", info);
 
@@ -1807,12 +1773,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         JComboBox<KVPair<String, String>> defEff = new JComboBox<KVPair<String, String>>();
                         int selEff = -1;
                         int i = 0;
-                        if (effects != null) {
-                            for (String k : effects.keySet()) {
-                                if (k.equals(book.getDefaultEffect())) {
+                        if (getBook().effects != null) {
+                            for (String k : getBook().effects.keySet()) {
+                                if (k.equals(getBook().getDefaultEffect())) {
                                     selEff = i;
                                 }
-                                KVPair<String, String> p = new KVPair<String, String>(k, effects.get(k).toString());
+                                KVPair<String, String> p = new KVPair<String, String>(k, getBook().effects.get(k).toString());
                                 defEff.addItem(p);
                                 i++;
                             }
@@ -1835,14 +1801,14 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                         i = defEff.getSelectedIndex();
                         KVPair<String, String> de = defEff.getItemAt(i);
-                        book.setDefaultEffect(de.getKey());
+                        getBook().setDefaultEffect(de.getKey());
 
-                        book.setAuthor(aut);
-                        book.setGenre(gen);
-                        book.setComment(com);
-                        book.setACX(acx);
-                        if (!(book.getName().equals(tit))) {
-                            book.renameBook(tit);
+                        getBook().setAuthor(aut);
+                        getBook().setGenre(gen);
+                        getBook().setComment(com);
+                        getBook().setACX(acx);
+                        if (!(getBook().getName().equals(tit))) {
+                            getBook().renameBook(tit);
                         }
 
                         CacheManager.purgeCache();
@@ -1850,10 +1816,10 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 });
                 menu.add(editData);
 
-                JMenuObject resetBookGaps = new JMenuObject("Reset all post gaps", book, new ActionListener() {
+                JMenuObject resetBookGaps = new JMenuObject("Reset all post gaps", getBook(), new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         Debug.trace();
-                        for (Enumeration ch = book.children(); ch.hasMoreElements();) {
+                        for (Enumeration ch = getBook().children(); ch.hasMoreElements();) {
                             Chapter chap = (Chapter)ch.nextElement();
                             chap.resetPostGaps();
                         }
@@ -1874,7 +1840,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         if (recording != null) return;
         if (book == null) return;
 
-        if (microphone == null) {
+        if (Microphone.getDevice() == null) {
             JOptionPane.showMessageDialog(this, "Microphone not started. Start microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -1902,7 +1868,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         if (s.startRecording()) {
             recording = (Sentence)selectedNode;
-            centralPanel.setFlash(true);
         }
     }
 
@@ -1912,7 +1877,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         if (recording != null) return;
         if (book == null) return;
 
-        if (microphone == null) {
+        if (Microphone.getDevice() == null) {
             JOptionPane.showMessageDialog(this, "Microphone not started. Start microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -1920,12 +1885,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
 
         if (selectedNode == null) {
-            selectedNode = book.getLastChapter();
+            selectedNode = getBook().getLastChapter();
             bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
         }
 
         if (selectedNode instanceof Book) {
-            selectedNode = book.getLastChapter();
+            selectedNode = getBook().getLastChapter();
             bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
         }
 
@@ -1953,7 +1918,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         if (s.startRecording()) {
             recording = s;
-            centralPanel.setFlash(true);
         }
     }
 
@@ -1964,7 +1928,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         if (recording != null) return;
         if (book == null) return;
 
-        if (microphone == null) {
+        if (Microphone.getDevice() == null) {
             JOptionPane.showMessageDialog(this, "Microphone not started. Start microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -1972,12 +1936,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
 
         if (selectedNode == null) {
-            selectedNode = book.getLastChapter();
+            selectedNode = getBook().getLastChapter();
             bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
         }
 
         if (selectedNode instanceof Book) {
-            selectedNode = book.getLastChapter();
+            selectedNode = getBook().getLastChapter();
             bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
         }
 
@@ -2005,7 +1969,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         if (s.startRecording()) {
             recording = s;
-            centralPanel.setFlash(true);
         }
     }
 
@@ -2015,7 +1978,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         if (recording != null) return;
         if (book == null) return;
 
-        if (microphone == null) {
+        if (Microphone.getDevice() == null) {
             JOptionPane.showMessageDialog(this, "Microphone not started. Start microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -2023,12 +1986,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
 
         if (selectedNode == null) {
-            selectedNode = book.getLastChapter();
+            selectedNode = getBook().getLastChapter();
             bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
         }
 
         if (selectedNode instanceof Book) {
-            selectedNode = book.getLastChapter();
+            selectedNode = getBook().getLastChapter();
             bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
         }
 
@@ -2056,7 +2019,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         if (s.startRecording()) {
             recording = s;
-            centralPanel.setFlash(true);
         }
     }
 
@@ -2066,7 +2028,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         if (recording != null) return;
         if (book == null) return;
 
-        if (microphone == null) {
+        if (Microphone.getDevice() == null) {
             JOptionPane.showMessageDialog(this, "Microphone not started. Start microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -2074,12 +2036,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
 
         if (selectedNode == null) {
-            selectedNode = book.getLastChapter();
+            selectedNode = getBook().getLastChapter();
             bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
         }
 
         if (selectedNode instanceof Book) {
-            selectedNode = book.getLastChapter();
+            selectedNode = getBook().getLastChapter();
             bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
         }
 
@@ -2107,7 +2069,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         if (s.startRecording()) {
             recording = s;
-            centralPanel.setFlash(true);
         }
     }
 
@@ -2116,13 +2077,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         if (recording == null) return;
         recording.stopRecording();
 
-//        book.reloadTree();
+//        getBook().reloadTree();
 
         bookTree.expandPath(new TreePath(((DefaultMutableTreeNode)recording.getParent()).getPath()));
         bookTree.setSelectionPath(new TreePath(recording.getPath()));
         bookTree.scrollPathToVisible(new TreePath(recording.getPath()));
 
-        centralPanel.setFlash(false);
         recording = null;
         saveBookStructure();
     }
@@ -2135,12 +2095,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
 
         if (selectedNode == null) {
-            selectedNode = book.getLastChapter();
+            selectedNode = getBook().getLastChapter();
             bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
         }
 
         if (selectedNode instanceof Book) {
-            selectedNode = book.getLastChapter();
+            selectedNode = getBook().getLastChapter();
             bookTree.setSelectionPath(new TreePath(selectedNode.getPath()));
         }
 
@@ -2173,34 +2133,16 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     public void addChapter() {
         Debug.trace();
-        Chapter c = book.addChapter();   
-        bookTreeModel.insertNodeInto(c, book, book.getChildCount());
+        Chapter c = getBook().addChapter();   
+        bookTreeModel.insertNodeInto(c, getBook(), getBook().getChildCount());
         bookTree.scrollPathToVisible(new TreePath(c.getPath()));
     } 
 
     @SuppressWarnings("unchecked")
     public void saveBookStructure() {
         Debug.trace();
-        if (book == null) return;
-
-        File bookRoot = new File(Options.get("path.storage"), book.getName());
-        if (!bookRoot.exists()) {
-            bookRoot.mkdirs();
-        }
-
         try {
-            File xml = new File(bookRoot, "audiobook.abx");
-            Document doc = book.buildDocument();
-
-
-            // write the content into xml file
-            TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            Transformer transformer = transformerFactory.newTransformer();
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-            DOMSource source = new DOMSource(doc);
-            StreamResult result = new StreamResult(xml);
-            transformer.transform(source, result);
+            getBook().save();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -2210,6 +2152,9 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         Debug.trace();
 
         try {
+
+            book = new Book(inputFile);
+/*
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
             Document doc = dBuilder.parse(inputFile);
@@ -2218,12 +2163,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             Element root = doc.getDocumentElement();
 
             book = new Book(root);
-            
+*/            
             bookTreeModel = new DefaultTreeModel(book);
 
-            book.loadBookXML(root, bookTreeModel);
+//            getBook().loadBookXML(root, bookTreeModel);
 
-            loadEffects();
+//            loadEffects();
 
             bookTree = new JTree(bookTreeModel);
             bookTree.setEditable(true);
@@ -2239,8 +2184,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             InputMap im = bookTree.getInputMap(JComponent.WHEN_FOCUSED);
             im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "startStopPlayback");
             im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.SHIFT_DOWN_MASK), "startPlaybackFrom");
-
-            roomNoise = new Sentence("room-noise", "Room Noise");
 
             bookTree.addTreeSelectionListener(new TreeSelectionListener() {
                 public void valueChanged(TreeSelectionEvent e) {
@@ -2324,15 +2267,15 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             if (cf.exists()) {
                 ImageIcon i = new ImageIcon(cf.getAbsolutePath());
                 Image ri = Utils.getScaledImage(i.getImage(), 22, 22);
-                book.setIcon(new ImageIcon(ri));
+                getBook().setIcon(new ImageIcon(ri));
             } else {
-                book.setIcon(Icons.book);
+                getBook().setIcon(Icons.book);
             }
-            book.reloadTree();
+            getBook().reloadTree();
 
-            bookTree.expandPath(new TreePath(book.getPath()));
+            bookTree.expandPath(new TreePath(getBook().getPath()));
 
-            noiseFloorLabel.setNoiseFloor(getNoiseFloorDB());
+//            noiseFloorLabel.setNoiseFloor(getBook().getNoiseFloorDB());
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -2363,8 +2306,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             if (cf.exists()) {
                 ImageIcon i = new ImageIcon(cf.getAbsolutePath());
                 Image ri = Utils.getScaledImage(i.getImage(), 22, 22);
-                book.setIcon(new ImageIcon(ri));
-                book.reloadTree();
+                getBook().setIcon(new ImageIcon(ri));
+                getBook().reloadTree();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -2377,12 +2320,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         book = new Book(prefs, prefs.getProperty("book.name"));
 
-        book.setAuthor(prefs.getProperty("book.author"));
-        book.setGenre(prefs.getProperty("book.genre"));
-        book.setComment(prefs.getProperty("book.comment"));
-        book.setACX(prefs.getProperty("book.acx"));
+        getBook().setAuthor(prefs.getProperty("book.author"));
+        getBook().setGenre(prefs.getProperty("book.genre"));
+        getBook().setComment(prefs.getProperty("book.comment"));
+        getBook().setACX(prefs.getProperty("book.acx"));
 
-        loadEffects();
+        getBook().loadEffects();
 
         String defaultEffectChain = prefs.getProperty("audio.effect.default");
 
@@ -2390,25 +2333,25 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             defaultEffectChain = "none";
         }
 
-        book.setDefaultEffect(defaultEffectChain);
+        getBook().setDefaultEffect(defaultEffectChain);
 
         int sr = Utils.s2i(prefs.getProperty("audio.recording.samplerate"));
         if (sr == 0) {
             sr = Options.getInteger("audio.recording.samplerate");
         }
-        book.setSampleRate(sr);
+        getBook().setSampleRate(sr);
 
         int chans = Utils.s2i(prefs.getProperty("audio.recording.channels"));
         if (chans == 0) {
             chans = Options.getInteger("audio.recording.channels");
         }
-        book.setChannels(chans);
+        getBook().setChannels(chans);
 
         int res = Utils.s2i(prefs.getProperty("audio.recording.resolution"));
         if (res == 0) {
             res = Options.getInteger("audio.recording.resolution");
         }
-        book.setResolution(res);
+        getBook().setResolution(res);
 
         bookTreeModel = new DefaultTreeModel(book);
         bookTree = new JTree(bookTreeModel);
@@ -2421,8 +2364,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         InputMap im = bookTree.getInputMap(JComponent.WHEN_FOCUSED);
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "startStopPlayback");
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.SHIFT_DOWN_MASK), "startPlaybackFrom");
-
-        roomNoise = new Sentence("room-noise", "Room Noise");
 
         bookTree.addTreeSelectionListener(new TreeSelectionListener() {
             public void valueChanged(TreeSelectionEvent e) {
@@ -2496,7 +2437,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         Chapter c = new Chapter("audition", prefs.getProperty("chapter.audition.name"));
         c.setPostGap(Utils.s2i(prefs.getProperty("chapter.audition.post-gap")));
         c.setPreGap(Utils.s2i(prefs.getProperty("chapter.audition.pre-gap")));
-        bookTreeModel.insertNodeInto(c, book, 0);
+        bookTreeModel.insertNodeInto(c, getBook(), 0);
         
         for (int i = 0; i < 100000000; i++) {
             String id = prefs.getProperty(String.format("chapter.audition.sentence.%08d.id", i));
@@ -2518,7 +2459,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         c = new Chapter("open", prefs.getProperty("chapter.open.name"));
         c.setPostGap(Utils.s2i(prefs.getProperty("chapter.open.post-gap")));
         c.setPreGap(Utils.s2i(prefs.getProperty("chapter.open.pre-gap")));
-        bookTreeModel.insertNodeInto(c, book, 0);
+        bookTreeModel.insertNodeInto(c, getBook(), 0);
         
         for (int i = 0; i < 100000000; i++) {
             String id = prefs.getProperty(String.format("chapter.open.sentence.%08d.id", i));
@@ -2546,7 +2487,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             c = new Chapter(String.format("%04d", cno), cname);
             c.setPostGap(Utils.s2i(prefs.getProperty(String.format("chapter.%04d.post-gap", cno))));
             c.setPreGap(Utils.s2i(prefs.getProperty(String.format("chapter.%04d.pre-gap", cno))));
-            bookTreeModel.insertNodeInto(c, book, book.getChildCount());
+            bookTreeModel.insertNodeInto(c, getBook(), getBook().getChildCount());
 
             for (int i = 0; i < 100000000; i++) {
                 String id = prefs.getProperty(String.format("chapter.%04d.sentence.%08d.id", cno, i));
@@ -2569,7 +2510,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         c = new Chapter("close", prefs.getProperty("chapter.close.name"));
         c.setPostGap(Utils.s2i(prefs.getProperty("chapter.close.post-gap")));
         c.setPreGap(Utils.s2i(prefs.getProperty("chapter.close.pre-gap")));
-        bookTreeModel.insertNodeInto(c, book, book.getChildCount());
+        bookTreeModel.insertNodeInto(c, getBook(), getBook().getChildCount());
 
         for (int i = 0; i < 100000000; i++) {
             String id = prefs.getProperty(String.format("chapter.close.sentence.%08d.id", i));
@@ -2588,10 +2529,10 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             bookTreeModel.insertNodeInto(s, c, c.getChildCount());
         }
 
-        bookTree.expandPath(new TreePath(book.getPath()));
+        bookTree.expandPath(new TreePath(getBook().getPath()));
 
-        noiseFloorLabel.setNoiseFloor(getNoiseFloorDB());
-        book.setIcon(Icons.book);
+//        noiseFloorLabel.setNoiseFloor(getBook().getNoiseFloorDB());
+        getBook().setIcon(Icons.book);
     }
 
     public void openBook() {
@@ -2623,7 +2564,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 loadBookStructure(f);
             }
 
-            Options.set("path.last-book", book.getName());
+            Options.set("path.last-book", getBook().getName());
             Options.savePreferences();
             
         }
@@ -2633,48 +2574,18 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     public File getBookFolder() {
         Debug.trace();
-        File bf = new File(Options.get("path.storage"), book.getName());
+        File bf = new File(Options.get("path.storage"), getBook().getName());
         if (!bf.exists()) {
             bf.mkdirs();
         }
         return bf;
     }
 
-    public double getNoiseFloor() { 
-        Debug.trace();
-        if (roomNoise == null) return 0;
-        return roomNoise.getPeak();
-    }
-
-    public int getNoiseFloorDB() {
-        Debug.trace();
-        if (roomNoise == null) return 0;
-        return roomNoise.getPeakDB();
-    }
-
-    public void recordRoomNoise() {
-        Debug.trace();
-        if (roomNoise.startRecording()) {
-
-            centralPanel.setFlash(true);
-            java.util.Timer ticker = new java.util.Timer(true);
-            ticker.schedule(new TimerTask() {
-                public void run() {
-                    Debug.trace();
-                    roomNoise.stopRecording();
-                    centralPanel.setFlash(false);
-                    noiseFloorLabel.setNoiseFloor(getNoiseFloorDB());
-                }
-            }, 5000); // 5 seconds of recording
-        }
-    }
-
-
     public void playSelectedSentence() {
         Debug.trace();
         if (selectedSentence == null) return;
         if (playing != null) return;
-        if (getNoiseFloor() == 0) {
+        if (getBook().getNoiseFloor() == 0) {
             alertNoRoomNoise();
             return;
         }
@@ -2794,7 +2705,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         Debug.trace();
 
         
-        for (Enumeration o = book.children(); o.hasMoreElements();) {
+        for (Enumeration o = getBook().children(); o.hasMoreElements();) {
             Chapter c = (Chapter)o.nextElement();
             ProgressDialog ed = new ProgressDialog("Exporting " + c.getName());
 
@@ -2812,7 +2723,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         Debug.trace();
         if (selectedSentence == null) return;
         if (playing != null) return;
-        if (getNoiseFloor() == 0) {
+        if (getBook().getNoiseFloor() == 0) {
             alertNoRoomNoise();
             return;
         }
@@ -2892,7 +2803,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         Debug.trace();
         if (selectedSentence == null) return;
         if (playing != null) return;
-        if (getNoiseFloor() == 0) {
+        if (getBook().getNoiseFloor() == 0) {
             alertNoRoomNoise();
             return;
         }
@@ -2927,7 +2838,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                             first = true;
                         }
                         if (first) {
-                            data = getRoomNoise(Utils.s2i(Options.get("catenation.pre-chapter")));
+                            data = getBook().getRoomNoise(Utils.s2i(Options.get("catenation.pre-chapter")));
                             play.write(data, 0, data.length);
                         }
                         data = s.getPCMData(effectsEnabled);
@@ -2957,11 +2868,11 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         }
 
                         if (last) {
-                            data = getRoomNoise(Utils.s2i(Options.get("catenation.post-chapter")));
+                            data = getBook().getRoomNoise(Utils.s2i(Options.get("catenation.post-chapter")));
                             play.write(data, 0, data.length);
                             playing = null;
                         } else {
-                            data = getRoomNoise(s.getPostGap());
+                            data = getBook().getRoomNoise(s.getPostGap());
                             play.write(data, 0, data.length);
                         }
                         s = (Sentence)next;
@@ -2990,38 +2901,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         playingThread.start();
     }
 
-
-    public Sentence getRoomNoiseSentence() {
-        return roomNoise;
-    }
-
-    public byte[] getRoomNoise(int ms) {
-        Debug.trace();
-
-        if (roomNoise == null) return null;
-
-        roomNoise.setEffectChain(book.getDefaultEffect());
-
-        int len = roomNoise.getSampleSize();
-        if (len == 0) return null;
-
-        AudioFormat f = roomNoise.getAudioFormat();
-        
-        float sr = f.getSampleRate();
-
-        int samples = (int)(ms * (sr / 1000f));
-
-        int start = rng.nextInt(len - samples);
-        int end = start + samples;
-
-        roomNoise.setStartOffset(start);
-        roomNoise.setEndOffset(end);
-
-        byte[] data = roomNoise.getPCMData();
-
-        return data;
-    }
-
     public void stopPlaying() {
         Debug.trace();
         if (play != null) {
@@ -3035,54 +2914,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         Debug.trace();
         JOptionPane.showMessageDialog(this, "You must record room noise\nbefore recording or playback", "Error", JOptionPane.ERROR_MESSAGE);
     }
-
-    public boolean enableMicrophone() {
-        Debug.trace();
-        AudioFormat format = Options.getAudioFormat();
-
-        Mixer.Info mixer = Options.getRecordingMixer();
-
-        microphone = null;
-
-        try {
-            microphone = AudioSystem.getTargetDataLine(format, mixer);
-        } catch (Exception e) {
-            e.printStackTrace();
-            microphone = null;
-            return false;
-        }
-
-        if (microphone == null) {
-            JOptionPane.showMessageDialog(AudiobookRecorder.window, "Sample format not supported", "Error", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-
-        microphoneStream = new AudioInputStream(microphone);
-
-        try {
-            microphone.open();
-        } catch (Exception e) {
-            e.printStackTrace();
-            microphone = null;
-            return false;
-        }
-
-        microphone.start();
-        return true;
-    }
-
-    public void disableMicrophone() {
-        Debug.trace();
-        try {
-            microphoneStream.close();
-            microphone.stop();
-            microphone.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        microphone = null;
-        microphoneStream = null;
-    } 
 
     public void execScript(String s) {
         Debug.trace();
@@ -3166,20 +2997,20 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     public void mergeChapter(Properties prefs, String chid) {
         Debug.trace();
-        Chapter c = book.addChapter();
+        Chapter c = getBook().addChapter();
         c.setName("Merged-" + prefs.getProperty("chapter." + chid + ".name"));
         c.setPostGap(Utils.s2i(prefs.getProperty("chapter." + chid + ".post-gap")));
         c.setPreGap(Utils.s2i(prefs.getProperty("chapter." + chid + ".pre-gap")));
 
-        Chapter lc = book.getLastChapter();
-        int idx = bookTreeModel.getIndexOfChild(book, lc);
-        bookTreeModel.insertNodeInto(c, book, idx+1);
+        Chapter lc = getBook().getLastChapter();
+        int idx = bookTreeModel.getIndexOfChild(getBook(), lc);
+        bookTreeModel.insertNodeInto(c, getBook(), idx+1);
 
 
         File srcBook = new File(Options.get("path.storage"), prefs.getProperty("book.name"));
         File srcFolder = new File(srcBook, "files");
 
-        File dstBook = new File(Options.get("path.storage"), book.getName());
+        File dstBook = new File(Options.get("path.storage"), getBook().getName());
         File dstFolder = new File(dstBook, "files");
 
         for (int i = 0; i < 100000000; i++) {
@@ -3240,7 +3071,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         public void run() {
             Debug.trace();
             try {
-                String name = AudiobookRecorder.this.book.getName();
+                String name = AudiobookRecorder.this.getBook().getName();
                 File storageDir = new File(Options.get("path.storage"));
                 File bookDir = new File(storageDir, name);
                 File archiveDir = new File(Options.get("path.archive"));
@@ -3297,7 +3128,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 }
 
                 // Now grab any used effects that aren't already part of the book folder
-                ArrayList<String> usedEffects = book.getUsedEffects();
+                ArrayList<String> usedEffects = getBook().getUsedEffects();
                 for (String ef : usedEffects) {
                     File inBook = new File(bookDir, ef + ".eff");
                     if (!inBook.exists()) {
@@ -3475,7 +3306,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             File src = jc.getSelectedFile();
             if (src.exists()) {
                 File dest = null;
-                File bookFolder = new File(Options.get("path.storage"), book.getName());
+                File bookFolder = new File(Options.get("path.storage"), getBook().getName());
                 if (src.getName().endsWith(".png")) {
                     dest = new File(bookFolder, "coverart.png");
                 } else if (src.getName().endsWith(".jpg")) {
@@ -3498,8 +3329,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                     ImageIcon i = new ImageIcon(dest.getAbsolutePath());
                     Image ri = Utils.getScaledImage(i.getImage(), 22, 22);
-                    book.setIcon(new ImageIcon(ri));
-                    book.reloadTree();
+                    getBook().setIcon(new ImageIcon(ri));
+                    getBook().reloadTree();
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -3520,25 +3351,25 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             if ((!force) && (sampleWaveform.getId() != null) && (sampleWaveform.getId().equals(selectedSentence.getId()))) return;
     
             synchronized (waveformUpdater) {
-                try {
-                    if (waveformUpdaterTask != null) {
-                        waveformUpdaterTask.cancel();
-                    }
-                } catch (Exception ex) {
-                }
+//                try {
+//                    if (waveformUpdaterTask != null) {
+//                        waveformUpdaterTask.cancel();
+//                    }
+//                } catch (Exception ex) {
+//                }
 
-                waveformUpdaterTask = new TimerTask() {
-                    public void run() {
+//                waveformUpdaterTask = new TimerTask() {
+//                    public void run() {
                         sampleWaveform.setId(selectedSentence.getId());
                         if (rawAudio.isSelected()) {
                             sampleWaveform.setData(selectedSentence.getRawAudioData());
                         } else {
                             sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
                         }
-                    }
-                };
+//                    }
+//                };
 
-                waveformUpdater.schedule(waveformUpdaterTask, 20);
+//                waveformUpdater.schedule(waveformUpdaterTask, 20);
             }
 
         }
@@ -3551,302 +3382,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         }
     }
 
-    public void loadEffects() {
-        Debug.trace();
-        effects = new TreeMap<String,EffectGroup>();
-        loadEffectsFromFolder(new File(Options.get("path.storage"), "System"));
-        if (book != null) {
-            loadEffectsFromFolder(new File(Options.get("path.storage"), book.getName()));
-        }
-        updateEffectChains();
-    }
-
-    public void loadEffectsFromFolder(File dir) {
-        Debug.trace();
-        if (dir == null) return;
-	if (!dir.exists()) return;
-        File[] files = dir.listFiles();
-        for (File f : files) {
-            if (f.getName().endsWith(".eff")) {
-                EffectGroup g = loadEffect(f);
-                if (g != null) {
-                    String fn = f.getName().replace(".eff","");
-                    effects.put(fn, g);
-                }
-            }
-        }
-    }
-
-    public EffectGroup loadEffect(File xml) {
-        Debug.trace();
-        try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(xml);
-
-            Element root = document.getDocumentElement();
-            if (root.getTagName().equals("effect")) {
-                EffectGroup g = loadEffectGroup(root);
-                return g;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public EffectGroup loadEffectGroup(Element root) {
-        Debug.trace();
-        EffectGroup group = new EffectGroup(root.getAttribute("name"));
-        NodeList kids = root.getChildNodes();
-        for (int i = 0; i < kids.getLength(); i++) {
-            Node kid = kids.item(i);
-            if (kid instanceof Element) {
-                Element e = (Element)kid;
-                if (e.getTagName().equals("biquad")) {
-                    Effect eff = (Effect)loadBiquad(e);
-                    if (eff != null) {
-                        group.addEffect(eff);
-                    }
-                } else if (e.getTagName().equals("delayline")) {
-                    Effect eff = (Effect)loadDelayLine(e);
-                    if (eff != null) {
-                        group.addEffect(eff);
-                    }
-                } else if (e.getTagName().equals("pan")) {
-                    Effect eff = (Effect)loadPan(e);
-                    if (eff != null) {
-                        group.addEffect(eff);
-                    }
-                } else if (e.getTagName().equals("amplifier")) {
-                    Effect eff = (Effect)loadAmplifier(e);
-                    if (eff != null) {
-                        group.addEffect(eff);
-                    }
-                } else if (e.getTagName().equals("chain")) {
-                    Effect eff = (Effect)loadChain(e);
-                    if (eff != null) {
-                        group.addEffect(eff);
-                    }
-                } else if (e.getTagName().equals("group")) {
-                    Effect eff = (Effect)loadEffectGroup(e);
-                    if (eff != null) {
-                        group.addEffect(eff);
-                    }
-                } else if (e.getTagName().equals("lfo")) {
-                    Effect eff = (Effect)loadLFO(e);
-                    if (eff != null) {
-                        group.addEffect(eff);
-                    }
-                } else if (e.getTagName().equals("agc")) {
-                    Effect eff = (Effect)loadAGC(e);
-                    if (eff != null) {
-                        group.addEffect(eff);
-                    }
-                } else if (e.getTagName().equals("clipping")) {
-                    Effect eff = (Effect)loadClipping(e);
-                    if (eff != null) {
-                        group.addEffect(eff);
-                    }
-                }
-            }
-        }
-        return group;
-    }
-
-    public Biquad loadBiquad(Element root) {
-        Debug.trace();
-        String type = root.getAttribute("type").toLowerCase();
-        Biquad bq = new Biquad();
-
-        if (type.equals("lowpass")) {
-            bq.setType(Biquad.Lowpass);
-        } else if (type.equals("highpass")) {
-            bq.setType(Biquad.Highpass);
-        } else if (type.equals("bandpass")) {
-            bq.setType(Biquad.Bandpass);
-        } else if (type.equals("notch")) {
-            bq.setType(Biquad.Notch);
-        }  else if (type.equals("peak")) {
-            bq.setType(Biquad.Peak);
-        } else if (type.equals("lowshelf")) {
-            bq.setType(Biquad.Lowshelf);
-        } else if (type.equals("highshelf")) {
-            bq.setType(Biquad.Highshelf);
-        } else {
-            Debug.d("Bad Biquad type:", type);
-            return null;
-        }
-
-        bq.setQ(Utils.s2d(root.getAttribute("q")));
-        bq.setFc(Utils.s2d(root.getAttribute("fc")));
-        bq.setPeakGain(Utils.s2d(root.getAttribute("gain")));
-        return bq;
-    }
-
-    public DelayLine loadDelayLine(Element root) {
-        Debug.trace();
-        DelayLine line = new DelayLine();
-    
-        NodeList list = root.getChildNodes();
-        if (Utils.s2b(root.getAttribute("wetonly"))) {
-            line.setWetOnly(true);
-        }
-
-        for (int i = 0; i < list.getLength(); i++) {
-            Node n = list.item(i);
-            if (n instanceof Element) {
-                Element e = (Element)n;
-                if (e.getTagName().equals("delay")) {
-                    int samples = Utils.s2i(e.getAttribute("samples"));
-                    double gain = Utils.s2d(e.getAttribute("gain"));
-                    double pan = Utils.s2d(e.getAttribute("pan"));
-                    DelayLineStore store = line.addDelayLine(samples, gain, pan);
-
-
-                    NodeList inner = e.getChildNodes();
-                    for (int j = 0; j < inner.getLength(); j++) {
-                        Node in = inner.item(j);
-                        if (in instanceof Element) {
-                            Element ie = (Element)in;
-
-                            if (ie.getTagName().equals("biquad")) {
-                                Effect eff = (Effect)loadBiquad(ie);
-                                if (eff != null) {
-                                    store.addEffect(eff);
-                                }
-                            } else if (ie.getTagName().equals("delayline")) {
-                                Effect eff = (Effect)loadDelayLine(ie);
-                                if (eff != null) {
-                                    store.addEffect(eff);
-                                }
-                            } else if (ie.getTagName().equals("pan")) {
-                                Effect eff = (Effect)loadPan(ie);
-                                if (eff != null) {
-                                    store.addEffect(eff);
-                                }
-                            } else if (ie.getTagName().equals("amplifier")) {
-                                Effect eff = (Effect)loadAmplifier(ie);
-                                if (eff != null) {
-                                    store.addEffect(eff);
-                                }
-                            } else if (ie.getTagName().equals("chain")) {
-                                Effect eff = (Effect)loadChain(ie);
-                                if (eff != null) {
-                                    store.addEffect(eff);
-                                }
-                            } else if (ie.getTagName().equals("group")) {
-                                Effect eff = (Effect)loadEffectGroup(ie);
-                                if (eff != null) {
-                                    store.addEffect(eff);
-                                }
-                            } else if (ie.getTagName().equals("lfo")) {
-                                Effect eff = (Effect)loadLFO(ie);
-                                if (eff != null) {
-                                    store.addEffect(eff);
-                                }
-                            } else if (ie.getTagName().equals("agc")) {
-                                Effect eff = (Effect)loadAGC(ie);
-                                if (eff != null) {
-                                    store.addEffect(eff);
-                                }
-                            } else if (ie.getTagName().equals("clipping")) {
-                                Effect eff = (Effect)loadClipping(ie);
-                                if (eff != null) {
-                                    store.addEffect(eff);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return line;
-    }
-
-    public Amplifier loadAmplifier(Element root) {
-        Debug.trace();
-        Amplifier a = new Amplifier(Utils.s2d(root.getAttribute("gain")));
-        return a;
-    }
-
-    public Chain loadChain(Element root) {
-        Debug.trace();
-        Chain c = new Chain(root.getAttribute("src"));
-        return c;
-    }
-
-    public Pan loadPan(Element root) {
-        Debug.trace();
-        Pan p = new Pan(Utils.s2d(root.getAttribute("pan")));
-        return p;
-    }
-
-    public Clipping loadClipping(Element root) {
-        Debug.trace();
-        Clipping c = new Clipping(Utils.s2d(root.getAttribute("clip")));
-        return c;
-    }
-
-    public LFO loadLFO(Element root) {
-        Debug.trace();
-        double f = Utils.s2d(root.getAttribute("frequency"));
-        double d = Utils.s2d(root.getAttribute("depth"));
-        double p = Utils.s2d(root.getAttribute("phase"));
-        double dty = Math.PI;
-        String waveform = root.getAttribute("waveform");
-        if (waveform == null) {
-            waveform = "sine";
-        }
-
-        int w = LFO.SINE;
-
-        switch (waveform.toLowerCase()) {
-            case "sine": w = LFO.SINE; break;
-            case "cosine": w = LFO.COSINE; break;
-            case "square": w = LFO.SQUARE; break;
-            case "triangle": w = LFO.TRIANGLE; break;
-            case "sawtooth": w = LFO.SAWTOOTH; break;
-        }
-
-        int m = LFO.ADD;
-
-        String mode = root.getAttribute("mode");
-
-        if (mode == null) {
-            mode = "add";
-        }
-
-        switch (mode.toLowerCase()) {
-            case "add": m = LFO.ADD; break;
-            case "replace": m = LFO.REPLACE; break;
-        }
-
-        if (root.getAttribute("duty") != null) {
-            int di = Utils.s2i(root.getAttribute("duty")); // 0-100;
-            dty = (Math.PI * 2) * ((double)di / 100d);
-        }
-        return new LFO(f, d, p, w, dty, m);
-    }
-
-    public AGC loadAGC(Element root) {
-        Debug.trace();
-        double ceiling = Utils.s2d(root.getAttribute("ceiling"));
-        double limit = Utils.s2d(root.getAttribute("limit"));
-        double attack = Utils.s2d(root.getAttribute("attack"));
-        double decay = Utils.s2d(root.getAttribute("decay"));
-        if (ceiling < 0.0001d) {
-            ceiling = 0.708d; // -3dB
-        }
-        if (limit < 0.0001d) {
-            limit = 1d; // No gain
-        }
-        AGC agc = new AGC(ceiling, attack, decay, limit);
-        return agc;
-    }
-
-    public void updateEffectChains() {
+    public void updateEffectChains(TreeMap<String, EffectGroup> effs) {
         Debug.trace();
         int sel = effectChain.getSelectedIndex();
         KVPair<String, String> ent = effectChain.getItemAt(sel);
@@ -3856,15 +3392,15 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         KVPair<String, String> none = new KVPair<String, String>("none", "None"); 
         effectChain.addItem(none);
-        for (String k : effects.keySet()) {
-            Effect e = effects.get(k);
+        for (String k : effs.keySet()) {
+            Effect e = effs.get(k);
             KVPair<String, String> p = new KVPair<String, String>(k, e.toString());
             effectChain.addItem(p);
         }
         if (ent != null) {
             setEffectChain(ent.getKey());
-        } else {
-            setEffectChain(book.getDefaultEffect());
+//        } else {
+//            setEffectChain(getBook().getDefaultEffect());
         }
     }
 
@@ -3879,8 +3415,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
         }
 
-        if (effects.get(book.getDefaultEffect()) != null) {
-            setEffectChain(book.getDefaultEffect());
+        if (getBook().effects.get(getBook().getDefaultEffect()) != null) {
+            setEffectChain(getBook().getDefaultEffect());
             updateWaveform(true);
         } else {
             effectChain.setSelectedIndex(0);
@@ -3890,7 +3426,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     public String getDefaultEffectsChain() {
         Debug.trace();
-        return book.getDefaultEffect();
+        return getBook().getDefaultEffect();
     }
 
     public synchronized boolean getLock() {
@@ -4063,7 +3599,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     public void openManuscript() {
         Debug.trace();
         if (book == null) return;
-        File ms = book.getManuscript();
+        File ms = getBook().getManuscript();
         if (ms == null) return;
         try {
             Desktop.getDesktop().open(ms);
@@ -4086,7 +3622,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         if (r == JFileChooser.APPROVE_OPTION) {
             File src = jc.getSelectedFile();
             if (src.exists()) {
-                book.setManuscript(src);
+                getBook().setManuscript(src);
             }
         }
     }
@@ -4096,7 +3632,9 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     public void changedUpdate(DocumentEvent e) {
         Debug.trace();
         javax.swing.text.Document doc = e.getDocument();
-        if (doc == chapterNotesArea.getDocument()) {
+        if (doc == bookNotesArea.getDocument()) {
+            getBook().setNotes(bookNotesArea.getText());
+        } else if (doc == chapterNotesArea.getDocument()) {
             DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
             if (selectedNode instanceof Sentence) {
                 selectedNode = (DefaultMutableTreeNode)selectedNode.getParent();
@@ -4165,7 +3703,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     // DocumentListener *//
 
     public boolean sentenceIdExists(String id) {
-        for (Enumeration c = book.children(); c.hasMoreElements();) {
+        for (Enumeration c = getBook().children(); c.hasMoreElements();) {
             Chapter chp = (Chapter)c.nextElement();
             for (Enumeration s = chp.children(); s.hasMoreElements();) {
                 Sentence snt = (Sentence)s.nextElement();
@@ -4179,9 +3717,9 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         Chapter orphans = getChapterById("orphans");
         if (orphans == null) {
             orphans = new Chapter("orphans", "Orphan Files");
-            bookTreeModel.insertNodeInto(orphans, book, book.getChildCount());
+            bookTreeModel.insertNodeInto(orphans, getBook(), getBook().getChildCount());
         }
-        File bookRoot = new File(Options.get("path.storage"), book.getName());
+        File bookRoot = new File(Options.get("path.storage"), getBook().getName());
         File[] files = new File(bookRoot, "files").listFiles();
         for (File f : files) {
             String filename = f.getName();
@@ -4206,7 +3744,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public Chapter getChapterById(String id) {
-        for (Enumeration c = book.children(); c.hasMoreElements();) {
+        for (Enumeration c = getBook().children(); c.hasMoreElements();) {
             Chapter chp = (Chapter)c.nextElement();
             if (chp.getId().equals(id)) return chp;
         }
@@ -4222,5 +3760,17 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
             processQueue.notify();
         }
+    }
+
+    public Book getBook() {
+        return book;
+//        if (bookTree == null) return null;
+//        DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
+//        if (selectedNode == null) return null;
+//        if (selectedNode instanceof BookTreeNode) {
+//            BookTreeNode btn = (BookTreeNode)selectedNode;
+//            return btn.getBook();
+//        }
+//        return null;
     }
 }

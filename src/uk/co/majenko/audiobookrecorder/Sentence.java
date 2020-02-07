@@ -34,6 +34,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.AudioFileFormat;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import javax.swing.tree.TreeNode;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.util.UUID;
@@ -88,6 +89,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
     AudioInputStream inputStream;
     AudioFormat storedFormat = null;
 
+    Book parentBook = null;
+
     double runtime = -1d;
 
     double[][] audioData = null;
@@ -132,14 +135,14 @@ public class Sentence extends BookTreeNode implements Cacheable {
                 byte[] buf = new byte[1024]; //AudiobookRecorder.window.microphone.getBufferSize()];
                 FileOutputStream fos = new FileOutputStream(tempFile);
                 int len = 0;
-                AudiobookRecorder.window.microphone.flush();
+                Microphone.flush();
                 int nr = 0;
                 while (recording) {
-                    nr = AudiobookRecorder.window.microphoneStream.read(buf, 0, buf.length);
+                    nr = Microphone.getStream().read(buf, 0, buf.length);
                     len += nr;
                     fos.write(buf, 0, nr);
                 }
-                nr = AudiobookRecorder.window.microphoneStream.read(buf, 0, buf.length);
+                nr = Microphone.getStream().read(buf, 0, buf.length);
                 len += nr;
                 fos.write(buf, 0, nr);
                 fos.close();
@@ -221,16 +224,17 @@ public class Sentence extends BookTreeNode implements Cacheable {
         if (text == null) text = id;
         if (text.equals("")) text = id;
 
-        if ((crossStartOffset == -1) || (crossEndOffset == -1)) {
-            updateCrossings();
-        }
+//        if (id.equals("room-noise")) return;
+//        if ((crossStartOffset == -1) || (crossEndOffset == -1)) {
+//            updateCrossings();
+//        }
 
-        if (runtime <= 0.01d) getLength();
+//        if (runtime <= 0.01d) getLength();
     }
 
     public boolean startRecording() {
         Debug.trace();
-        if (AudiobookRecorder.window.microphone == null) {
+        if (Microphone.getDevice() == null) {
             JOptionPane.showMessageDialog(AudiobookRecorder.window, "Microphone not started. Start the microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
@@ -242,6 +246,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         Thread rc = new Thread(recordingThread);
         rc.setDaemon(true);
         rc.start();
+        AudiobookRecorder.window.centralPanel.setFlash(true);
 
         return true;
     }
@@ -256,6 +261,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
                 e.printStackTrace();
             }
         }
+        AudiobookRecorder.window.centralPanel.setFlash(false);
 
         CacheManager.removeFromCache(this);
 
@@ -332,7 +338,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
             return;
         }
 
-        double[] roomNoiseProfile = AudiobookRecorder.window.getRoomNoiseSentence().getFFTProfile();
+        double[] roomNoiseProfile = getBook().getRoomNoiseSentence().getFFTProfile();
 
         int fftSize = Options.getInteger("audio.recording.trim.blocksize");
 
@@ -462,7 +468,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         double[][] samples;
         samples = getProcessedAudioData();
         if (samples == null) return;
-        double noiseFloor = AudiobookRecorder.window.getNoiseFloor();
+        double noiseFloor = getBook().getNoiseFloor();
         noiseFloor *= 1.1;
 
         // Find start
@@ -525,7 +531,10 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public File getFile() {
         Debug.trace();
-        File b = new File(AudiobookRecorder.window.getBookFolder(), "files");
+        Debug.d("Get file for", id);
+        Book book = getBook();
+        if (book == null) return null;
+        File b = new File(book.getLocation(), "files");
         if (!b.exists()) {
             b.mkdirs();
         }
@@ -534,7 +543,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public File getTempFile() {
         Debug.trace();
-        File b = new File(AudiobookRecorder.window.getBookFolder(), "files");
+        File b = new File(getBook().getLocation(), "files");
         if (!b.exists()) {
             b.mkdirs();
         }
@@ -1366,6 +1375,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     synchronized public double[][] getProcessedAudioData(boolean effectsEnabled, boolean applyGain) {
         Debug.trace();
+        Book book = getBook();
         loadFile();
         if (processedAudio != null) {
             return processedAudio;
@@ -1381,8 +1391,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
 
         String def = AudiobookRecorder.window.getDefaultEffectsChain();
-        if ((def != null) && (AudiobookRecorder.window.effects != null)) {
-            Effect eff = AudiobookRecorder.window.effects.get(def);
+        if ((def != null) && (book.effects != null)) {
+            Effect eff = book.effects.get(def);
         
             if (effectsEnabled) {
                 if (eff != null) {
@@ -1393,7 +1403,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
                 if (effectChain != null) {
                     // Don't double up the default chain
                     if (!effectChain.equals(def)) {
-                        eff = AudiobookRecorder.window.effects.get(effectChain);
+                        eff = book.effects.get(effectChain);
                         if (eff != null) {
                             eff.init(getAudioFormat().getFrameRate());
                             eff.process(processedAudio);
@@ -1620,6 +1630,11 @@ public class Sentence extends BookTreeNode implements Cacheable {
     public void onSelect() {
         Debug.trace();
         AudiobookRecorder.window.setSentenceNotes(notes);
+        TreeNode p = getParent();
+        if (p instanceof BookTreeNode) {
+            BookTreeNode btn = (BookTreeNode)p;
+            btn.onSelect();
+        }
     }
 
     void reloadTree() {
@@ -1692,4 +1707,21 @@ public class Sentence extends BookTreeNode implements Cacheable {
         reloadTree();
     }
 
+    public Book getBook() {
+        if (parentBook != null) {
+            Debug.d("Returning parent book");
+            return parentBook; // Override for room noise which isn't attached to a book tree
+        }
+        Chapter c = (Chapter)getParent();
+        if (c == null) {
+            Debug.d("No parent found");
+            return null;
+        }
+        Debug.d("Chapter: ", c.toString());
+        return c.getBook();
+    }
+
+    public void setParentBook(Book b) {
+        parentBook = b;
+    }
 }

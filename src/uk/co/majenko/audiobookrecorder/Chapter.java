@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeNode;
 
 import it.sauronsoftware.jave.FFMPEGLocator;
 import it.sauronsoftware.jave.AudioAttributes;
@@ -52,6 +53,7 @@ public class Chapter extends BookTreeNode {
     int postGap;
 
     String notes;
+    Book parentBook = null;
 
     public Chapter(String i, String chaptername) {
         super(chaptername);
@@ -78,6 +80,25 @@ public class Chapter extends BookTreeNode {
             Element sentenceElement = (Element)sentences.item(i);
             Sentence newSentence = new Sentence(sentenceElement);
             model.insertNodeInto(newSentence, this, getChildCount());
+        }
+    }
+
+    public Chapter(Element root) {
+        Debug.trace();
+        name = Book.getTextNode(root, "name");
+        id = root.getAttribute("id");
+        preGap = Utils.s2i(Book.getTextNode(root, "pre-gap"));
+        postGap = Utils.s2i(Book.getTextNode(root, "post-gap"));
+
+        notes = Book.getTextNode(root, "notes");
+
+        Element sentencesNode = Book.getNode(root, "sentences");
+        NodeList sentences = sentencesNode.getElementsByTagName("sentence");
+
+        for (int i = 0; i < sentences.getLength(); i++) {
+            Element sentenceElement = (Element)sentences.item(i);
+            Sentence newSentence = new Sentence(sentenceElement);
+            add(newSentence);
         }
     }
 
@@ -149,7 +170,7 @@ public class Chapter extends BookTreeNode {
 
         if (getChildCount() == 0) return;
 
-        Book book = AudiobookRecorder.window.book;
+        Book book = getBook();
 
         File bookRoot = new File(Options.get("path.storage"), book.getName());
         if (!bookRoot.exists()) {
@@ -183,7 +204,7 @@ public class Chapter extends BookTreeNode {
         attributes.setAudioAttributes(audioAttributes);
 
 
-        AudioFormat sampleformat = AudiobookRecorder.window.roomNoise.getAudioFormat();
+        AudioFormat sampleformat = getBook().getRoomNoiseSentence().getAudioFormat();
         AudioFormat format = new AudioFormat(sampleformat.getSampleRate(), 16, 2, true, false);
         byte[] data;
 
@@ -201,7 +222,7 @@ public class Chapter extends BookTreeNode {
         File taggedFile = new File(export, book.getName() + " - " + name + ".mp3");
 
         FileOutputStream fos = new FileOutputStream(exportFile);
-        data = AudiobookRecorder.window.getRoomNoise(Utils.s2i(Options.get("catenation.pre-chapter")));
+        data = getBook().getRoomNoise(Utils.s2i(Options.get("catenation.pre-chapter")));
         fullLength += data.length;
         fos.write(data);
 
@@ -218,9 +239,9 @@ public class Chapter extends BookTreeNode {
             fos.write(data);
 
             if (s.hasMoreElements()) {
-                data = AudiobookRecorder.window.getRoomNoise(snt.getPostGap());
+                data = getBook().getRoomNoise(snt.getPostGap());
             } else {
-                data = AudiobookRecorder.window.getRoomNoise(Utils.s2i(Options.get("catenation.post-chapter")));
+                data = getBook().getRoomNoise(Utils.s2i(Options.get("catenation.post-chapter")));
             }
             fullLength += data.length;
             fos.write(data);
@@ -351,6 +372,11 @@ public class Chapter extends BookTreeNode {
     public void onSelect() {
         Debug.trace();
         AudiobookRecorder.window.setChapterNotes(notes);
+        TreeNode p = getParent();
+        if (p instanceof BookTreeNode) {
+            BookTreeNode btn = (BookTreeNode)p;
+            btn.onSelect();
+        }
     }
 
     public double getLength() {
@@ -366,4 +392,21 @@ public class Chapter extends BookTreeNode {
         return len;
     }
 
+    @Override
+    public Book getBook() {
+        if (parentBook != null) return parentBook;
+        if (getParent() == null) return null;
+        return (Book)getParent();
+    }
+
+    public void setParentBook(Book me) {
+        parentBook = me;
+        for (Enumeration o = children(); o.hasMoreElements();) {
+            Object ob = (Object)o.nextElement();
+            if (ob instanceof Sentence) {
+                Sentence s = (Sentence)ob;
+                s.setParentBook(me);
+            }
+        }
+    }
 }

@@ -65,7 +65,7 @@ public class MainToolBar extends JToolBar {
 
         recordRoomNoise = new JButtonSpacePlay(Icons.recordRoom, "Record Room Noise", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                root.recordRoomNoise();
+                root.book.recordRoomNoise();
             }
         });
         add(recordRoomNoise);
@@ -108,7 +108,7 @@ public class MainToolBar extends JToolBar {
             public void actionPerformed(ActionEvent e) {
                 JToggleButton b = (JToggleButton)e.getSource();
                 if (b.isSelected()) {
-                    if (!root.enableMicrophone()) {
+                    if (!Microphone.start()) {
                         b.setSelected(false);
                     } else {
                         if (bgCol == null) {
@@ -117,7 +117,7 @@ public class MainToolBar extends JToolBar {
                         b.setBackground(Color.RED);
                     }
                 } else {
-                    root.disableMicrophone();
+                    Microphone.stop();
                     if (bgCol != null) {
                         b.setBackground(bgCol);
                     }

@@ -16,5 +16,6 @@ public abstract class BookTreeNode extends DefaultMutableTreeNode {
     public abstract String getNotes();
 
     public abstract void onSelect();
+    public abstract Book getBook();
 }
 

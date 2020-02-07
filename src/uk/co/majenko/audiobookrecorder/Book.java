@@ -1,29 +1,39 @@
 package uk.co.majenko.audiobookrecorder;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.UUID;
 import java.util.Properties;
+import java.util.Random;
+import java.util.TimerTask;
+import java.util.TreeMap;
 import javax.sound.sampled.AudioFormat;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.ImageIcon;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.OutputKeys;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
+import org.xml.sax.SAXException;
 
 public class Book extends BookTreeNode {
     
@@ -33,20 +43,17 @@ public class Book extends BookTreeNode {
     String comment;
     String ACX;
     String manuscript;
-
     String defaultEffect = "none";
-
+    Sentence roomNoise = null;
     int sampleRate;
     int channels;
     int resolution;
-
     String notes = null;
-
     ImageIcon icon;
-
     Properties prefs;
-
     File location;
+    Random rng = new Random();
+    TreeMap<String, EffectGroup> effects;
 
     public Book(Properties p, String bookname) {
         super(bookname);
@@ -63,6 +70,57 @@ public class Book extends BookTreeNode {
         AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name); // This should be in the load routine!!!!
     }
 
+    public Book(File inputFile) throws SAXException, IOException, ParserConfigurationException {
+        Debug.trace();
+        Debug.d("Loading book from", inputFile.getCanonicalPath());
+        if (inputFile.getName().endsWith(".abx")) {
+            location = inputFile.getParentFile();
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            Document doc = dBuilder.parse(inputFile);
+            doc.getDocumentElement().normalize();
+            Element root = doc.getDocumentElement();
+
+            name = getTextNode(root, "title");
+            author = getTextNode(root, "author");
+            genre = getTextNode(root, "genre");
+            comment = getTextNode(root, "comment");
+            ACX = getTextNode(root, "acx");
+            manuscript = getTextNode(root, "manuscript");
+            notes = getTextNode(root, "notes");
+
+            Element settings = getNode(root, "settings");
+            Element audioSettings = getNode(settings, "audio");
+            Element effectSettings = getNode(settings, "effects");
+
+            sampleRate = Utils.s2i(getTextNode(audioSettings, "samplerate"));
+            channels = Utils.s2i(getTextNode(audioSettings, "channels"));
+            resolution = Utils.s2i(getTextNode(audioSettings, "resolution"));
+
+            defaultEffect = getTextNode(settings, "default");
+
+            AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name); // This should be in the load routine!!!!
+
+            loadEffects();
+
+            Element chapters = getNode(root, "chapters");
+
+            NodeList chapterList = chapters.getElementsByTagName("chapter");
+
+            roomNoise = new Sentence("room-noise", "Room Noise");
+            roomNoise.setParentBook(this);
+
+            for (int i = 0; i < chapterList.getLength(); i++) {
+                Element chapterElement = (Element)chapterList.item(i);
+                Chapter newChapter = new Chapter(chapterElement);
+                newChapter.setParentBook(this);
+                add(newChapter);
+            }
+    
+            AudiobookRecorder.window.updateEffectChains(effects);
+        }
+    }
+
     public void loadBookXML(Element root, DefaultTreeModel model) {
         Debug.trace();
         name = getTextNode(root, "title");
@@ -71,8 +129,6 @@ public class Book extends BookTreeNode {
         comment = getTextNode(root, "comment");
         ACX = getTextNode(root, "acx");
         manuscript = getTextNode(root, "manuscript");
-
-        AudiobookRecorder.window.setBookNotes(getTextNode(root, "notes"));
         notes = getTextNode(root, "notes");
 
         Element settings = getNode(root, "settings");
@@ -90,6 +146,9 @@ public class Book extends BookTreeNode {
         Element chapters = getNode(root, "chapters");
 
         NodeList chapterList = chapters.getElementsByTagName("chapter");
+
+        roomNoise = new Sentence("room-noise", "Room Noise");
+        roomNoise.setParentBook(this);
 
         for (int i = 0; i < chapterList.getLength(); i++) {
             Element chapterElement = (Element)chapterList.item(i);
@@ -155,7 +214,15 @@ public class Book extends BookTreeNode {
 
     public Chapter getLastChapter() {
         Debug.trace();
-        return (Chapter)getLastLeaf();
+        DefaultMutableTreeNode leaf = getLastLeaf();
+        if (leaf instanceof Sentence) {
+            Sentence s = (Sentence)leaf;
+            return (Chapter)s.getParent();
+        }
+        if (leaf instanceof Chapter) {
+            return (Chapter)getLastLeaf();
+        } 
+        return null;
     }
 
     public Chapter getChapter(int n) {
@@ -194,14 +261,9 @@ public class Book extends BookTreeNode {
         }
     }
 
-    public File getBookPath() {
-        Debug.trace();
-        return new File(Options.get("path.storage"), name);
-    }
-
     public void renameBook(String newName) {
         Debug.trace();
-        File oldDir = getBookPath();
+        File oldDir = location;
         File newDir = new File(Options.get("path.storage"), newName);
 
         if (newDir.exists()) {
@@ -327,8 +389,7 @@ public class Book extends BookTreeNode {
         root.appendChild(makeTextNode(doc, "genre", genre));
         root.appendChild(makeTextNode(doc, "acx", ACX));
         root.appendChild(makeTextNode(doc, "manuscript", manuscript));
-
-        root.appendChild(makeTextNode(doc, "notes", AudiobookRecorder.window.getBookNotes()));
+        root.appendChild(makeTextNode(doc, "notes", notes));
 
         Element settingsNode = doc.createElement("settings");
         root.appendChild(settingsNode);
@@ -405,7 +466,7 @@ public class Book extends BookTreeNode {
     public void setManuscript(File f) {
         Debug.trace();
         manuscript = f.getName();
-        File dst = new File(getBookPath(), manuscript);
+        File dst = new File(location, manuscript);
 
         try {
             Files.copy(f.toPath(), dst.toPath());
@@ -418,7 +479,7 @@ public class Book extends BookTreeNode {
         Debug.trace();
         if (manuscript == null) return null;
         if (manuscript.equals("")) return null;
-        File f = new File(getBookPath(), manuscript);
+        File f = new File(location, manuscript);
         if (f.exists()) { 
             return f;
         }
@@ -426,21 +487,34 @@ public class Book extends BookTreeNode {
     }
 
     public void onSelect() {
+        Debug.trace();
+        AudiobookRecorder.window.setBookNotes(notes);
+        AudiobookRecorder.window.noiseFloorLabel.setNoiseFloor(getNoiseFloorDB());
+//        AudiobookRecorder.window.updateEffectChains(effects);
+        TreeNode p = getParent();
+        if (p instanceof BookTreeNode) {
+            BookTreeNode btn = (BookTreeNode)p;
+            btn.onSelect();
+        }
     }
 
     public String getNotes() {
+        Debug.trace();
         return notes;
     }
 
     public void setNotes(String n) {
+        Debug.trace();
         notes = n;
     }
 
     public File getLocation() { 
+        Debug.trace();
         return location;
     }
 
     public void setLocation(File l) {
+        Debug.trace();
         location = l;
     }
 
@@ -448,6 +522,7 @@ public class Book extends BookTreeNode {
         Debug.trace();
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
+                Debug.trace();
                 if (AudiobookRecorder.window == null) return;
                 if (AudiobookRecorder.window.bookTreeModel == null) return;
                 try {
@@ -456,5 +531,136 @@ public class Book extends BookTreeNode {
                 }
             }
         });
+    }
+
+    @Override
+    public Book getBook() {
+        Debug.trace();
+        return this;
+    }
+
+    public byte[] getRoomNoise(int ms) {
+        Debug.trace();
+
+        if (roomNoise == null) return null;
+
+//        roomNoise.setEffectChain(getDefaultEffect());
+        int len = roomNoise.getSampleSize();
+        if (len == 0) return null;
+
+        AudioFormat f = roomNoise.getAudioFormat();
+
+        float sr = f.getSampleRate();
+
+        int samples = (int)(ms * (sr / 1000f));
+
+        int start = rng.nextInt(len - samples);
+        int end = start + samples;
+
+        roomNoise.setStartOffset(start);
+        roomNoise.setEndOffset(end);
+
+        byte[] data = roomNoise.getPCMData();
+
+        return data;
+    }
+
+    public double getNoiseFloor() {
+        Debug.trace();
+        if (roomNoise == null) return 0;
+        return roomNoise.getPeak();
+    }
+
+    public int getNoiseFloorDB() {
+        Debug.trace();
+        if (roomNoise == null) return 0;
+        return roomNoise.getPeakDB();
+    }
+
+    public Sentence getRoomNoiseSentence() {
+        Debug.trace();
+        return roomNoise;
+    }
+
+    public void recordRoomNoise() {
+        Debug.trace();
+        if (roomNoise.startRecording()) {
+
+            java.util.Timer ticker = new java.util.Timer(true);
+            ticker.schedule(new TimerTask() {
+                public void run() {
+                    Debug.trace();
+                    roomNoise.stopRecording();
+                }
+            }, 5000); // 5 seconds of recording
+        }
+    }
+
+    public void loadEffects() {
+        Debug.trace();
+        effects = new TreeMap<String,EffectGroup>();
+        loadEffectsFromFolder(new File(Options.get("path.storage"), "System"));
+        if (getBook() != null) {
+            loadEffectsFromFolder(location);
+        }
+    }
+
+    public void loadEffectsFromFolder(File dir) {
+        Debug.trace();
+        if (dir == null) return;
+        if (!dir.exists()) return;
+        File[] files = dir.listFiles();
+        for (File f : files) {
+            if (f.getName().endsWith(".eff")) {
+                EffectGroup g = loadEffect(f);
+                if (g != null) {
+                    String fn = f.getName().replace(".eff","");
+                    effects.put(fn, g);
+                }
+            }
+        }
+    }
+
+    public EffectGroup loadEffect(File xml) {
+        Debug.trace();
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document document = builder.parse(xml);
+
+            Element root = document.getDocumentElement();
+            if (root.getTagName().equals("effect")) {
+                EffectGroup g = EffectGroup.loadEffectGroup(root);
+                return g;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void save() throws ParserConfigurationException, TransformerConfigurationException, TransformerException {
+        Debug.trace();
+        if (location == null) {
+            location = new File(Options.get("path.storage"), getName());
+        }
+
+        if (!location.exists()) {
+            location.mkdirs();
+        }
+
+        File xml = new File(location, "audiobook.abx");
+        Document doc = buildDocument();
+
+
+        // write the content into xml file
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+        DOMSource source = new DOMSource(doc);
+        StreamResult result = new StreamResult(xml);
+        transformer.transform(source, result);
     }
 }

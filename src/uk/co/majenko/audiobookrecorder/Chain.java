@@ -15,7 +15,7 @@ public class Chain implements Effect {
 
     public void process(double[][] samples) {
         if (target != null) {
-            Effect t = AudiobookRecorder.window.effects.get(target);
+            Effect t = AudiobookRecorder.window.getBook().effects.get(target);
             if (t != null) {
                 t.process(samples);
             }
@@ -40,7 +40,7 @@ public class Chain implements Effect {
 
     public void init(double sf) {
         if (target != null) {
-            Effect t = AudiobookRecorder.window.effects.get(target);
+            Effect t = AudiobookRecorder.window.getBook().effects.get(target);
             if (t != null) {
                 t.init(sf);
             }
