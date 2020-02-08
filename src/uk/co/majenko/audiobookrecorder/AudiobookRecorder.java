@@ -2884,9 +2884,17 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     public void moveSentences(Chapter from, Chapter to) {
         while (from.getChildCount() > 0) {
-            DefaultMutableTreeNode n = (DefaultMutableTreeNode)from.getFirstChild();
-            from.remove(n);
-            to.add(n);
+            try {
+                Sentence snt = (Sentence)from.getFirstChild();
+                File source = snt.getFile();
+                from.remove(snt);
+                to.add(snt);
+                snt.setParentBook(to.getBook());
+                File destination = snt.getFile();
+                Files.copy(source.toPath(), destination.toPath());
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
@@ -2903,13 +2911,13 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         while (from.getChildCount() > 0) {
             Chapter fc = (Chapter)from.getFirstChild();
             Chapter tc = findChapter(to, fc.getId(), fc.getName());
-            if (tc != null) {
-                moveSentences(fc, tc);
-                from.remove(fc);
-            } else {
-                from.remove(fc);
-                to.add(fc);
+            if (tc == null) {
+                tc = new Chapter(fc.getId(), fc.getName());
+                tc.setParentBook(to);
+                to.add(tc);
             }
+            moveSentences(fc, tc);
+            from.remove(fc);
         }
     }
 
