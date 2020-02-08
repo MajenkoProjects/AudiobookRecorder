@@ -90,6 +90,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.OutputKeys;
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.SourceDataLine;
@@ -140,8 +141,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     JMenuItem toolsCoverArt;
     JMenuItem toolsManuscript;
     JMenuItem toolsOptions;
-
-    JMenuItem helpAbout;
 
     FlashPanel centralPanel;
 
@@ -361,16 +360,21 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
 
         helpMenu = new JMenu("Help");
-        helpAbout = new JMenuItem("About AudiobookRecorder");
 
-        helpAbout.addActionListener(new ActionListener() {
+        helpMenu.add(new JMenuObject("Website", null, new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Debug.trace();
+                Utils.browse("https://majenkoprojects.github.io/AudiobookRecorder/index.html");
+            }
+        }));
+
+        helpMenu.add(new JMenuObject("About AudiobookRecorder", null, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
                 JOptionPane.showMessageDialog(AudiobookRecorder.this, new AboutPanel(), "About AudiobookRecorder", JOptionPane.PLAIN_MESSAGE);
             }
-        });
+        }));
 
-        helpMenu.add(helpAbout);
         menuBar.add(helpMenu);
 
         ob.add(menuBar, BorderLayout.NORTH);
@@ -574,7 +578,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
         });
 
-        gainPercent = new JSpinner(new SteppedNumericSpinnerModel(0, 500, 1, 100));
+        gainPercent = new JSpinner(new SteppedNumericSpinnerModel(0, 1000, 1, 100));
         gainPercent.setPreferredSize(new Dimension(50, 20));
 
         gainPercent.addChangeListener(new ChangeListener() {
@@ -1681,6 +1685,15 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     }
                 });
 
+                JMenuObject importWav = new JMenuObject("Import WAV file...", c, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter chap = (Chapter)o.getObject();
+                        importWavFile(chap);
+                    }
+                });
+
                 JMenuObject exportChapter = new JMenuObject("Export chapter", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         Debug.trace();
@@ -1791,6 +1804,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 menu.add(lockAll);
                 menu.add(unlockAll);
                 menu.addSeparator();
+                menu.add(importWav);
                 menu.add(exportChapter);
                 menu.addSeparator();
                 menu.add(deleteChapter);
@@ -3771,5 +3785,46 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 //        }
 
         CacheManager.purgeCache();
+    }
+
+    public void importWavFile(Chapter c) {
+        JFileChooser jc = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("WAV Files", "wav");
+        jc.addChoosableFileFilter(filter);
+        jc.setFileFilter(filter);
+        jc.setDialogTitle("Select WAV File");
+        int r = jc.showOpenDialog(this);
+
+        if (r != JFileChooser.APPROVE_OPTION) return;
+        File f = jc.getSelectedFile();
+        if (!f.exists()) return;
+
+        try {
+
+            Book book = c.getBook();
+            AudioFormat targetFormat = book.getAudioFormat();
+
+            Sentence newSentence = new Sentence();
+            newSentence.setText(f.getName());
+            newSentence.setParentBook(book);
+            c.add(newSentence);
+
+            FileOutputStream fos = new FileOutputStream(newSentence.getFile());
+            AudioInputStream source = AudioSystem.getAudioInputStream(f);
+            AudioInputStream in = AudioSystem.getAudioInputStream(targetFormat, source);
+            AudioSystem.write(in, AudioFileFormat.Type.WAVE, newSentence.getFile());
+//            fos.close();
+            in.close();
+            source.close();
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    bookTreeModel.reload(c);
+                    bookTree.setSelectionPath(new TreePath(newSentence.getPath()));
+                    bookTree.scrollPathToVisible(new TreePath(newSentence.getPath()));
+                }
+            });
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 }

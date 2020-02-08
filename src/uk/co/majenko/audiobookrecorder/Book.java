@@ -54,6 +54,7 @@ public class Book extends BookTreeNode {
     File location;
     Random rng = new Random();
     TreeMap<String, EffectGroup> effects;
+    AudioFormat cachedFormat = null;
 
     public Book(String bookname) {
         super(bookname);
@@ -125,6 +126,13 @@ public class Book extends BookTreeNode {
 
             roomNoise = new Sentence("room-noise", "Room Noise");
             roomNoise.setParentBook(this);
+
+            AudioFormat fmt = getAudioFormat();
+            if (fmt != null) {
+                sampleRate = (int)fmt.getSampleRate();
+                channels = fmt.getChannels();
+                resolution = fmt.getSampleSizeInBits();
+            }
 
             Element chapters = getNode(root, "chapters");
             NodeList chapterList = chapters.getElementsByTagName("chapter");
@@ -342,7 +350,11 @@ public class Book extends BookTreeNode {
 
     public AudioFormat getAudioFormat() {
         Debug.trace();
-        return new AudioFormat(getSampleRate(), getResolution(), getChannels(), true, false);
+        if (cachedFormat != null) {
+            return cachedFormat;
+        }
+        cachedFormat = roomNoise.getAudioFormat();
+        return cachedFormat;
     }
 
     public File getBookFolder() {
