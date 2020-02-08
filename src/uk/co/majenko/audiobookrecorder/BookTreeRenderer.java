@@ -96,29 +96,30 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
             ctx.anchor = GridBagConstraints.LINE_START;
             p.add(ret, ctx);
 
-            if (s.isProcessing()) {
-                JLabel eff = new JLabel();
-                eff.setIcon(Icons.processing);
-                ctx.weightx = 0.0d;
-                ctx.gridx = 1;
-                p.add(eff);
-            } else if (s.isQueued()) {
-                JLabel eff = new JLabel();
-                eff.setIcon(Icons.queued);
-                ctx.weightx = 0.0d;
-                ctx.gridx = 1;
-                p.add(eff);
-            }
-
             String effectChain = s.getEffectChain();
             if ((effectChain != null) && (!effectChain.equals("none"))) {
                 Effect e = AudiobookRecorder.window.getBook().effects.get(effectChain);
                 if (e != null) {
                     JLabel eff = new JLabel(e.toString() + " ");
                     ctx.weightx = 0.0d;
-                    ctx.gridx = 2;
+                    ctx.gridx = 1;
                     p.add(eff);
                 }
+            }
+
+
+            if (s.isProcessing()) {
+                JLabel eff = new JLabel();
+                eff.setIcon(Icons.processing);
+                ctx.weightx = 0.0d;
+                ctx.gridx = 2;
+                p.add(eff);
+            } else if (s.isQueued()) {
+                JLabel eff = new JLabel();
+                eff.setIcon(Icons.queued);
+                ctx.weightx = 0.0d;
+                ctx.gridx = 2;
+                p.add(eff);
             }
 
             ctx.weightx = 0.0d;
