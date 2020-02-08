@@ -62,6 +62,8 @@ public class Book extends BookTreeNode {
         location = new File(Options.get("path.storage"), sanitize(name));
         AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name); // This should be in the load routine!!!!
         setIcon(Icons.book);
+        roomNoise = new Sentence("room-noise", "Room Noise");
+        roomNoise.setParentBook(this);
     }
 /*
     public Book(Element root) {
@@ -203,16 +205,6 @@ public class Book extends BookTreeNode {
     public String getComment() { Debug.trace(); return comment; }
     public String getACX() { Debug.trace(); if (ACX == null) return ""; return ACX; }
 
-    public Chapter getClosingCredits() {
-        Debug.trace();
-        return getChapterById("close");
-    }
-    
-    public Chapter getOpeningCredits() {
-        Debug.trace();
-        return getChapterById("open");
-    }
-
     @SuppressWarnings("unchecked")
     public Chapter getChapterById(String id) {
         Debug.trace();
@@ -221,6 +213,20 @@ public class Book extends BookTreeNode {
             if (ob instanceof Chapter) {
                 Chapter c = (Chapter)ob;
                 if (c.getId().equals(id)) {
+                    return c;
+                }
+            }
+        }
+        return null;
+    }
+
+    public Chapter getChapterByName(String name) {
+        Debug.trace();
+        for (Enumeration o = children(); o.hasMoreElements();) {
+            Object ob = (Object)o.nextElement();
+            if (ob instanceof Chapter) {
+                Chapter c = (Chapter)ob;
+                if (c.getName().equals(name)) {
                     return c;
                 }
             }
@@ -251,6 +257,24 @@ public class Book extends BookTreeNode {
         Debug.trace();
         String uuid = UUID.randomUUID().toString();
         Chapter c = new Chapter(uuid, uuid);
+        add(c);
+        c.setParentBook(this);
+        return c;
+    }
+
+    public Chapter addChapter(String name) {
+        Debug.trace();
+        String uuid = UUID.randomUUID().toString();
+        Chapter c = new Chapter(uuid, name);
+        add(c);
+        c.setParentBook(this);
+        return c;
+    }
+
+    public Chapter addChapter(String id, String name) {
+        Debug.trace();
+        Chapter c = new Chapter(id, name);
+        add(c);
         c.setParentBook(this);
         return c;
     }

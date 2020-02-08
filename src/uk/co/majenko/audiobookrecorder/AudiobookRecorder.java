@@ -1196,9 +1196,9 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             newbook.setComment(info.getComment().trim());
             newbook.setACX(info.getACX().trim());
 
-            Chapter caud = new Chapter(UUID.randomUUID().toString(), "Audition");
-            Chapter copen = new Chapter(UUID.randomUUID().toString(), "Opening Credits");
-            Chapter cclose = new Chapter(UUID.randomUUID().toString(), "Closing Credits");
+            Chapter caud = new Chapter("audition", "Audition");
+            Chapter copen = new Chapter("open", "Opening Credits");
+            Chapter cclose = new Chapter("close", "Closing Credits");
             Chapter cone = new Chapter(UUID.randomUUID().toString(), "Chapter 1");
 
             newbook.add(caud);
@@ -1674,13 +1674,9 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                             JMenuObject2 ob = (JMenuObject2)e.getSource();
                             Chapter source = (Chapter)ob.getObject1();
                             Chapter target = (Chapter)ob.getObject2();
-
-                            DefaultMutableTreeNode n = source.getFirstLeaf();
-                            while (n instanceof Sentence) {
-                                bookTreeModel.removeNodeFromParent(n);
-                                bookTreeModel.insertNodeInto(n, target, target.getChildCount());
-                                n = source.getFirstLeaf();
-                            }
+                            moveSentences(source, target);
+                            bookTreeModel.reload(source);
+                            bookTreeModel.reload(target);
                         }
                     });
                     mergeWith.add(m);
@@ -2191,9 +2187,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 name = chapname + (chapnum + 1);
             }
         }
-        Chapter c = getBook().addChapter();   
-        c.setName(name);
-        bookTreeModel.insertNodeInto(c, getBook(), getBook().getChildCount());
+        Chapter c = getBook().addChapter(name);   
+        bookTreeModel.reload(c);
         bookTree.scrollPathToVisible(new TreePath(c.getPath()));
     } 
 
@@ -2854,89 +2849,45 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
 
             try {
-                Properties prefs = new Properties();
-                FileInputStream fis = new FileInputStream(f);
-                prefs.loadFromXML(fis);
-
-                // Merge the opening credits if they exist
-                if (prefs.getProperty("chapter.open.name") != null) {
-                    mergeChapter(prefs, "open");
-                }
-
-                // Merge the audition if it exists
-                if (prefs.getProperty("chapter.audition.name") != null) {
-                    mergeChapter(prefs, "audition");
-                }
-
-                for (int i = 0; i < 9999; i++) {
-                    String chid = String.format("%04d", i);
-                    if (prefs.getProperty("chapter." + chid + ".name") != null) {
-                        mergeChapter(prefs, chid);
-                    }
-                }
-
-                // Merge the opening credits if they exist
-                if (prefs.getProperty("chapter.open.name") != null) {
-                    mergeChapter(prefs, "open");
-                }
-
-                // Merge the closing credits if they exist
-                if (prefs.getProperty("chapter.close.name") != null) {
-                    mergeChapter(prefs, "close");
-                }
-
+                Book toBook = getBook();
+                Book fromBook = new Book(f);
+                mergeAllChapters(fromBook, toBook);
+                bookTreeModel.reload(toBook);
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-
-
         }
     }
 
-    public void mergeChapter(Properties prefs, String chid) {
-        Debug.trace();
-        Chapter c = getBook().addChapter();
-        c.setName("Merged-" + prefs.getProperty("chapter." + chid + ".name"));
-        c.setPostGap(Utils.s2i(prefs.getProperty("chapter." + chid + ".post-gap")));
-        c.setPreGap(Utils.s2i(prefs.getProperty("chapter." + chid + ".pre-gap")));
-
-        Chapter lc = getBook().getLastChapter();
-        int idx = bookTreeModel.getIndexOfChild(getBook(), lc);
-        bookTreeModel.insertNodeInto(c, getBook(), idx+1);
-
-
-        File srcBook = new File(Options.get("path.storage"), prefs.getProperty("book.name"));
-        File srcFolder = new File(srcBook, "files");
-
-        File dstBook = new File(Options.get("path.storage"), getBook().getName());
-        File dstFolder = new File(dstBook, "files");
-
-        for (int i = 0; i < 100000000; i++) {
-            String id = prefs.getProperty(String.format("chapter." + chid + ".sentence.%08d.id", i));
-            String text = prefs.getProperty(String.format("chapter." + chid + ".sentence.%08d.text", i));
-            int gap = Utils.s2i(prefs.getProperty(String.format("chapter." + chid + ".sentence.%08d.post-gap", i)));
-            if (id == null) break;
-            Sentence s = new Sentence(id, text);
-            s.setPostGap(gap);
-            s.setStartOffset(Utils.s2i(prefs.getProperty(String.format("chapter." + chid + ".sentence.%08d.start-offset", i))));
-            s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter." + chid + ".sentence.%08d.end-offset", i))));
-            s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter." + chid + ".sentence.%08d.locked", i))));
-            bookTreeModel.insertNodeInto(s, c, c.getChildCount());
-
-            File srcFile = new File(srcFolder, s.getId() + ".wav");
-            File dstFile = new File(dstFolder, s.getId() + ".wav");
-
-            if (srcFile.exists()) {
-                try {
-                    Files.copy(srcFile.toPath(), dstFile.toPath());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
+    public void moveSentences(Chapter from, Chapter to) {
+        while (from.getChildCount() > 0) {
+            DefaultMutableTreeNode n = (DefaultMutableTreeNode)from.getFirstChild();
+            from.remove(n);
+            to.add(n);
         }
+    }
 
+    public Chapter findChapter(Book from, String id, String name) {
+        Chapter c = from.getChapterById(id);
+        if (c != null) return c;
+        c = from.getChapterByName(name);
+        if (c != null) return c;
+        return null;
+    }
+
+    public void mergeAllChapters(Book from, Book to) {
+        if (from.getChildCount() == 0) return;
+        while (from.getChildCount() > 0) {
+            Chapter fc = (Chapter)from.getFirstChild();
+            Chapter tc = findChapter(to, fc.getId(), fc.getName());
+            if (tc != null) {
+                moveSentences(fc, tc);
+                from.remove(fc);
+            } else {
+                from.remove(fc);
+                to.add(fc);
+            }
+        }
     }
 
     ArrayList<File> gatherFiles(File root) {
