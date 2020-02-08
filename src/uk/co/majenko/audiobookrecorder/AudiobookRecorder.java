@@ -130,7 +130,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     JMenuItem fileExit;
     JMenuItem fileOpenArchive;
 
-    JMenuItem bookNewChapter;
     JMenuItem bookExportAudio;
     JMenu bookVisitACX;
     JMenuItem bookVisitTitle;
@@ -276,14 +275,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         bookMenu = new JMenu("Book");
         
-        bookNewChapter = new JMenuItem("New Chapter");
-        bookNewChapter.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Debug.trace();
-                addChapter();
-            }
-        });
-
         bookExportAudio = new JMenuItem("Export Audio");
         bookExportAudio.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -292,7 +283,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
         });
 
-        bookMenu.add(bookNewChapter);
         bookMenu.add(bookExportAudio);
 
         bookVisitACX = new JMenu("Visit ACX");
@@ -1812,6 +1802,17 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 Book book = (Book)node;
                 JPopupMenu menu = new JPopupMenu();
 
+                menu.add(new JMenuObject("Add chapter", book, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject src = (JMenuObject)(e.getSource());
+                        Book thisBook = (Book)(src.getObject());
+                        addChapter(thisBook);
+                    }
+                }));
+            
+                menu.addSeparator();
+
                 menu.add(new JMenuObject("Edit Data...", book, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         Debug.trace();
@@ -2190,9 +2191,15 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void addChapter() {
+        if (getBook() != null) {
+            addChapter(getBook());
+        }
+    }
+
+    public void addChapter(Book book) {
         Debug.trace();
-        Chapter last = getBook().getLastChapter();
-        String name = "Chapter " + (getBook().getChildCount() + 1);
+        Chapter last = book.getLastChapter();
+        String name = "Chapter " + (book.getChildCount() + 1);
         if (last != null) {
             String lastname = last.getName();
             Pattern p = Pattern.compile("^([^\\d]+)(\\d+)$");
@@ -2203,8 +2210,9 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 name = chapname + (chapnum + 1);
             }
         }
-        Chapter c = getBook().addChapter(name);   
-        bookTreeModel.reload(c);
+        Chapter c = book.addChapter(name);   
+        bookTreeModel.reload(book);
+        bookTree.setSelectionPath(new TreePath(c.getPath()));
         bookTree.scrollPathToVisible(new TreePath(c.getPath()));
     } 
 
