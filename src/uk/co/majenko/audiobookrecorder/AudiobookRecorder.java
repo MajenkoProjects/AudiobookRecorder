@@ -137,11 +137,9 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     JMenuItem bookVisitAudition;
     JMenuItem bookVisitProduce;
 
-    JMenuItem toolsMerge;
     JMenuItem toolsArchive;
     JMenuItem toolsCoverArt;
     JMenuItem toolsManuscript;
-    JMenuItem toolsReloadEffects;
     JMenuItem toolsOptions;
 
     JMenuItem helpAbout;
@@ -184,7 +182,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     JSpinner postSentenceGap;
     JSpinner gainPercent;
-    Timer waveformUpdater = new Timer();
     JCheckBox locked;
     JCheckBox attention;
     JCheckBox rawAudio;
@@ -332,14 +329,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         toolsMenu = new JMenu("Tools");
 
-        toolsMerge = new JMenuItem("Merge Book...");
-        toolsMerge.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Debug.trace();
-                mergeBook(getBook());
-            }
-        });
-        
         toolsArchive = new JMenuItem("Archive Book");
         toolsArchive.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -364,18 +353,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
         });
 
-        toolsReloadEffects = new JMenuItem("Reload effects");
-        toolsReloadEffects.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Debug.trace();
-                queueJob(new Runnable() {
-                    public void run() {
-                        getBook().loadEffects();
-                    }
-                });
-            }
-        });
-        
         toolsOptions = new JMenuItem("Options");
         toolsOptions.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -384,11 +361,9 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
         });
         
-        toolsMenu.add(toolsMerge);
         toolsMenu.add(toolsArchive);
         toolsMenu.add(toolsCoverArt);
         toolsMenu.add(toolsManuscript);
-        toolsMenu.add(toolsReloadEffects);
         toolsMenu.addSeparator();
         toolsMenu.add(toolsOptions);
 
@@ -1887,6 +1862,15 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     }
                 }));
 
+                menu.add(new JMenuObject("Reload effects", book, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject src = (JMenuObject)(e.getSource());
+                        Book thisBook = (Book)(src.getObject());
+                        thisBook.loadEffects();
+                    }
+                }));
+
                 menu.addSeparator();
 
                 menu.add(new JMenuObject("Close book", book, new ActionListener() {
@@ -3243,36 +3227,22 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         updateWaveform(false);
     }
 
-    TimerTask waveformUpdaterTask = null;
-
     synchronized public void updateWaveform(boolean force) {
         Debug.trace();
-        if (selectedSentence != null) {
-            if ((!force) && (sampleWaveform.getId() != null) && (sampleWaveform.getId().equals(selectedSentence.getId()))) return;
-    
-            synchronized (waveformUpdater) {
-//                try {
-//                    if (waveformUpdaterTask != null) {
-//                        waveformUpdaterTask.cancel();
-//                    }
-//                } catch (Exception ex) {
-//                }
-
-//                waveformUpdaterTask = new TimerTask() {
-//                    public void run() {
-                        sampleWaveform.setId(selectedSentence.getId());
-                        if (rawAudio.isSelected()) {
-                            sampleWaveform.setData(selectedSentence.getRawAudioData());
-                        } else {
-                            sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
-                        }
-//                    }
-//                };
-
-//                waveformUpdater.schedule(waveformUpdaterTask, 20);
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                if (selectedSentence != null) {
+                    if ((!force) && (sampleWaveform.getId() != null) && (sampleWaveform.getId().equals(selectedSentence.getId()))) return;
+            
+                    sampleWaveform.setId(selectedSentence.getId());
+                    if (rawAudio.isSelected()) {
+                        sampleWaveform.setData(selectedSentence.getRawAudioData());
+                    } else {
+                        sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
+                    }
+                }
             }
-
-        }
+        });
     }
 
     synchronized public void updateWaveformMarkers() {
