@@ -2891,7 +2891,9 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 to.add(snt);
                 snt.setParentBook(to.getBook());
                 File destination = snt.getFile();
-                Files.copy(source.toPath(), destination.toPath());
+                if (from.getBook() != to.getBook()) {
+                    Files.copy(source.toPath(), destination.toPath());
+                }
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
