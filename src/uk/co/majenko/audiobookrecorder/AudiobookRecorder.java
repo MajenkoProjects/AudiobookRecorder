@@ -1090,14 +1090,18 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         try {
                             Book b = new Book(f);
                             rootNode.add(b);
-                            bookTreeModel.reload(rootNode);
-                            bookTree.expandPath(new TreePath(b.getPath()));
                         } catch (Exception ex) {
                             ex.printStackTrace();
                         }
                     }
                 }
             }
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    bookTreeModel.reload(rootNode);
+                    expandAllBooks();
+                }
+            });
         }
 
         queueJob(new VersionChecker());
@@ -2215,6 +2219,16 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         bookTreeModel.reload(c);
         bookTree.scrollPathToVisible(new TreePath(c.getPath()));
     } 
+
+    public void expandAllBooks() {
+        for (Enumeration s = rootNode.children(); s.hasMoreElements();) {
+            TreeNode n = (TreeNode)s.nextElement();
+            if (n instanceof Book) {
+                Book b = (Book)n;
+                bookTree.expandPath(new TreePath(b.getPath()));
+            }
+        }
+    }
 
     public void saveAllBooks() {
         for (Enumeration s = rootNode.children(); s.hasMoreElements();) {
