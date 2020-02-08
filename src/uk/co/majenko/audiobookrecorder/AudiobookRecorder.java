@@ -132,7 +132,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     JMenuItem bookNewChapter;
     JMenuItem bookExportAudio;
-    JMenuItem bookPurgeBackups;
     JMenu bookVisitACX;
     JMenuItem bookVisitTitle;
     JMenuItem bookVisitAudition;
@@ -296,17 +295,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
         });
 
-        bookPurgeBackups = new JMenuItem("Purge Backups");
-        bookPurgeBackups.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Debug.trace();
-                getBook().purgeBackups();
-            }
-        });
-
         bookMenu.add(bookNewChapter);
         bookMenu.add(bookExportAudio);
-        bookMenu.add(bookPurgeBackups);
 
         bookVisitACX = new JMenu("Visit ACX");
         bookMenu.add(bookVisitACX);
@@ -1847,18 +1837,16 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 Book book = (Book)node;
                 JPopupMenu menu = new JPopupMenu();
 
-                JMenuItem editData = new JMenuObject("Edit Data...", book, new ActionListener() {
+                menu.add(new JMenuObject("Edit Data...", book, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         Debug.trace();
                         JMenuObject src = (JMenuObject)(e.getSource());
                         Book thisBook = (Book)(src.getObject());
                         editBookInfo(thisBook);
                     }
-                });
+                }));
                 
-                menu.add(editData);
-
-                JMenuObject resetBookGaps = new JMenuObject("Reset all post gaps", book, new ActionListener() {
+                menu.add(new JMenuObject("Reset all post gaps", book, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         Debug.trace();
                         JMenuObject src = (JMenuObject)(e.getSource());
@@ -1868,31 +1856,47 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                             chap.resetPostGaps();
                         }
                     }
-                });
+                }));
 
-                menu.add(resetBookGaps);
-
-                JMenuObject mergeBookMenu = new JMenuObject("Merge book...", book, new ActionListener() {
+                menu.add(new JMenuObject("Merge book...", book, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         Debug.trace();
                         JMenuObject src = (JMenuObject)(e.getSource());
                         Book thisBook = (Book)(src.getObject());
                         mergeBook(thisBook);
                     }
-                });
-                menu.add(mergeBookMenu);
+                }));
 
                 menu.addSeparator();
 
-                JMenuObject closeBookMenu = new JMenuObject("Close book", book, new ActionListener() {
+                menu.add(new JMenuObject("Scan for orphan files", book, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject src = (JMenuObject)(e.getSource());
+                        Book thisBook = (Book)(src.getObject());
+                        findOrphans(thisBook);
+                    }
+                }));
+
+                menu.add(new JMenuObject("Purge backups", book, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject src = (JMenuObject)(e.getSource());
+                        Book thisBook = (Book)(src.getObject());
+                        thisBook.purgeBackups();
+                    }
+                }));
+
+                menu.addSeparator();
+
+                menu.add(new JMenuObject("Close book", book, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         Debug.trace();
                         JMenuObject src = (JMenuObject)(e.getSource());
                         Book thisBook = (Book)(src.getObject());
                         closeBook(thisBook);
                     }
-                });
-                menu.add(closeBookMenu);
+                }));
                         
                 menu.show(bookTree, e.getX(), e.getY());
             }
@@ -3609,13 +3613,14 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         return false;
     }
 
-    public void gatherOrphans() {
+    public void findOrphans(Book book) {
         Chapter orphans = getChapterById("orphans");
         if (orphans == null) {
             orphans = new Chapter("orphans", "Orphan Files");
-            bookTreeModel.insertNodeInto(orphans, getBook(), getBook().getChildCount());
+            orphans.setParentBook(book);
+            book.add(orphans);
         }
-        File bookRoot = new File(Options.get("path.storage"), getBook().getName());
+        File bookRoot = book.getLocation();
         File[] files = new File(bookRoot, "files").listFiles();
         for (File f : files) {
             String filename = f.getName();
@@ -3627,17 +3632,19 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 Debug.d("Testing orphanicity of", id);
                 if (!sentenceIdExists(id)) {
                     Sentence newSentence = new Sentence(id, id);
-                    newSentence.setParentBook(getBook());
-                    bookTreeModel.insertNodeInto(newSentence, orphans, orphans.getChildCount());
+                    newSentence.setParentBook(book);
+                    orphans.add(newSentence);
                 }
             }
         }
         if (orphans.getChildCount() == 0) {
-            try {
-                bookTreeModel.removeNodeFromParent(orphans);
-            } catch (Exception ignored) {
-            }
+            book.remove(orphans);
         }
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                bookTreeModel.reload(book);
+            }
+        });
     }
 
     public Chapter getChapterById(String id) {
