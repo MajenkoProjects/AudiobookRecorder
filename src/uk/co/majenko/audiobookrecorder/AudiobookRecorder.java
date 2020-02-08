@@ -1430,10 +1430,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     }
                 });
                 setGapType.add(gapTypeSection);
-                
 
-
-                JMenuObject ins = new JMenuObject("Insert phrase above", s, new ActionListener() {
+                JMenuObject insa = new JMenuObject("Insert phrase above", s, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
@@ -1442,8 +1440,21 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         Sentence newSentence = new Sentence();
                         int where = bookTreeModel.getIndexOfChild(c, s);
                         bookTreeModel.insertNodeInto(newSentence, c, where);
+                        bookTreeModel.reload(newSentence);
                     }
-                        
+                });
+
+                JMenuObject insb = new JMenuObject("Insert phrase below", s, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Sentence s = (Sentence)o.getObject();
+                        Chapter c = (Chapter)s.getParent();
+                        Sentence newSentence = new Sentence();
+                        int where = bookTreeModel.getIndexOfChild(c, s);
+                        bookTreeModel.insertNodeInto(newSentence, c, where + 1);
+                        bookTreeModel.reload(newSentence);
+                    }
                 });
 
                 JMenuObject del = new JMenuObject("Delete phrase", s, new ActionListener() {
@@ -1526,7 +1537,10 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 menu.addSeparator();
                 menu.add(edit);
                 menu.add(external);
-                menu.add(ins);
+                menu.addSeparator();
+                menu.add(insa);
+                menu.add(insb);
+                menu.addSeparator();
                 menu.add(del);
                 menu.addSeparator();
                 menu.add(dup);
