@@ -346,7 +346,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         toolsMerge.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
-                mergeBook();
+                mergeBook(getBook());
             }
         });
         
@@ -1854,6 +1854,16 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 menu.add(resetBookGaps);
 
+                JMenuObject mergeBookMenu = new JMenuObject("Merge book...", book, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject src = (JMenuObject)(e.getSource());
+                        Book thisBook = (Book)(src.getObject());
+                        mergeBook(thisBook);
+                    }
+                });
+                menu.add(mergeBookMenu);
+
                 menu.addSeparator();
 
                 JMenuObject closeBookMenu = new JMenuObject("Close book", book, new ActionListener() {
@@ -2827,7 +2837,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         }
     }
 
-    public void mergeBook() {
+    public void mergeBook(Book toBook) {
         Debug.trace();
         OpenBookPanel info = new OpenBookPanel();
         int r = JOptionPane.showConfirmDialog(this, info, "Merge Book", JOptionPane.OK_CANCEL_OPTION);
@@ -2849,7 +2859,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
 
             try {
-                Book toBook = getBook();
                 Book fromBook = new Book(f);
                 mergeAllChapters(fromBook, toBook);
                 bookTreeModel.reload(toBook);
