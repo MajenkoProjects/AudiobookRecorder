@@ -3,13 +3,14 @@ package uk.co.majenko.audiobookrecorder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.UUID;
-import java.util.Properties;
 import java.util.Random;
 import java.util.TimerTask;
 import java.util.TreeMap;
+import java.awt.Image;
 import javax.sound.sampled.AudioFormat;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -50,26 +51,27 @@ public class Book extends BookTreeNode {
     int resolution;
     String notes = null;
     ImageIcon icon;
-    Properties prefs;
     File location;
     Random rng = new Random();
     TreeMap<String, EffectGroup> effects;
 
-    public Book(Properties p, String bookname) {
+    public Book(String bookname) {
         super(bookname);
         Debug.trace();
-        prefs = p;
         name = bookname;
+        location = new File(Options.get("path.storage"), sanitize(name));
         AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name); // This should be in the load routine!!!!
+        setIcon(Icons.book);
     }
-
+/*
     public Book(Element root) {
         super(getTextNode(root, "title"));
         Debug.trace();
         name = getTextNode(root, "title");
         AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name); // This should be in the load routine!!!!
+        setIcon(Icons.book);
     }
-
+*/
     public Book(File inputFile) throws SAXException, IOException, ParserConfigurationException {
         Debug.trace();
         Debug.d("Loading book from", inputFile.getCanonicalPath());
@@ -103,13 +105,27 @@ public class Book extends BookTreeNode {
 
             loadEffects();
 
-            Element chapters = getNode(root, "chapters");
+            File cf = new File(location, "coverart.png");
+            if (!cf.exists()) {
+                cf = new File(location, "coverart.jpg");
+                if (!cf.exists()) {
+                    cf = new File(location, "coverart.gif");
+                }
+            }
 
-            NodeList chapterList = chapters.getElementsByTagName("chapter");
+            if (cf.exists()) {
+                ImageIcon i = new ImageIcon(cf.getAbsolutePath());
+                Image ri = Utils.getScaledImage(i.getImage(), 22, 22);
+                setIcon(new ImageIcon(ri));
+            } else {
+                setIcon(Icons.book);
+            }
 
             roomNoise = new Sentence("room-noise", "Room Noise");
             roomNoise.setParentBook(this);
 
+            Element chapters = getNode(root, "chapters");
+            NodeList chapterList = chapters.getElementsByTagName("chapter");
             for (int i = 0; i < chapterList.getLength(); i++) {
                 Element chapterElement = (Element)chapterList.item(i);
                 Chapter newChapter = new Chapter(chapterElement);
@@ -234,7 +250,9 @@ public class Book extends BookTreeNode {
     public Chapter addChapter() {
         Debug.trace();
         String uuid = UUID.randomUUID().toString();
-        return new Chapter(uuid, uuid);
+        Chapter c = new Chapter(uuid, uuid);
+        c.setParentBook(this);
+        return c;
     }
 
     public String getName() {
@@ -274,7 +292,11 @@ public class Book extends BookTreeNode {
         if (oldDir.exists() && oldDir.isDirectory()) {
             oldDir.renameTo(newDir);
             name = newName;
-            AudiobookRecorder.window.saveBookStructure();
+            try {
+                save();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             reloadTree();
             Options.set("path.last-book", name);
             Options.savePreferences();
@@ -285,20 +307,6 @@ public class Book extends BookTreeNode {
     public String toString() {
         Debug.trace();
         return name;
-    }
-
-    @SuppressWarnings("unchecked")
-    public void renumberChapters() {
-        Debug.trace();
-        int id = 1;
-
-        for (Enumeration c = children(); c.hasMoreElements();) {
-            Chapter chp = (Chapter)c.nextElement();
-            if (Utils.s2i(chp.getId()) > 0) {
-                chp.setId(String.format("%04d", id));
-                id++;
-            }
-        }
     }
 
     public int getSampleRate() { Debug.trace(); return sampleRate; }
@@ -313,32 +321,8 @@ public class Book extends BookTreeNode {
         return new AudioFormat(getSampleRate(), getResolution(), getChannels(), true, false);
     }
 
-    public String get(String key) {
-        Debug.trace();
-        if (prefs.getProperty(key) == null) { return Options.get(key); }
-        return prefs.getProperty(key);
-    }
-
-    public Integer getInteger(String key) {
-        Debug.trace();
-        if (prefs.getProperty(key) == null) { return Options.getInteger(key); }
-        return Utils.s2i(prefs.getProperty(key));
-    }
-
-    public void set(String key, String value) {
-        Debug.trace();
-        prefs.setProperty(key, value);
-    }
-
-    public void set(String key, Integer value) {
-        Debug.trace();
-        prefs.setProperty(key, "" + value);
-    }
-
     public File getBookFolder() {
-        Debug.trace();
-        File dir = new File(Options.get("path.storage"), name);
-        return dir;
+        return location;
     }
 
     public ArrayList<String> getUsedEffects() {
@@ -486,15 +470,20 @@ public class Book extends BookTreeNode {
         return null;
     }
 
-    public void onSelect() {
+    public void onSelect(BookTreeNode target) {
         Debug.trace();
+        AudiobookRecorder.setSelectedBook(this);
+        if (target == this) {
+            AudiobookRecorder.setSelectedChapter(null);
+            AudiobookRecorder.setSelectedSentence(null);
+        }
         AudiobookRecorder.window.setBookNotes(notes);
         AudiobookRecorder.window.noiseFloorLabel.setNoiseFloor(getNoiseFloorDB());
 //        AudiobookRecorder.window.updateEffectChains(effects);
         TreeNode p = getParent();
         if (p instanceof BookTreeNode) {
             BookTreeNode btn = (BookTreeNode)p;
-            btn.onSelect();
+            btn.onSelect(target);
         }
     }
 
@@ -662,5 +651,27 @@ public class Book extends BookTreeNode {
         DOMSource source = new DOMSource(doc);
         StreamResult result = new StreamResult(xml);
         transformer.transform(source, result);
+    }
+
+    public File getBookFile() {
+        return new File(location, "audiobook.abx");
+    }
+
+    final static int[] illegalChars = {34, 60, 62, 124, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 58, 42, 63, 92, 47};
+
+    static {
+        Arrays.sort(illegalChars);
+    }
+
+    public static String sanitize(String badFileName) {
+        StringBuilder cleanName = new StringBuilder();
+        int len = badFileName.codePointCount(0, badFileName.length());
+        for (int i=0; i<len; i++) {
+            int c = badFileName.codePointAt(i);
+            if (Arrays.binarySearch(illegalChars, c) < 0) {
+                cleanName.appendCodePoint(c);
+            }
+        }
+        return cleanName.toString();
     }
 }

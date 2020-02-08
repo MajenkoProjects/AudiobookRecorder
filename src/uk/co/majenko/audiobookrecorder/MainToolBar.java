@@ -49,7 +49,7 @@ public class MainToolBar extends JToolBar {
 
         saveBook = new JButtonSpacePlay(Icons.save, "Save Book", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                root.saveBookStructure();
+                root.saveAllBooks();
             }
         });
         add(saveBook);
@@ -65,7 +65,7 @@ public class MainToolBar extends JToolBar {
 
         recordRoomNoise = new JButtonSpacePlay(Icons.recordRoom, "Record Room Noise", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                root.book.recordRoomNoise();
+                root.getBook().recordRoomNoise();
             }
         });
         add(recordRoomNoise);

@@ -369,13 +369,17 @@ public class Chapter extends BookTreeNode {
         notes = t;
     }
 
-    public void onSelect() {
+    public void onSelect(BookTreeNode target) {
         Debug.trace();
+        AudiobookRecorder.setSelectedChapter(this);
+        if (target == this) {
+            AudiobookRecorder.setSelectedSentence(null);
+        }
         AudiobookRecorder.window.setChapterNotes(notes);
         TreeNode p = getParent();
         if (p instanceof BookTreeNode) {
             BookTreeNode btn = (BookTreeNode)p;
-            btn.onSelect();
+            btn.onSelect(target);
         }
     }
 

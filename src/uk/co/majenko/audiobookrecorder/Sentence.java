@@ -224,12 +224,28 @@ public class Sentence extends BookTreeNode implements Cacheable {
         if (text == null) text = id;
         if (text.equals("")) text = id;
 
-//        if (id.equals("room-noise")) return;
+        if (id.equals("room-noise")) return;
+
+        if (startOffset >= sampleSize) startOffset = 0;
+        if (endOffset >= sampleSize) endOffset = sampleSize - 1;
+        if (crossStartOffset >= sampleSize) crossStartOffset = 0;
+        if (crossEndOffset >= sampleSize) crossEndOffset = sampleSize - 1;
+
+        if (crossStartOffset == -1) {
+            crossStartOffset = startOffset;
+        }
+
+        if (crossEndOffset == -1) {
+            crossEndOffset = endOffset;
+        }
 //        if ((crossStartOffset == -1) || (crossEndOffset == -1)) {
 //            updateCrossings();
 //        }
 
 //        if (runtime <= 0.01d) getLength();
+        if (runtime <= 0.001d) {
+            runtime = crossEndOffset - crossStartOffset;
+        }
     }
 
     public boolean startRecording() {
@@ -817,6 +833,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     public Sentence cloneSentence() throws IOException {
         Debug.trace();
         Sentence sentence = new Sentence();
+        sentence.setParentBook(getBook());
         sentence.setPostGap(getPostGap());
         if (!id.equals(text)) {
             sentence.setText(text);
@@ -966,6 +983,9 @@ public class Sentence extends BookTreeNode implements Cacheable {
         Debug.trace();
         ExternalEditor ed = new ExternalEditor(this);
         ed.run();
+        CacheManager.removeFromCache(this);
+        runtime = -1;
+        sampleSize = -1;
     }
 
     public void backup() throws IOException {
@@ -1009,6 +1029,10 @@ public class Sentence extends BookTreeNode implements Cacheable {
             if (command == null) return;
             if (command.equals("")) return;
 
+            Debug.d("Starting size:", sampleSize);
+            Debug.d("Start offset:", startOffset, crossStartOffset);
+            Debug.d("End offset:", endOffset, crossEndOffset);
+
             String[] parts = command.split("::");
         
             ArrayList<String> args = new ArrayList<String>();
@@ -1051,6 +1075,17 @@ public class Sentence extends BookTreeNode implements Cacheable {
             }
 
             CacheManager.removeFromCache(Sentence.this);
+            runtime = -1;
+            sampleSize = -1;
+            loadFile();
+            Debug.d("Ending size:", sampleSize);
+            if (startOffset >= sampleSize) startOffset = 0;
+            if (endOffset >= sampleSize) endOffset = sampleSize - 1;
+            crossStartOffset = -1;
+            crossEndOffset = -1;
+            updateCrossings();
+            Debug.d("Start offset:", startOffset, crossStartOffset);
+            Debug.d("End offset:", endOffset, crossEndOffset);
             AudiobookRecorder.window.updateWaveform(true);
         }
     }
@@ -1627,13 +1662,14 @@ public class Sentence extends BookTreeNode implements Cacheable {
         return notes;
     }
 
-    public void onSelect() {
+    public void onSelect(BookTreeNode target) {
         Debug.trace();
+        AudiobookRecorder.setSelectedSentence(this);
         AudiobookRecorder.window.setSentenceNotes(notes);
         TreeNode p = getParent();
         if (p instanceof BookTreeNode) {
             BookTreeNode btn = (BookTreeNode)p;
-            btn.onSelect();
+            btn.onSelect(target);
         }
     }
 
