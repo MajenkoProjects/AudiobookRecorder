@@ -121,7 +121,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     JMenuBar menuBar;
     JMenu fileMenu;
-    JMenu bookMenu;
     JMenu toolsMenu;
     JMenu helpMenu;
 
@@ -130,17 +129,10 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     JMenuItem fileSave;
     JMenuItem fileExit;
     JMenuItem fileOpenArchive;
+    JMenuItem fileOptions;
 
-    JMenuItem bookExportAudio;
-    JMenu bookVisitACX;
-    JMenuItem bookVisitTitle;
-    JMenuItem bookVisitAudition;
-    JMenuItem bookVisitProduce;
-
-    JMenuItem toolsArchive;
     JMenuItem toolsCoverArt;
     JMenuItem toolsManuscript;
-    JMenuItem toolsOptions;
 
     FlashPanel centralPanel;
 
@@ -252,6 +244,14 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
         });
 
+        fileOptions = new JMenuItem("Options");
+        fileOptions.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Debug.trace();
+                new Options(AudiobookRecorder.this);
+            }
+        });
+
         fileExit = new JMenuItem("Exit");
         fileExit.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -263,101 +263,14 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         fileMenu.add(fileNewBook);
         fileMenu.add(fileOpenBook);
+        fileMenu.add(fileOpenArchive);
         fileMenu.add(fileSave);
         fileMenu.addSeparator();
-        fileMenu.add(fileOpenArchive);
+        fileMenu.add(fileOptions);
         fileMenu.addSeparator();
         fileMenu.add(fileExit);
 
         menuBar.add(fileMenu);
-
-
-        bookMenu = new JMenu("Book");
-        
-        bookExportAudio = new JMenuItem("Export Audio");
-        bookExportAudio.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Debug.trace();
-                exportAudio();
-            }
-        });
-
-        bookMenu.add(bookExportAudio);
-
-        bookVisitACX = new JMenu("Visit ACX");
-        bookMenu.add(bookVisitACX);
-
-        bookVisitTitle = new JMenuItem("Title");
-        bookVisitTitle.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Debug.trace();
-                Utils.browse("https://www.acx.com/titleview/" + getBook().getACX());
-            }
-        });
-        bookVisitACX.add(bookVisitTitle);
-
-        bookVisitAudition = new JMenuItem("Audition");
-        bookVisitAudition.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Debug.trace();
-                Utils.browse("https://www.acx.com/titleview/" + getBook().getACX() + "?bucket=AUDITION_READY");
-            }
-        });
-        bookVisitACX.add(bookVisitAudition);
-
-        bookVisitProduce = new JMenuItem("Produce");
-        bookVisitProduce.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Debug.trace();
-                Utils.browse("https://www.acx.com/titleview/" + getBook().getACX() + "?bucket=PRODUCE");
-            }
-        });
-        bookVisitACX.add(bookVisitProduce);
-
-        menuBar.add(bookMenu);
-
-        toolsMenu = new JMenu("Tools");
-
-        toolsArchive = new JMenuItem("Archive Book");
-        toolsArchive.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Debug.trace();
-                archiveBook();
-            }
-        });
-
-        toolsCoverArt = new JMenuItem("Import Cover Art...");
-        toolsCoverArt.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Debug.trace();
-                loadCoverArt();
-            }
-        });
-        
-        toolsManuscript = new JMenuItem("Import Manuscript...");
-        toolsManuscript.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Debug.trace();
-                loadManuscript();
-            }
-        });
-
-        toolsOptions = new JMenuItem("Options");
-        toolsOptions.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Debug.trace();
-                new Options(AudiobookRecorder.this);
-            }
-        });
-        
-        toolsMenu.add(toolsArchive);
-        toolsMenu.add(toolsCoverArt);
-        toolsMenu.add(toolsManuscript);
-        toolsMenu.addSeparator();
-        toolsMenu.add(toolsOptions);
-
-        menuBar.add(toolsMenu);
-
 
         helpMenu = new JMenu("Help");
 
@@ -1859,6 +1772,66 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 menu.addSeparator();
 
+                menu.add(new JMenuObject("Export All Audio", book, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject src = (JMenuObject)(e.getSource());
+                        Book thisBook = (Book)(src.getObject());
+                        exportAudio(thisBook);
+                    }
+                }));
+
+                JMenu visitACX = new JMenu("Visit ACX");
+
+                visitACX.add(new JMenuObject("Title", book, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject src = (JMenuObject)(e.getSource());
+                        Book thisBook = (Book)(src.getObject());
+                        Utils.browse("https://www.acx.com/titleview/" + thisBook.getACX() + "?bucket=CREATIVE_BRIEF");
+                    }
+                }));
+
+                visitACX.add(new JMenuObject("Audition", book, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject src = (JMenuObject)(e.getSource());
+                        Book thisBook = (Book)(src.getObject());
+                        Utils.browse("https://www.acx.com/titleview/" + thisBook.getACX() + "?bucket=AUDITION_READY");
+                    }
+                }));
+
+                visitACX.add(new JMenuObject("Produce", book, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject src = (JMenuObject)(e.getSource());
+                        Book thisBook = (Book)(src.getObject());
+                        Utils.browse("https://www.acx.com/titleview/" + thisBook.getACX() + "?bucket=IN_PRODUCTION");
+                    }
+                }));
+
+                menu.add(visitACX);
+
+                menu.add(new JMenuObject("Import Cover Art...", book, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject src = (JMenuObject)(e.getSource());
+                        Book thisBook = (Book)(src.getObject());
+                        loadCoverArt(thisBook);
+                    }
+                }));
+
+                menu.add(new JMenuObject("Import Manuscript...", book, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject src = (JMenuObject)(e.getSource());
+                        Book thisBook = (Book)(src.getObject());
+                        loadManuscript(thisBook);
+                    }
+                }));
+
+                menu.addSeparator();
+
                 menu.add(new JMenuObject("Scan for orphan files", book, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         Debug.trace();
@@ -1887,6 +1860,16 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 }));
 
                 menu.addSeparator();
+
+                menu.add(new JMenuObject("Archive book", book, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject src = (JMenuObject)(e.getSource());
+                        Book thisBook = (Book)(src.getObject());
+                        archiveBook(thisBook);
+                    }
+                }));
+
 
                 menu.add(new JMenuObject("Close book", book, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
@@ -2513,15 +2496,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         
     }
 
-    public File getBookFolder() {
-        Debug.trace();
-        File bf = new File(Options.get("path.storage"), getBook().getName());
-        if (!bf.exists()) {
-            bf.mkdirs();
-        }
-        return bf;
-    }
-
     public void playSelectedSentence() {
         Debug.trace();
         if (selectedSentence == null) return;
@@ -2643,12 +2617,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     @SuppressWarnings("unchecked")
-    public void exportAudio() {
+    public void exportAudio(Book book) {
         Debug.trace();
-
         
-        for (Enumeration o = getBook().children(); o.hasMoreElements();) {
+        for (Enumeration o = book.children(); o.hasMoreElements();) {
             Chapter c = (Chapter)o.nextElement();
+            if (c.getChildCount() == 0) continue;
             ProgressDialog ed = new ProgressDialog("Exporting " + c.getName());
 
             ExportThread t = new ExportThread(c, ed);
@@ -2969,18 +2943,20 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     public class ArchiveBookThread implements Runnable {
         ProgressDialog pd;
+        Book book;
 
-        public ArchiveBookThread(ProgressDialog p) {
+        public ArchiveBookThread(ProgressDialog p, Book b) {
             Debug.trace();
             pd = p;
+            book = b;
         }
 
         public void run() {
             Debug.trace();
             try {
-                String name = AudiobookRecorder.this.getBook().getName();
+                String name = book.getName();
                 File storageDir = new File(Options.get("path.storage"));
-                File bookDir = AudiobookRecorder.this.getBook().getLocation();
+                File bookDir = book.getLocation();
                 File archiveDir = new File(Options.get("path.archive"));
 
                 ArrayList<File> fileList = gatherFiles(bookDir);
@@ -3004,7 +2980,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 int numFiles = fileList.size();
                 int fileNo = 0;
 
-                String prefix = storageDir.getAbsolutePath();
+                String prefix = bookDir.getParentFile().getAbsolutePath();
 
                 for (File f : fileList) {
                     fileNo++;
@@ -3035,7 +3011,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 }
 
                 // Now grab any used effects that aren't already part of the book folder
-                ArrayList<String> usedEffects = getBook().getUsedEffects();
+                ArrayList<String> usedEffects = book.getUsedEffects();
                 for (String ef : usedEffects) {
                     File inBook = new File(bookDir, ef + ".eff");
                     if (!inBook.exists()) {
@@ -3075,21 +3051,20 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         }
     }
 
-    public void archiveBook() {
+    public void archiveBook(Book book) {
         Debug.trace();
-        if (getBook() == null) return;
         int r = JOptionPane.showConfirmDialog(this, "This will stash the current book away\nin the archives folder in a compressed\nform. The existing book files will be deleted\nand the book closed.\n\nAre you sure you want to do this?", "Archive Book", JOptionPane.OK_CANCEL_OPTION);
 
         if (r == JOptionPane.OK_OPTION) {
 
             ProgressDialog pd = new ProgressDialog("Archiving book...");
-            saveBook(getBook());
+            saveBook(book);
 
-            ArchiveBookThread runnable = new ArchiveBookThread(pd);
+            ArchiveBookThread runnable = new ArchiveBookThread(pd, book);
             Thread t = new Thread(runnable);
             t.start();
             pd.setVisible(true);
-            closeBook(getBook());
+            closeBook(book);
         }
     }
 
@@ -3197,9 +3172,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         }
     }
 
-    public void loadCoverArt() {
+    public void loadCoverArt(Book book) {
         Debug.trace();
-        if (getBook() == null) return;
 
         JFileChooser jc = new JFileChooser();
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Image Files", "png", "jpg", "gif");
@@ -3212,7 +3186,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             File src = jc.getSelectedFile();
             if (src.exists()) {
                 File dest = null;
-                File bookFolder = new File(Options.get("path.storage"), getBook().getName());
+                File bookFolder = book.getLocation();
                 if (src.getName().endsWith(".png")) {
                     dest = new File(bookFolder, "coverart.png");
                 } else if (src.getName().endsWith(".jpg")) {
@@ -3235,8 +3209,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                     ImageIcon i = new ImageIcon(dest.getAbsolutePath());
                     Image ri = Utils.getScaledImage(i.getImage(), 22, 22);
-                    getBook().setIcon(new ImageIcon(ri));
-                    getBook().reloadTree();
+                    book.setIcon(new ImageIcon(ri));
+                    book.reloadTree();
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -3500,9 +3474,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         }
     }
 
-    public void loadManuscript() {
+    public void loadManuscript(Book book) {
         Debug.trace();
-        if (getBook() == null) return;
 
         JFileChooser jc = new JFileChooser();
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Document Files", "doc", "docx", "pdf", "odt");
@@ -3514,7 +3487,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         if (r == JFileChooser.APPROVE_OPTION) {
             File src = jc.getSelectedFile();
             if (src.exists()) {
-                getBook().setManuscript(src);
+                book.setManuscript(src);
             }
         }
     }
@@ -3594,8 +3567,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     // DocumentListener *//
 
-    public boolean sentenceIdExists(String id) {
-        for (Enumeration c = getBook().children(); c.hasMoreElements();) {
+    public boolean sentenceIdExists(Book book, String id) {
+        for (Enumeration c = book.children(); c.hasMoreElements();) {
             Chapter chp = (Chapter)c.nextElement();
             for (Enumeration s = chp.children(); s.hasMoreElements();) {
                 Sentence snt = (Sentence)s.nextElement();
@@ -3606,7 +3579,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public void findOrphans(Book book) {
-        Chapter orphans = getChapterById("orphans");
+        Chapter orphans = book.getChapterById("orphans");
         if (orphans == null) {
             orphans = new Chapter("orphans", "Orphan Files");
             orphans.setParentBook(book);
@@ -3622,7 +3595,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             if (filename.endsWith(".wav")) {
                 String id = filename.substring(0, filename.length() - 4);
                 Debug.d("Testing orphanicity of", id);
-                if (!sentenceIdExists(id)) {
+                if (!sentenceIdExists(book, id)) {
                     Sentence newSentence = new Sentence(id, id);
                     newSentence.setParentBook(book);
                     orphans.add(newSentence);
@@ -3637,14 +3610,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 bookTreeModel.reload(book);
             }
         });
-    }
-
-    public Chapter getChapterById(String id) {
-        for (Enumeration c = getBook().children(); c.hasMoreElements();) {
-            Chapter chp = (Chapter)c.nextElement();
-            if (chp.getId().equals(id)) return chp;
-        }
-        return null;
     }
 
     public void queueJob(Runnable r) {

@@ -45,25 +45,11 @@ public class DelayLine implements Effect {
             for (int i = 0; i < subSamples[Sentence.LEFT].length; i++) {
                 int off = i + d.getSamples();
                 if ((off < samples[Sentence.LEFT].length) && (off > 0)) {
-                    samples[Sentence.LEFT][off] = mix(samples[Sentence.LEFT][off], subSamples[Sentence.LEFT][i]);
-                    samples[Sentence.RIGHT][off] = mix(samples[Sentence.RIGHT][off], subSamples[Sentence.RIGHT][i]);
+                    samples[Sentence.LEFT][off] = Utils.mix(samples[Sentence.LEFT][off], subSamples[Sentence.LEFT][i]);
+                    samples[Sentence.RIGHT][off] = Utils.mix(samples[Sentence.RIGHT][off], subSamples[Sentence.RIGHT][i]);
                 }
             }
         }
-    }
-
-    double mix(double a, double b) {
-        double out;
-
-        if ((a < 0) && (b < 0)) {
-            out = (a + b) - (a * b);
-        } else if ((a > 0) && (b > 0)) {
-            out = (a + b) - (a * b);
-        } else {
-            out = a + b;
-        }
-
-        return out;
     }
 
     public DelayLineStore addDelayLine(int samples, double gain, double pan) {

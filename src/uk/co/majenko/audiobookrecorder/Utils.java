@@ -84,4 +84,28 @@ public class Utils {
         String time = df.format(d); 
         return time;
     }
+
+    public static double[] stereoToMono(double[][] in) {
+        double[] out = new double[in[Sentence.LEFT].length];
+
+        for (int i = 0; i < in[Sentence.LEFT].length; i++) {
+            out[i] = mix(in[Sentence.LEFT][i], in[Sentence.RIGHT][i]);
+        }
+        return out;
+    }
+
+    public static double mix(double a, double b) {
+        double out;
+
+        if ((a < 0) && (b < 0)) {
+            out = (a + b) - (a * b);
+        } else if ((a > 0) && (b > 0)) {
+            out = (a + b) - (a * b);
+        } else {
+            out = a + b;
+        }
+
+        return out;
+    }
+
 }
