@@ -383,6 +383,7 @@ public class Chapter extends BookTreeNode {
         }
     }
 
+    @Override
     public double getLength() {
         Debug.trace();
         double len = 0;
@@ -391,6 +392,7 @@ public class Chapter extends BookTreeNode {
             if (ob instanceof Sentence) {
                 Sentence s = (Sentence)ob;
                 len += s.getLength();
+                len += (s.getPostGap() / 1000d);
             }
         }
         return len;

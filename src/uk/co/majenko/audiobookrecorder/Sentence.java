@@ -817,6 +817,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     /* Get the length of the sample in seconds */
+    @Override
     public double getLength() {
         Debug.trace();
         if (runtime > 0.01d) return runtime;

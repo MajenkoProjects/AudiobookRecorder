@@ -710,4 +710,21 @@ public class Book extends BookTreeNode {
         }
         return cleanName.toString();
     }
+
+    @Override
+    public double getLength() {
+        Debug.trace();
+        double len = 0;
+        for (Enumeration o = children(); o.hasMoreElements();) {
+            Object ob = (Object)o.nextElement();
+            if (ob instanceof Chapter) {
+                Chapter c = (Chapter)ob;
+                len += c.getLength();
+                len += (c.getPreGap() / 1000d);
+                len += (c.getPostGap() / 1000d);
+            }
+        }
+        return len;
+    }
+
 }

@@ -181,7 +181,7 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
             ret.setIcon(b.getIcon());
             p.add(ret, ctx);
 
-            JLabel author = new JLabel(b.getAuthor());
+            JLabel author = new JLabel(b.getAuthor() + " - " + Utils.secToTime(b.getLength(), "HH:mm:ss"));
             ctx.gridy++;
             author.setBorder(new EmptyBorder(0, 27, 0, 0));
             Font f = author.getFont();
