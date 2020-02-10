@@ -183,6 +183,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     JToggleButtonSpacePlay selectCutMode;
     JButtonSpacePlay doCutSplit;
 
+    JButtonSpacePlay refreshSentence;
+
     JComboBox<KVPair<String,String>> effectChain;
 
     Thread playingThread = null;
@@ -574,6 +576,14 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
         });
 
+        refreshSentence = new JButtonSpacePlay(Icons.refresh, "Refresh Phrase Data", new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                Debug.trace();
+                if (selectedSentence == null) return;
+                selectedSentence.refreshAllData();
+            }
+        });
+
         controlsTop.add(attention);
 
         controlsTop.add(Box.createHorizontalGlue());
@@ -586,6 +596,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         controlsTop.add(new JLabel("%"));
 
         controlsTop.add(Box.createHorizontalGlue());
+    
+        controlsTop.add(refreshSentence);
 
 
         JButtonSpacePlay zoomIn = new JButtonSpacePlay(Icons.zoomIn, "Zoom In", new ActionListener() {

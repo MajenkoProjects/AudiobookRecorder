@@ -98,7 +98,7 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
 
             String effectChain = s.getEffectChain();
             if ((effectChain != null) && (!effectChain.equals("none"))) {
-                Effect e = AudiobookRecorder.window.getBook().effects.get(effectChain);
+                Effect e = s.getBook().effects.get(effectChain);
                 if (e != null) {
                     JLabel eff = new JLabel(e.toString() + " ");
                     ctx.weightx = 0.0d;

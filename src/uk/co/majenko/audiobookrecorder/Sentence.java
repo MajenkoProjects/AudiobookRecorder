@@ -1762,4 +1762,21 @@ public class Sentence extends BookTreeNode implements Cacheable {
     public void setParentBook(Book b) {
         parentBook = b;
     }
+
+    public void refreshAllData() {
+        runtime = -1d;
+        peak = -1d;
+        sampleSize = -1;
+        audioData = null;
+        processedAudio = null;
+        fftProfile = null;
+        CacheManager.removeFromCache(this);
+        getProcessedAudioData();
+        getLength();
+        crossStartOffset = -1;
+        crossEndOffset = -1;
+        updateCrossings();
+        getPeakDB();
+        reloadTree();
+    }
 }
