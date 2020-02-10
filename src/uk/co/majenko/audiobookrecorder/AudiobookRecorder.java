@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 import java.awt.FlowLayout;
 import java.awt.BorderLayout;
 import java.awt.Container;
+import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -907,20 +908,36 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         bookNotesArea = new JTextArea();
         bookNotesArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        bookNotesArea.getDocument().addDocumentListener(this);
+        bookNotesArea.setLineWrap(true);
+        bookNotesArea.setWrapStyleWord(true);
         bookNotesScroll = new JScrollPane();
         bookNotesScroll.setViewportView(bookNotesArea);
+        bookNotesArea.setCaretColor(new Color(20, 20, 20));
+        bookNotesArea.setForeground(new Color(20, 20, 20));
+        bookNotesArea.setBackground(new Color(224, 211, 175));
 
         chapterNotesArea = new JTextArea();
         chapterNotesArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
         chapterNotesArea.getDocument().addDocumentListener(this);
+        chapterNotesArea.setLineWrap(true);
+        chapterNotesArea.setWrapStyleWord(true);
         chapterNotesScroll = new JScrollPane();
         chapterNotesScroll.setViewportView(chapterNotesArea);
+        chapterNotesArea.setCaretColor(new Color(20, 20, 20));
+        chapterNotesArea.setForeground(new Color(20, 20, 20));
+        chapterNotesArea.setBackground(new Color(224, 211, 175));
 
         sentenceNotesArea = new JTextArea();
         sentenceNotesArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
         sentenceNotesArea.getDocument().addDocumentListener(this);
+        sentenceNotesArea.setLineWrap(true);
+        sentenceNotesArea.setWrapStyleWord(true);
         sentenceNotesScroll = new JScrollPane();
         sentenceNotesScroll.setViewportView(sentenceNotesArea);
+        sentenceNotesArea.setCaretColor(new Color(20, 20, 20));
+        sentenceNotesArea.setForeground(new Color(20, 20, 20));
+        sentenceNotesArea.setBackground(new Color(224, 211, 175));
 
         notesTabs = new JTabbedPane();
 
@@ -3375,75 +3392,34 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     //* DocumentListener
 
-    public void changedUpdate(DocumentEvent e) {
+    public void documentContentsChanged(DocumentEvent e) {
         Debug.trace();
         javax.swing.text.Document doc = e.getDocument();
         if (doc == bookNotesArea.getDocument()) {
-            getBook().setNotes(bookNotesArea.getText());
+            if (selectedBook == null) return;
+            selectedBook.setNotes(bookNotesArea.getText());
         } else if (doc == chapterNotesArea.getDocument()) {
-            DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
-            if (selectedNode instanceof Sentence) {
-                selectedNode = (DefaultMutableTreeNode)selectedNode.getParent();
-            }
-            if (! (selectedNode instanceof Chapter)) {
-                return;
-            }
-            Chapter c = (Chapter)selectedNode;
-            c.setNotes(chapterNotesArea.getText());
+            if (selectedChapter == null) return;
+            selectedChapter.setNotes(chapterNotesArea.getText());
         } else if (doc == sentenceNotesArea.getDocument()) {
-            DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
-            if (! (selectedNode instanceof Sentence)) {
-                return;
-            }
-            Sentence s = (Sentence)selectedNode;
-            s.setNotes(sentenceNotesArea.getText());
+            if (selectedSentence == null) return;
+            selectedSentence.setNotes(sentenceNotesArea.getText());
         }
+    }
+
+    public void changedUpdate(DocumentEvent e) {
+        Debug.trace();
+        documentContentsChanged(e);
     }
 
     public void removeUpdate(DocumentEvent e) {
         Debug.trace();
-        javax.swing.text.Document doc = e.getDocument();
-        if (doc == chapterNotesArea.getDocument()) {
-            DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
-            if (selectedNode instanceof Sentence) {
-                selectedNode = (DefaultMutableTreeNode)selectedNode.getParent();
-            }
-            if (! (selectedNode instanceof Chapter)) {
-                return;
-            }
-            Chapter c = (Chapter)selectedNode;
-            c.setNotes(chapterNotesArea.getText());
-        } else if (doc == sentenceNotesArea.getDocument()) {
-            DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
-            if (! (selectedNode instanceof Sentence)) {
-                return;
-            }
-            Sentence s = (Sentence)selectedNode;
-            s.setNotes(sentenceNotesArea.getText());
-        }
+        documentContentsChanged(e);
     }
 
     public void insertUpdate(DocumentEvent e) {
         Debug.trace();
-        javax.swing.text.Document doc = e.getDocument();
-        if (doc == chapterNotesArea.getDocument()) {
-            DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
-            if (selectedNode instanceof Sentence) {
-                selectedNode = (DefaultMutableTreeNode)selectedNode.getParent();
-            }
-            if (! (selectedNode instanceof Chapter)) {
-                return;
-            }
-            Chapter c = (Chapter)selectedNode;
-            c.setNotes(chapterNotesArea.getText());
-        } else if (doc == sentenceNotesArea.getDocument()) {
-            DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
-            if (! (selectedNode instanceof Sentence)) {
-                return;
-            }
-            Sentence s = (Sentence)selectedNode;
-            s.setNotes(sentenceNotesArea.getText());
-        }
+        documentContentsChanged(e);
     }
 
     // DocumentListener *//
