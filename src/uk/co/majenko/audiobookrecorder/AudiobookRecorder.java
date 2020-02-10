@@ -916,6 +916,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         bookNotesArea.setCaretColor(new Color(20, 20, 20));
         bookNotesArea.setForeground(new Color(20, 20, 20));
         bookNotesArea.setBackground(new Color(224, 211, 175));
+        bookNotesArea.setEnabled(false);
 
         chapterNotesArea = new JTextArea();
         chapterNotesArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
@@ -927,6 +928,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         chapterNotesArea.setCaretColor(new Color(20, 20, 20));
         chapterNotesArea.setForeground(new Color(20, 20, 20));
         chapterNotesArea.setBackground(new Color(224, 211, 175));
+        chapterNotesArea.setEnabled(false);
 
         sentenceNotesArea = new JTextArea();
         sentenceNotesArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
@@ -938,6 +940,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         sentenceNotesArea.setCaretColor(new Color(20, 20, 20));
         sentenceNotesArea.setForeground(new Color(20, 20, 20));
         sentenceNotesArea.setBackground(new Color(224, 211, 175));
+        sentenceNotesArea.setEnabled(false);
 
         notesTabs = new JTabbedPane();
 
@@ -3497,6 +3500,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         Debug.trace();
         selectedSentence = s;
         if (selectedSentence == null) window.sentenceNotesArea.setText("");
+        window.sentenceNotesArea.setEnabled(selectedSentence != null);
         Debug.d("Selected sentence", s);
     }
 
@@ -3504,6 +3508,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         Debug.trace();
         selectedChapter = c;
         if (selectedChapter == null) window.chapterNotesArea.setText("");
+        window.chapterNotesArea.setEnabled(selectedChapter != null);
         Debug.d("Selected chapter", c);
     }
 
@@ -3511,6 +3516,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         Debug.trace();
         selectedBook = b;
         if (selectedBook == null) window.bookNotesArea.setText("");
+        window.bookNotesArea.setEnabled(selectedBook != null);
         Debug.d("Selected book", b);
     }
 
