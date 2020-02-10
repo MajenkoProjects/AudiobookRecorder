@@ -9,6 +9,9 @@ import java.awt.Graphics2D;
 import java.awt.Desktop;
 import java.util.Date;
 import java.util.TimeZone;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 
 public class Utils {
     public static Image getScaledImage(Image srcImg, int w, int h){
@@ -106,6 +109,27 @@ public class Utils {
         }
 
         return out;
+    }
+
+    public static void copyFolder(File from, File to) throws IOException {
+        File[] files = from.listFiles();
+
+        for (File source : files) {
+            File destination = new File(to, source.getName());
+            if (destination.exists()) {
+                if (!destination.isDirectory()) {
+                    destination.delete();
+                }
+            }
+            if (source.isDirectory()) {
+                if (!destination.exists()) {
+                    destination.mkdirs();
+                }
+                copyFolder(source, destination);
+            } else {
+                Files.copy(source.toPath(), destination.toPath());
+            }
+        }
     }
 
 }

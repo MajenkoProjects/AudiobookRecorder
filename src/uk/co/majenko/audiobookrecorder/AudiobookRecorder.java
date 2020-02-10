@@ -246,6 +246,14 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
         });
 
+        JMenuItem openOld = new JMenuItem("Import old audiobook...");
+        openOld.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Debug.trace();
+                importOldStyleBook();
+            }
+        });
+
         fileOptions = new JMenuItem("Options");
         fileOptions.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -266,6 +274,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         fileMenu.add(fileNewBook);
         fileMenu.add(fileOpenBook);
         fileMenu.add(fileOpenArchive);
+        fileMenu.add(openOld);
         fileMenu.add(fileSave);
         fileMenu.addSeparator();
         fileMenu.add(fileOptions);
@@ -2145,8 +2154,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         if (recording == null) return;
         recording.stopRecording();
 
-//        getBook().reloadTree();
-
         bookTree.expandPath(new TreePath(((DefaultMutableTreeNode)recording.getParent()).getPath()));
         bookTree.setSelectionPath(new TreePath(recording.getPath()));
         bookTree.scrollPathToVisible(new TreePath(recording.getPath()));
@@ -2257,225 +2264,92 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         }
     }
 
-    /* Retained for legacy use...! */
-    public void buildBook(Properties prefs) {
+    public Chapter convertChapter(String name, String id, Properties data) {
+        Chapter c = new Chapter(id, data.getProperty("chapter." + name + ".name"));
+        c.setPostGap(Utils.s2i(data.getProperty("chapter." + name + ".post-gap")));
+        c.setPreGap(Utils.s2i(data.getProperty("chapter." + name + ".pre-gap")));
+
+        for (int i = 0; i < 100000000; i++) {
+            String sid = data.getProperty(String.format("chapter." + name + ".sentence.%08d.id", i));
+            String text = data.getProperty(String.format("chapter." + name + ".sentence.%08d.text", i));
+            int gap = Utils.s2i(data.getProperty(String.format("chapter." + name + ".sentence.%08d.post-gap", i)));
+            if (sid == null) break;
+            Sentence s = new Sentence(sid, text);
+            s.setPostGap(gap);
+            s.setStartOffset(Utils.s2i(data.getProperty(String.format("chapter." + name + ".sentence.%08d.start-offset", i))));
+            s.setEndOffset(Utils.s2i(data.getProperty(String.format("chapter. " + name + ".sentence.%08d.end-offset", i))));
+            s.setLocked(Utils.s2b(data.getProperty(String.format("chapter." + name + ".sentence.%08d.locked", i))));
+            s.setAttentionFlag(Utils.s2b(data.getProperty(String.format("chapter." + name + ".sentence.%08d.attention", i))));
+            s.setGain(Utils.s2d(data.getProperty(String.format("chapter." + name + ".sentence.%08d.gain", i))));
+            s.setEffectChain(data.getProperty(String.format("chapter." + name + ".sentence.%08d.effect", i)));
+            s.setPostGapType(data.getProperty(String.format("chapter." + name + ".sentence.%08d.gaptype", i)));
+            c.add(s);
+        }
+
+        return c;
+    }
+
+    public void importOldStyleBook() {
         Debug.trace();
-/* 
-        book = new Book(prefs, prefs.getProperty("book.name"));
+        JFileChooser jc = new JFileChooser(new File(Options.get("path.storage")));
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Old Audiobooks", "abk");
+        jc.addChoosableFileFilter(filter);
+        jc.setFileFilter(filter);
+        jc.setDialogTitle("Select Old Audiobook");
+        int r = jc.showOpenDialog(this);
 
-        getBook().setAuthor(prefs.getProperty("book.author"));
-        getBook().setGenre(prefs.getProperty("book.genre"));
-        getBook().setComment(prefs.getProperty("book.comment"));
-        getBook().setACX(prefs.getProperty("book.acx"));
-
-        getBook().loadEffects();
-
-        String defaultEffectChain = prefs.getProperty("audio.effect.default");
-
-        if (defaultEffectChain == null) {
-            defaultEffectChain = "none";
-        }
-
-        getBook().setDefaultEffect(defaultEffectChain);
-
-        int sr = Utils.s2i(prefs.getProperty("audio.recording.samplerate"));
-        if (sr == 0) {
-            sr = Options.getInteger("audio.recording.samplerate");
-        }
-        getBook().setSampleRate(sr);
-
-        int chans = Utils.s2i(prefs.getProperty("audio.recording.channels"));
-        if (chans == 0) {
-            chans = Options.getInteger("audio.recording.channels");
-        }
-        getBook().setChannels(chans);
-
-        int res = Utils.s2i(prefs.getProperty("audio.recording.resolution"));
-        if (res == 0) {
-            res = Options.getInteger("audio.recording.resolution");
-        }
-        getBook().setResolution(res);
-
-        bookTreeModel = new DefaultTreeModel(book);
-        bookTree = new JTree(bookTreeModel);
-        bookTree.setEditable(true);
-        bookTree.setUI(new CustomTreeUI(mainScroll));
-        bookTree.setCellRenderer(new BookTreeRenderer());
-
-
-        InputMap im = bookTree.getInputMap(JComponent.WHEN_FOCUSED);
-        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "startStopPlayback");
-        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.SHIFT_DOWN_MASK), "startPlaybackFrom");
-
-        bookTree.addTreeSelectionListener(new TreeSelectionListener() {
-            public void valueChanged(TreeSelectionEvent e) {
-                Debug.trace();
-                DefaultMutableTreeNode n = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
-                if (n instanceof BookTreeNode) {
-                    BookTreeNode btn = (BookTreeNode)n;
-                    btn.onSelect(btn);
-                }
-
-                if (n instanceof Sentence) {
-                    Sentence s = (Sentence)n;
-                    //selectedSentence = s;
-                    sampleWaveform.setData(s.getDoubleAudioData(effectsEnabled));
-                    sampleWaveform.setMarkers(s.getStartOffset(), s.getEndOffset());
-                    s.updateCrossings();
-                    sampleWaveform.setAltMarkers(s.getStartCrossing(), s.getEndCrossing());
-                    postSentenceGap.setValue(s.getPostGap());
-                    gainPercent.setValue((int)(s.getGain() * 100d));
-                    locked.setSelected(s.isLocked());
-                    attention.setSelected(s.getAttentionFlag());
-
-                    setEffectChain(s.getEffectChain());
-
-                    postSentenceGap.setEnabled(!s.isLocked());
-                    gainPercent.setEnabled(!s.isLocked());
-                    reprocessAudioFFT.setEnabled(!s.isLocked());
-                    reprocessAudioPeak.setEnabled(!s.isLocked());
-                    selectCutMode.setEnabled(!s.isLocked());
-                    selectSplitMode.setEnabled(!s.isLocked());
-                    doCutSplit.setEnabled(false);
-                    selectCutMode.setSelected(false);
-                    selectSplitMode.setSelected(false);
-                } else {
-                    //selectedSentence = null;
-                    sampleWaveform.clearData();
-                    postSentenceGap.setValue(0);
-                    gainPercent.setValue(100);
-                    locked.setSelected(false);
-                    attention.setSelected(false);
-                    selectCutMode.setEnabled(false);
-                    selectSplitMode.setEnabled(false);
-                    doCutSplit.setEnabled(false);
-                    selectCutMode.setSelected(false);
-                    selectSplitMode.setSelected(false);
-                }
+        if (r == JFileChooser.APPROVE_OPTION) {
+            File f = jc.getSelectedFile();
+            if (f.exists()) {
+                convertOldStyleBook(f);
             }
-        });
+        }
+    }
 
+    public void convertOldStyleBook(File f) {
+        Debug.trace();
+        try {
+            Properties data = new Properties();
+            data.loadFromXML(new FileInputStream(f));
+            File sourceFolder = f.getParentFile();
 
-        bookTree.addMouseListener(new MouseAdapter() {
-            public void mousePressed(MouseEvent e) {
-                Debug.trace();
-                if (e.isPopupTrigger()) {
-                    treePopup(e);
-                }
+            Book book = new Book(data.getProperty("book.name"));
+            book.setAuthor(data.getProperty("book.author"));
+            book.setGenre(data.getProperty("book.genre"));
+            book.setComment(data.getProperty("book.comment"));
+            book.setACX(data.getProperty("book.acx"));
+
+            book.setDefaultEffect(data.getProperty("audio.effect.default"));
+
+            book.add(convertChapter("audition", "audition", data));
+            book.add(convertChapter("open", "open", data));
+            book.add(convertChapter("close", "close", data));
+            for (int cno = 1; cno < 10000; cno++) {
+                String oldid = String.format("%04d", cno);
+                String newid = UUID.randomUUID().toString();
+                if (data.getProperty("chapter." + oldid + ".name") == null) break;
+                book.add(convertChapter(oldid, newid, data));
             }
 
-            public void mouseReleased(MouseEvent e) {
-                Debug.trace();
-                if (e.isPopupTrigger()) {
-                    treePopup(e);
-                }
-            }
-
-        });
-
-        mainScroll.setViewportView(bookTree);
-
-
-        Chapter c = new Chapter("audition", prefs.getProperty("chapter.audition.name"));
-        c.setPostGap(Utils.s2i(prefs.getProperty("chapter.audition.post-gap")));
-        c.setPreGap(Utils.s2i(prefs.getProperty("chapter.audition.pre-gap")));
-        bookTreeModel.insertNodeInto(c, getBook(), 0);
+            book.save();
         
-        for (int i = 0; i < 100000000; i++) {
-            String id = prefs.getProperty(String.format("chapter.audition.sentence.%08d.id", i));
-            String text = prefs.getProperty(String.format("chapter.audition.sentence.%08d.text", i));
-            int gap = Utils.s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.post-gap", i)));
-            if (id == null) break;
-            Sentence s = new Sentence(id, text);
-            s.setPostGap(gap);
-            s.setStartOffset(Utils.s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.start-offset", i))));
-            s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.audition.sentence.%08d.end-offset", i))));
-            s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.locked", i))));
-            s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.audition.sentence.%08d.attention", i))));
-            s.setGain(Utils.s2d(prefs.getProperty(String.format("chapter.audition.sentence.%08d.gain", i))));
-            s.setEffectChain(prefs.getProperty(String.format("chapter.audition.sentence.%08d.effect", i)));
-            s.setPostGapType(prefs.getProperty(String.format("chapter.audition.sentence.%08d.gaptype", i)));
-            bookTreeModel.insertNodeInto(s, c, c.getChildCount());
+            File destFolder = book.getLocation();
+
+            // If we are importing from the storage area and nothing changes then we are done.
+            if (destFolder.equals(sourceFolder)) return;
+
+            // Otherwise we need to copy everything over.
+            Utils.copyFolder(sourceFolder, destFolder);
+
+            // Save again, just to be sure.
+            book.save();
+
+            // Add the book to the tree
+            loadXMLBookStructure(new File(book.getLocation(), "audiobook.abx"));
+            updateOpenBookList();
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
-
-        c = new Chapter("open", prefs.getProperty("chapter.open.name"));
-        c.setPostGap(Utils.s2i(prefs.getProperty("chapter.open.post-gap")));
-        c.setPreGap(Utils.s2i(prefs.getProperty("chapter.open.pre-gap")));
-        bookTreeModel.insertNodeInto(c, getBook(), 0);
-        
-        for (int i = 0; i < 100000000; i++) {
-            String id = prefs.getProperty(String.format("chapter.open.sentence.%08d.id", i));
-            String text = prefs.getProperty(String.format("chapter.open.sentence.%08d.text", i));
-            int gap = Utils.s2i(prefs.getProperty(String.format("chapter.open.sentence.%08d.post-gap", i)));
-            if (id == null) break;
-            Sentence s = new Sentence(id, text);
-            s.setPostGap(gap);
-            s.setStartOffset(Utils.s2i(prefs.getProperty(String.format("chapter.open.sentence.%08d.start-offset", i))));
-            s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.open.sentence.%08d.end-offset", i))));
-            s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.locked", i))));
-            s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.open.sentence.%08d.attention", i))));
-            s.setGain(Utils.s2d(prefs.getProperty(String.format("chapter.open.sentence.%08d.gain", i))));
-            s.setEffectChain(prefs.getProperty(String.format("chapter.open.sentence.%08d.effect", i)));
-            s.setPostGapType(prefs.getProperty(String.format("chapter.open.sentence.%08d.gaptype", i)));
-            bookTreeModel.insertNodeInto(s, c, c.getChildCount());
-        }
-
-
-
-        for (int cno = 1; cno < 10000; cno++) {
-            String cname = prefs.getProperty(String.format("chapter.%04d.name", cno));
-            if (cname == null) break;
-
-            c = new Chapter(String.format("%04d", cno), cname);
-            c.setPostGap(Utils.s2i(prefs.getProperty(String.format("chapter.%04d.post-gap", cno))));
-            c.setPreGap(Utils.s2i(prefs.getProperty(String.format("chapter.%04d.pre-gap", cno))));
-            bookTreeModel.insertNodeInto(c, getBook(), getBook().getChildCount());
-
-            for (int i = 0; i < 100000000; i++) {
-                String id = prefs.getProperty(String.format("chapter.%04d.sentence.%08d.id", cno, i));
-                String text = prefs.getProperty(String.format("chapter.%04d.sentence.%08d.text", cno, i));
-                int gap = Utils.s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.post-gap", cno, i)));
-                if (id == null) break;
-                Sentence s = new Sentence(id, text);
-                s.setPostGap(gap);
-                s.setStartOffset(Utils.s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.start-offset", cno, i))));
-                s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.end-offset", cno, i))));
-                s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.locked", cno, i))));
-                s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.attention", cno, i))));
-                s.setGain(Utils.s2d(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.gain", cno, i))));
-                s.setEffectChain(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.effect", cno, i)));
-                s.setPostGapType(prefs.getProperty(String.format("chapter.%04d.sentence.%08d.gaptype", cno, i)));
-                bookTreeModel.insertNodeInto(s, c, c.getChildCount());
-            }
-        }
-
-        c = new Chapter("close", prefs.getProperty("chapter.close.name"));
-        c.setPostGap(Utils.s2i(prefs.getProperty("chapter.close.post-gap")));
-        c.setPreGap(Utils.s2i(prefs.getProperty("chapter.close.pre-gap")));
-        bookTreeModel.insertNodeInto(c, getBook(), getBook().getChildCount());
-
-        for (int i = 0; i < 100000000; i++) {
-            String id = prefs.getProperty(String.format("chapter.close.sentence.%08d.id", i));
-            String text = prefs.getProperty(String.format("chapter.close.sentence.%08d.text", i));
-            int gap = Utils.s2i(prefs.getProperty(String.format("chapter.close.sentence.%08d.post-gap", i)));
-            if (id == null) break;
-            Sentence s = new Sentence(id, text);
-            s.setPostGap(gap);
-            s.setStartOffset(Utils.s2i(prefs.getProperty(String.format("chapter.close.sentence.%08d.start-offset", i))));
-            s.setEndOffset(Utils.s2i(prefs.getProperty(String.format("chapter.close.sentence.%08d.end-offset", i))));
-            s.setLocked(Utils.s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.locked", i))));
-            s.setAttentionFlag(Utils.s2b(prefs.getProperty(String.format("chapter.close.sentence.%08d.attention", i))));
-            s.setGain(Utils.s2d(prefs.getProperty(String.format("chapter.close.sentence.%08d.gain", i))));
-            s.setEffectChain(prefs.getProperty(String.format("chapter.close.sentence.%08d.effect", i)));
-            s.setPostGapType(prefs.getProperty(String.format("chapter.close.sentence.%08d.gaptype", i)));
-            bookTreeModel.insertNodeInto(s, c, c.getChildCount());
-        }
-
-        bookTree.expandPath(new TreePath(getBook().getPath()));
-
-//        noiseFloorLabel.setNoiseFloor(getBook().getNoiseFloorDB());
-        getBook().setIcon(Icons.book);
-*/
     }
 
     public void openBook() {
@@ -3300,11 +3174,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             effectChain.setSelectedIndex(0);
             updateWaveform(true);
         }
-    }
-
-    public String getDefaultEffectsChain() {
-        Debug.trace();
-        return getBook().getDefaultEffect();
     }
 
     public synchronized boolean getLock() {

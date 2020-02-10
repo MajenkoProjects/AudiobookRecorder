@@ -395,6 +395,11 @@ public class Chapter extends BookTreeNode {
                 len += (s.getPostGap() / 1000d);
             }
         }
+
+        if (len > 0) {
+            len += (getPreGap() / 1000d);
+            len += (getPostGap() / 1000d);
+        }
         return len;
     }
 

@@ -1427,7 +1427,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         // Add processing in here.
 
 
-        String def = AudiobookRecorder.window.getDefaultEffectsChain();
+        String def = getBook().getDefaultEffect();
         if ((def != null) && (book.effects != null)) {
             Effect eff = book.effects.get(def);
         

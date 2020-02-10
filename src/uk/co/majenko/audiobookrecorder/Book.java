@@ -46,9 +46,6 @@ public class Book extends BookTreeNode {
     String manuscript;
     String defaultEffect = "none";
     Sentence roomNoise = null;
-    int sampleRate;
-    int channels;
-    int resolution;
     String notes = null;
     ImageIcon icon;
     File location;
@@ -65,16 +62,9 @@ public class Book extends BookTreeNode {
         setIcon(Icons.book);
         roomNoise = new Sentence("room-noise", "Room Noise");
         roomNoise.setParentBook(this);
+        loadEffects();
     }
-/*
-    public Book(Element root) {
-        super(getTextNode(root, "title"));
-        Debug.trace();
-        name = getTextNode(root, "title");
-        AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name); // This should be in the load routine!!!!
-        setIcon(Icons.book);
-    }
-*/
+
     public Book(File inputFile) throws SAXException, IOException, ParserConfigurationException {
         Debug.trace();
         Debug.d("Loading book from", inputFile.getCanonicalPath());
@@ -97,10 +87,6 @@ public class Book extends BookTreeNode {
             Element settings = getNode(root, "settings");
             Element audioSettings = getNode(settings, "audio");
             Element effectSettings = getNode(settings, "effects");
-
-            sampleRate = Utils.s2i(getTextNode(audioSettings, "samplerate"));
-            channels = Utils.s2i(getTextNode(audioSettings, "channels"));
-            resolution = Utils.s2i(getTextNode(audioSettings, "resolution"));
 
             defaultEffect = getTextNode(settings, "default");
 
@@ -126,13 +112,6 @@ public class Book extends BookTreeNode {
 
             roomNoise = new Sentence("room-noise", "Room Noise");
             roomNoise.setParentBook(this);
-
-            AudioFormat fmt = getAudioFormat();
-            if (fmt != null) {
-                sampleRate = (int)fmt.getSampleRate();
-                channels = fmt.getChannels();
-                resolution = fmt.getSampleSizeInBits();
-            }
 
             Element chapters = getNode(root, "chapters");
             NodeList chapterList = chapters.getElementsByTagName("chapter");
@@ -160,10 +139,6 @@ public class Book extends BookTreeNode {
         Element settings = getNode(root, "settings");
         Element audioSettings = getNode(settings, "audio");
         Element effectSettings = getNode(settings, "effects");
-
-        sampleRate = Utils.s2i(getTextNode(audioSettings, "samplerate"));
-        channels = Utils.s2i(getTextNode(audioSettings, "channels"));
-        resolution = Utils.s2i(getTextNode(audioSettings, "resolution"));
 
         defaultEffect = getTextNode(settings, "default");
 
@@ -341,13 +316,6 @@ public class Book extends BookTreeNode {
         return name;
     }
 
-    public int getSampleRate() { Debug.trace(); return sampleRate; }
-    public void setSampleRate(int sr) { Debug.trace(); sampleRate = sr; }
-    public int getChannels() { Debug.trace(); return channels; }
-    public void setChannels(int c) { Debug.trace(); channels = c; }
-    public int getResolution() { Debug.trace(); return resolution; }
-    public void setResolution(int r) { Debug.trace(); resolution = r; }
-
     public AudioFormat getAudioFormat() {
         Debug.trace();
         if (cachedFormat != null) {
@@ -413,13 +381,6 @@ public class Book extends BookTreeNode {
 
         Element settingsNode = doc.createElement("settings");
         root.appendChild(settingsNode);
-        
-        Element audioSettingsNode = doc.createElement("audio");
-        settingsNode.appendChild(audioSettingsNode);
-
-        audioSettingsNode.appendChild(makeTextNode(doc, "channels", channels));
-        audioSettingsNode.appendChild(makeTextNode(doc, "resolution", resolution));
-        audioSettingsNode.appendChild(makeTextNode(doc, "samplerate", sampleRate));
         
         Element effectsNode = doc.createElement("effects");
         settingsNode.appendChild(effectsNode);
@@ -625,7 +586,7 @@ public class Book extends BookTreeNode {
         Debug.trace();
         effects = new TreeMap<String,EffectGroup>();
         loadEffectsFromFolder(new File(Options.get("path.storage"), "System"));
-        if (getBook() != null) {
+        if (location != null) {
             loadEffectsFromFolder(location);
         }
     }
@@ -720,8 +681,6 @@ public class Book extends BookTreeNode {
             if (ob instanceof Chapter) {
                 Chapter c = (Chapter)ob;
                 len += c.getLength();
-                len += (c.getPreGap() / 1000d);
-                len += (c.getPostGap() / 1000d);
             }
         }
         return len;
