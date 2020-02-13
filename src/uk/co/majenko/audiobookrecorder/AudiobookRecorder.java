@@ -826,6 +826,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         bookTree.setUI(new CustomTreeUI(mainScroll));
         bookTree.setRootVisible(false);
         mainScroll.setViewportView(bookTree);
+        bookTree.setEditable(true);
 
         TreeCellRenderer renderer = new BookTreeRenderer();
         try {
