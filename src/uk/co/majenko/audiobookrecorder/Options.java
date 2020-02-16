@@ -495,49 +495,33 @@ public class Options extends JDialog {
 
     @SuppressWarnings("unchecked")
     static KVPair<String, String>[] getRecordingMixerList() {
-        TreeSet<KVPair<String, String>> list = new TreeSet<KVPair<String, String>>();
-
-        AudioFormat stereoFormat = new AudioFormat(44100f, 16, 2, true, false);
-        AudioFormat monoFormat = new AudioFormat(44100f, 16, 1, true, false);
-
-        DataLine.Info stereoDIF = new DataLine.Info(TargetDataLine.class, stereoFormat);
-        DataLine.Info monoDIF = new DataLine.Info(TargetDataLine.class, monoFormat);
-
-        Mixer.Info[] info = AudioSystem.getMixerInfo();
-        for (Mixer.Info i : info) {
-            Mixer m = AudioSystem.getMixer(i);
-
-            boolean supported = false;
-
-            try {
-                m.getLine(stereoDIF);
-                supported = true;
-            } catch (Exception e) {
-            }
-
-            try {
-                m.getLine(monoDIF);
-                supported = true;
-            } catch (Exception e) {
-            }
-
-            if (supported) {
-                KVPair<String, String> p = new KVPair<String, String>(i.getName(), i.getName()); //i.getDescription());
-                list.add(p);
-            }
-        }
-
-        return list.toArray(new KVPair[0]);
+        return getMixerList(TargetDataLine.class);
     }
 
     static KVPair[] getPlaybackMixerList() {
-        TreeSet<KVPair<String, String>> list = new TreeSet<KVPair<String, String>>();
+        return getMixerList(SourceDataLine.class);
+    }
+
+    static KVPair[] getMixerList(Class<?> cl) {
+        ArrayList<KVPair<String, String>> list = new ArrayList<KVPair<String, String>>();
 
         AudioFormat stereoFormat = new AudioFormat(44100f, 16, 2, true, false);
         AudioFormat monoFormat = new AudioFormat(44100f, 16, 1, true, false);
 
-        DataLine.Info stereoDIF = new DataLine.Info(SourceDataLine.class, stereoFormat);
-        DataLine.Info monoDIF = new DataLine.Info(SourceDataLine.class, monoFormat);
+        ArrayList<AudioFormat> validFormats = new ArrayList<AudioFormat>();
+
+        validFormats.add(new AudioFormat(44100f, 16, 1, true, false));
+        validFormats.add(new AudioFormat(44100f, 16, 2, true, false));
+        validFormats.add(new AudioFormat(44100f, 24, 1, true, false));
+        validFormats.add(new AudioFormat(44100f, 24, 2, true, false));
+        validFormats.add(new AudioFormat(48000f, 16, 1, true, false));
+        validFormats.add(new AudioFormat(48000f, 16, 2, true, false));
+        validFormats.add(new AudioFormat(48000f, 24, 1, true, false));
+        validFormats.add(new AudioFormat(48000f, 24, 2, true, false));
+        validFormats.add(new AudioFormat(96000f, 16, 1, true, false));
+        validFormats.add(new AudioFormat(96000f, 16, 2, true, false));
+        validFormats.add(new AudioFormat(96000f, 24, 1, true, false));
+        validFormats.add(new AudioFormat(96000f, 24, 2, true, false));
 
         Mixer.Info[] info = AudioSystem.getMixerInfo();
         for (Mixer.Info i : info) {
@@ -545,18 +529,13 @@ public class Options extends JDialog {
 
             boolean supported = false;
 
-            try { 
-                m.getLine(stereoDIF);
-                supported = true; 
-            } catch (Exception e) {
+            for (AudioFormat valid : validFormats) {
+                try { 
+                    m.getLine(new DataLine.Info(cl, valid));
+                    supported = true; 
+                } catch (Exception e) {
+                }
             }
-
-            try { 
-                m.getLine(monoDIF);
-                supported = true; 
-            } catch (Exception e) {
-            }
-
 
             if (supported) {
                 KVPair<String, String> p = new KVPair<String, String>(i.getName(), i.getName()); //i.getDescription());
@@ -727,12 +706,12 @@ public class Options extends JDialog {
     }
 
     void storePreferences() {
-        set("audio.recording.device", ((KVPair)mixerList.getSelectedItem()).key);
-        set("audio.recording.channels", ((KVPair)channelList.getSelectedItem()).key);
-        set("audio.recording.samplerate", ((KVPair)rateList.getSelectedItem()).key);
-        set("audio.recording.resolution", ((KVPair)bitDepth.getSelectedItem()).key);
-        set("audio.recording.trim", ((KVPair)trimMethod.getSelectedItem()).key);
-        set("audio.playback.device", ((KVPair)playbackList.getSelectedItem()).key);
+        if (mixerList.getSelectedItem() != null) set("audio.recording.device", ((KVPair)mixerList.getSelectedItem()).key);
+        if (channelList.getSelectedItem() != null) set("audio.recording.channels", ((KVPair)channelList.getSelectedItem()).key);
+        if (rateList.getSelectedItem() != null) set("audio.recording.samplerate", ((KVPair)rateList.getSelectedItem()).key);
+        if (bitDepth.getSelectedItem() != null) set("audio.recording.resolution", ((KVPair)bitDepth.getSelectedItem()).key);
+        if (trimMethod.getSelectedItem() != null) set("audio.recording.trim", ((KVPair)trimMethod.getSelectedItem()).key);
+        if (playbackList.getSelectedItem() != null) set("audio.playback.device", ((KVPair)playbackList.getSelectedItem()).key);
         set("path.storage", storageFolder.getText());
         set("path.archive", archiveFolder.getText());
         set("path.ffmpeg", ffmpegLocation.getText());
@@ -742,9 +721,9 @@ public class Options extends JDialog {
         set("catenation.short-sentence", shortSentenceGap.getValue());
         set("catenation.post-paragraph", postParagraphGap.getValue());
         set("catenation.post-section", postSectionGap.getValue());
-        set("audio.export.bitrate", ((KVPair)bitRate.getSelectedItem()).key);
-        set("audio.export.channels", ((KVPair)channels.getSelectedItem()).key);
-        set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
+        if (bitRate.getSelectedItem() != null) set("audio.export.bitrate", ((KVPair)bitRate.getSelectedItem()).key);
+        if (channels.getSelectedItem() != null) set("audio.export.channels", ((KVPair)channels.getSelectedItem()).key);
+        if (exportRate.getSelectedItem() != null) set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
         set("process.sphinx", enableParsing.isSelected());
         set("process.command", speechCommand.getText());
         set("process.threads", workerThreads.getValue());
@@ -752,8 +731,8 @@ public class Options extends JDialog {
         set("cache.size", cacheSize.getValue());
         set("audio.recording.trim.fft", fftThreshold.getValue());
         set("audio.recording.variance", maxGainVariance.getValue());
-        set("audio.recording.trim.blocksize", ((KVPair)fftBlockSize.getSelectedItem()).key);
-        set("audio.playback.blocksize", ((KVPair)playbackBlockSize.getSelectedItem()).key);
+        if (fftBlockSize.getSelectedItem() != null) set("audio.recording.trim.blocksize", ((KVPair)fftBlockSize.getSelectedItem()).key);
+        if (playbackBlockSize.getSelectedItem() != null) set("audio.playback.blocksize", ((KVPair)playbackBlockSize.getSelectedItem()).key);
 
         set("scripts.startup", startupScript.getText());
 
