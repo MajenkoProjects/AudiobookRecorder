@@ -995,6 +995,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public void backup() throws IOException {
         Debug.trace();
+	if (getFile() == null) return;
+	if (!getFile().exists()) return;
         File whereto = getFile().getParentFile();
         String name = getFile().getName();
 

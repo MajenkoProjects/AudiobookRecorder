@@ -36,6 +36,7 @@ import java.awt.event.AdjustmentEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -681,95 +682,45 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         centralPanel.getActionMap().put("startRecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
+                if (!canStartRecording()) return;
                 if (!getLock()) return;
-                if (getFocusOwner() == bookNotesArea) { freeLock(); return; }
-                if (getFocusOwner() == chapterNotesArea) { freeLock(); return; }
-                if (getFocusOwner() == sentenceNotesArea) { freeLock(); return; }
-                if (bookTree.isEditing()) {
-                    freeLock();
-                    return;
-                }
-                if (getBook().getNoiseFloor() == 0) {
-                    freeLock();
-                    alertNoRoomNoise();
-                    return;
-                }
+                
                 startRecording();
             }
         });
         centralPanel.getActionMap().put("startRecordShort", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
+                if (!canStartRecording()) return;
                 if (!getLock()) return;
-                if (getFocusOwner() == bookNotesArea) { freeLock(); return; }
-                if (getFocusOwner() == chapterNotesArea) { freeLock(); return; }
-                if (getFocusOwner() == sentenceNotesArea) { freeLock(); return; }
-                if (bookTree.isEditing()) {
-                    freeLock();
-                    return;
-                }
-                if (getBook().getNoiseFloor() == 0) {
-                    freeLock();
-                    alertNoRoomNoise();
-                    return;
-                }
+                
                 startRecordingShort();
             }
         });
         centralPanel.getActionMap().put("startRecordNewPara", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
+                if (!canStartRecording()) return;
                 if (!getLock()) return;
-                if (getFocusOwner() == bookNotesArea) { freeLock(); return; }
-                if (getFocusOwner() == chapterNotesArea) { freeLock(); return; }
-                if (getFocusOwner() == sentenceNotesArea) { freeLock(); return; }
-                if (bookTree.isEditing()) {
-                    freeLock();
-                    return;
-                }
-                if (getBook().getNoiseFloor() == 0) {
-                    alertNoRoomNoise();
-                    freeLock();
-                    return;
-                }
+                
                 startRecordingNewParagraph();
             }
         });
         centralPanel.getActionMap().put("startRecordNewSection", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
+                if (!canStartRecording()) return;
                 if (!getLock()) return;
-                if (getFocusOwner() == bookNotesArea) { freeLock(); return; }
-                if (getFocusOwner() == chapterNotesArea) { freeLock(); return; }
-                if (getFocusOwner() == sentenceNotesArea) { freeLock(); return; }
-                if (bookTree.isEditing()) {
-                    freeLock();
-                    return;
-                }
-                if (getBook().getNoiseFloor() == 0) {
-                    freeLock();
-                    alertNoRoomNoise();
-                    return;
-                }
+
                 startRecordingNewSection();
             }
         });
         centralPanel.getActionMap().put("startRerecord", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
+                if (!canStartRecording()) return;
                 if (!getLock()) return;
-                if (getFocusOwner() == bookNotesArea) { freeLock(); return; }
-                if (getFocusOwner() == chapterNotesArea) { freeLock(); return; }
-                if (getFocusOwner() == sentenceNotesArea) { freeLock(); return; }
-                if (bookTree.isEditing()) {
-                    freeLock();
-                    return;
-                }
-                if (getBook().getNoiseFloor() == 0) {
-                    freeLock();
-                    alertNoRoomNoise();
-                    return;
-                }
+                
                 startReRecording();
             }
         });
@@ -833,6 +784,10 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         bookTree.setRootVisible(false);
         mainScroll.setViewportView(bookTree);
         bookTree.setEditable(true);
+
+	for (KeyListener kl : bookTree.getListeners(KeyListener.class)) {
+		bookTree.removeKeyListener(kl);
+	}
 
         TreeCellRenderer renderer = new BookTreeRenderer();
         try {
@@ -1036,6 +991,27 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             Options.set("interface.donations.count", numruns);
             Options.savePreferences();
         }
+    }
+
+    boolean canStartRecording() {
+        if (getFocusOwner() == bookNotesArea) { return false; }
+        if (getFocusOwner() == chapterNotesArea) { return false; }
+        if (getFocusOwner() == sentenceNotesArea) { return false; }
+        if (bookTree.isEditing()) { return false; }
+        if (getBook() == null) {
+            JOptionPane.showMessageDialog(AudiobookRecorder.window, "No book selected. Select a book to record.", "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        if (Microphone.getDevice() == null) {
+            JOptionPane.showMessageDialog(AudiobookRecorder.window, "Microphone not started. Start the microphone first.", "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        if (getBook().getNoiseFloor() == 0) {
+            alertNoRoomNoise();
+            return false;
+        }
+
+        return true;
     }
 
     void bindKeys(JComponent component) {
