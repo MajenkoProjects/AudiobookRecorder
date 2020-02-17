@@ -114,6 +114,7 @@ public class Options extends JDialog {
         panel.add(t, constraint);
 
         for (KVPair p : options) {
+            if (p == null) continue;
             if (p.key.equals(def)) {
                 o.setSelectedItem(p);
             }
@@ -562,7 +563,7 @@ public class Options extends JDialog {
         l[0] = new KVPair<String, String>("44100", "44100");
         l[1] = new KVPair<String, String>("48000", "48000");
         l[2] = new KVPair<String, String>("96000", "96000");
-        l[2] = new KVPair<String, String>("192000", "192000");
+        l[3] = new KVPair<String, String>("192000", "192000");
         return l;
     }
 
@@ -797,7 +798,7 @@ public class Options extends JDialog {
         KVPair[] pairs = new KVPair[3];
         pairs[0] = new KVPair<String, String>("16", "16 Bit");
         pairs[1] = new KVPair<String, String>("24", "24 Bit");
-        pairs[1] = new KVPair<String, String>("32", "32 Bit");
+        pairs[2] = new KVPair<String, String>("32", "32 Bit");
         return pairs;
     }
 
