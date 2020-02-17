@@ -522,6 +522,10 @@ public class Options extends JDialog {
         validFormats.add(new AudioFormat(96000f, 16, 2, true, false));
         validFormats.add(new AudioFormat(96000f, 24, 1, true, false));
         validFormats.add(new AudioFormat(96000f, 24, 2, true, false));
+        validFormats.add(new AudioFormat(192000f, 16, 1, true, false));
+        validFormats.add(new AudioFormat(192000f, 16, 2, true, false));
+        validFormats.add(new AudioFormat(192000f, 24, 1, true, false));
+        validFormats.add(new AudioFormat(192000f, 24, 2, true, false));
 
         Mixer.Info[] info = AudioSystem.getMixerInfo();
         for (Mixer.Info i : info) {
@@ -554,10 +558,11 @@ public class Options extends JDialog {
     }
 
     static KVPair[] getSampleRateList() {
-        KVPair[] l = new KVPair[3];
+        KVPair[] l = new KVPair[4];
         l[0] = new KVPair<String, String>("44100", "44100");
         l[1] = new KVPair<String, String>("48000", "48000");
         l[2] = new KVPair<String, String>("96000", "96000");
+        l[2] = new KVPair<String, String>("192000", "192000");
         return l;
     }
 
@@ -789,9 +794,10 @@ public class Options extends JDialog {
     }
 
     public static KVPair[] getResolutionList() {
-        KVPair[] pairs = new KVPair[2];
+        KVPair[] pairs = new KVPair[3];
         pairs[0] = new KVPair<String, String>("16", "16 Bit");
         pairs[1] = new KVPair<String, String>("24", "24 Bit");
+        pairs[1] = new KVPair<String, String>("32", "32 Bit");
         return pairs;
     }
 

@@ -133,7 +133,10 @@ public class Sentence extends BookTreeNode implements Cacheable {
             try {
                 running = true;
                 recording = true;
-                byte[] buf = new byte[1024]; //AudiobookRecorder.window.microphone.getBufferSize()];
+
+                final int numFrames = 512;
+                final int bufSize = numFrames * format.getFrameSize();
+                byte[] buf = new byte[bufSize]; //AudiobookRecorder.window.microphone.getBufferSize()];
                 FileOutputStream fos = new FileOutputStream(tempFile);
                 int len = 0;
                 Microphone.flush();

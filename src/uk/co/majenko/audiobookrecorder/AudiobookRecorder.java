@@ -315,11 +315,17 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         CLI.addParameter("debug", "", Boolean.class, "Enable debug output");
         CLI.addParameter("trace", "", Boolean.class, "Enable function tracing");
+        CLI.addParameter("opengl", "", Boolean.class, "Enable OpenGL graphical acceleration");
 
         String[] argv = CLI.process(args);
 
         Debug.debugEnabled = CLI.isSet("debug");
         Debug.traceEnabled = CLI.isSet("trace");
+
+        if (CLI.isSet("opengl")) {
+            Properties props = System.getProperties();
+            props.setProperty("sun.java2d.opengl", "true");
+        }
 
         processQueue = new ArrayDeque<Runnable>();
 
@@ -1080,8 +1086,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     public static void main(String args[]) {
         Debug.trace();
-        Properties props = System.getProperties();
-        props.setProperty("sun.java2d.opengl", "true");
         try {
             config.load(AudiobookRecorder.class.getResourceAsStream("config.txt"));
         } catch (Exception e) {
