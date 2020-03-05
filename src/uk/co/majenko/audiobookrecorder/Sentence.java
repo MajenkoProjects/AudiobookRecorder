@@ -35,6 +35,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.AudioFileFormat;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -817,6 +818,23 @@ public class Sentence extends BookTreeNode implements Cacheable {
             forwardsPrev = (data[LEFT][forwards] + data[RIGHT][forwards]) / 2d;
         }
         return pos;
+    }
+
+    public double getStartTime() {
+        double time = 0;
+        DefaultMutableTreeNode prev = getPreviousSibling();
+        while (prev != null) {
+            if (prev instanceof Sentence) {
+                Sentence ps = (Sentence)prev;
+                time += ps.getLength();
+                time += ps.getPostGap() / 1000d;
+                prev = prev.getPreviousSibling();
+            } else {
+                break;
+            }
+        }
+        return time;
+        
     }
 
     /* Get the length of the sample in seconds */

@@ -86,7 +86,7 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
             }
 
 
-            JLabel time = new JLabelFixedWidth(75, " " + Utils.secToTime(s.getLength(), "ss.SSS") + "     ");
+            JLabel time = new JLabelFixedWidth(75, " " + Utils.secToTime(s.getStartTime(), "mm.ss.SSS") + "     ");
             time.setHorizontalAlignment(SwingConstants.RIGHT);
 
             ctx.gridx = 0;
