@@ -20,6 +20,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 import javax.sound.sampled.TargetDataLine;
@@ -100,6 +101,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
     double[][] processedAudio = null;
 
     double[] fftProfile = null;
+ 
+    TreeMap<Integer, Double> gainPoints = null;
 
     RecordingThread recordingThread;
 
@@ -225,6 +228,19 @@ public class Sentence extends BookTreeNode implements Cacheable {
         runtime = Utils.s2d(Book.getTextNode(root, "time", "-1.000"));
         peak = Utils.s2d(Book.getTextNode(root, "peak", "-1.000"));
         isDetected = Utils.s2b(Book.getTextNode(root, "detected"));
+
+        gainPoints = new TreeMap<Integer, Double>();
+        Element gp = Book.getNode(root, "gainpoints");
+        if (gp != null) {
+            NodeList points = gp.getElementsByTagName("gainpoint");
+
+            for (int i = 0; i < points.getLength(); i++) {
+                Element point = (Element)points.item(i);
+                int loc = Utils.s2i(point.getAttribute("location"));
+                double g = Utils.s2d(point.getAttribute("gain"));
+                gainPoints.put(loc, g);
+            } 
+        }
 
         if (text == null) text = id;
         if (text.equals("")) text = id;
@@ -1481,6 +1497,12 @@ public class Sentence extends BookTreeNode implements Cacheable {
             }
         }
 
+        double[] gc = calculateGains();
+        for (int i = 0; i < processedAudio[LEFT].length; i++) {
+            processedAudio[LEFT][i] *= gc[i];
+            processedAudio[RIGHT][i] *= gc[i];
+        }
+
         return processedAudio;
     }
 
@@ -1663,6 +1685,15 @@ public class Sentence extends BookTreeNode implements Cacheable {
         sentenceNode.appendChild(Book.makeTextNode(doc, "time", getLength()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "peak", getPeak()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "detected", beenDetected()));
+        Element gp = doc.createElement("gainpoints");
+        for (Integer loc : gainPoints.keySet()) {
+            Double g = gainPoints.get(loc);
+            Element p = doc.createElement("gainpoint");
+            p.setAttribute("location", String.format("%d", loc));
+            p.setAttribute("gain", String.format("%.3g", g));
+            gp.appendChild(p);
+        }
+        sentenceNode.appendChild(gp);
         return sentenceNode;
     }
 
@@ -1801,5 +1832,51 @@ public class Sentence extends BookTreeNode implements Cacheable {
         updateCrossings();
         getPeakDB();
         reloadTree();
+    }
+
+    public TreeMap<Integer, Double> getGainPoints() {
+        return gainPoints;
+    }
+
+    public void addGainPoint(Integer loc, Double g) {
+        gainPoints.put(loc, g);
+        CacheManager.removeFromCache(this);
+    }
+
+    public void removeGainPoint(Integer loc) {
+        gainPoints.remove(loc);
+        CacheManager.removeFromCache(this);
+    }
+
+    public double[] calculateGains() {
+        double[] gains = new double[sampleSize];
+
+        double y = 1.0d;
+        int x1 = 0; 
+
+        if (gainPoints == null) {
+            for (int x = 0; x < sampleSize; x++) {
+                gains[x] = 1.0d;
+            }
+            return gains;
+        }
+
+        for (Integer loc : gainPoints.keySet()) {
+            int x2 = loc;
+            double y2 = gainPoints.get(loc);
+        
+            int range = x2 - x1;
+            double diff = y2 - y;
+            double ystep = diff / (double)range;
+            for (int x = 0; x < range; x++) {
+                y += ystep;
+                gains[x1 + x] = y;
+            }
+            x1 = x2;
+        }
+        for (int x = x1; x < sampleSize; x++) {
+            gains[x] = y;
+        }
+        return gains;
     }
 }

@@ -3,6 +3,7 @@ package uk.co.majenko.audiobookrecorder;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import javax.swing.JPanel;
+import java.util.TreeMap;
 import java.util.ArrayList;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
@@ -12,7 +13,7 @@ import java.awt.Cursor;
 
 public class Waveform extends JPanel implements MouseListener, MouseMotionListener {
 
-    double[][] samples = null;
+    Sentence sentence = null;
 
     int leftMarker = 0;
     int rightMarker = 0;
@@ -29,6 +30,8 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
     boolean displayCut = false;
     boolean displaySplit = false;
 
+    boolean displayGainCurve = false;
+
     int dragging = 0;
 
     int step = 1;
@@ -39,20 +42,29 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
 
     String loadedId = null;
 
-    ArrayList<MarkerDragListener> markerDragListeners;
-
     public Waveform() {
         super();
         addMouseListener(this);
         addMouseMotionListener(this);
-        markerDragListeners = new ArrayList<MarkerDragListener>();
     }
 
-    public void addMarkerDragListener(MarkerDragListener l) {
-        if (markerDragListeners.indexOf(l) == -1) {
-            markerDragListeners.add(l);
-        }
+    public void setSentence(Sentence s) {
+        sentence = s;
+        playMarker = 0;
+        displayCut = false;
+        displaySplit = false;
+        updateMarkers();
     }
+
+    public void updateMarkers() {
+        if (sentence != null) {
+            leftMarker = sentence.getStartOffset();
+            rightMarker = sentence.getEndOffset();
+            leftAltMarker = sentence.getStartCrossing();
+            rightAltMarker = sentence.getEndCrossing();
+        }
+        repaint();
+    } 
 
     public void paintComponent(Graphics g) {
         Dimension size = getSize();
@@ -82,7 +94,8 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
 
         double scale = (h/2);
 
-        if (samples != null) {
+        if (sentence != null) {
+            double[][] samples = sentence.getDoubleAudioData(true);
 
             int num = samples[Sentence.LEFT].length;
             step = num / zoomFactor / w;
@@ -173,51 +186,30 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
             for (int i = 0; i < h; i += 2) {
                 g.drawLine((playMarker - offset) / step, i, (playMarker - offset) / step, i);
             }
+
+            if (displayGainCurve) {
+                int x1 = 0;
+                double y1 = 1.0;
+                g.setColor(new Color(200, 200, 200));
+                TreeMap<Integer, Double> points = sentence.getGainPoints();
+                for (Integer loc : points.keySet()) {
+                    int x2 = loc;
+                    double y2 = points.get(loc);
+
+                    g.fillRect((x1 - offset) / step - 1, h - (int)((double)h / 2.0 * y1) - 1, 3, 3);
+
+                    g.drawLine((x1 - offset) / step, h - (int)((double)h / 2.0 * y1), (x2 - offset) / step, h - (int)((double)h / 2.0 * y2));
+                    x1 = x2;
+                    y1 = y2;
+                }
+                g.fillRect((x1 - offset) / step - 1, h - (int)((double)h / 2.0 * y1) - 1, 3, 3);
+                g.drawLine((x1 - offset) / step, h - (int)((double)h / 2.0 * y1), (num - offset) / step, h - (int)((double)h / 2.0 * y1));
+            }
         }
     }
 
-    public void setAltMarkers(int l, int r) {
-        leftAltMarker = l;
-        rightAltMarker = r;
-        repaint();
-    }
-
-    public void setMarkers(int l, int r) {
-        leftMarker = l;
-        rightMarker = r;
-        repaint();
-    }
-
-    public void setLeftAltMarker(int l) {
-        leftAltMarker = l;
-        repaint();
-    }
-
-    public void setRightAltMarker(int r) {
-        rightAltMarker = r;
-        repaint();
-    }
-
-    public void setLeftMarker(int l) {
-        leftMarker = l;
-        repaint();
-    }
-
-    public void setRightMarker(int r) {
-        rightMarker = r;
-        repaint();
-    }
-
-    public void clearData() {
-        samples = null;
-        repaint();
-    }
-
-    public void setData(double[][] s) {
-        samples = s;
-        playMarker = 0;
-        displayCut = false;
-        displaySplit = false;
+    public void setDisplayGainCurve(boolean b) {
+        displayGainCurve = b;
         repaint();
     }
 
@@ -264,46 +256,76 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
 
     public void mouseReleased(MouseEvent e) {
         if (dragging == 1) {
-            MarkerDragEvent evt = new MarkerDragEvent(this, leftMarker);
-            for (MarkerDragListener l : markerDragListeners) {
-                l.leftMarkerMoved(evt);
-            }
+            sentence.setStartOffset(leftMarker);
+            sentence.updateCrossings();
+            updateMarkers();
         } else if (dragging == 2) {
-            MarkerDragEvent evt = new MarkerDragEvent(this, rightMarker);
-            for (MarkerDragListener l : markerDragListeners) {
-                l.rightMarkerMoved(evt);
-            }
+            sentence.setEndOffset(rightMarker);
+            sentence.updateCrossings();
+            updateMarkers();
         }
         dragging = 0;
     }
 
     public void mouseClicked(MouseEvent e) {
+        if (displayGainCurve) {
+            if (e.getButton() == MouseEvent.BUTTON1) {
+                Dimension size = getSize();
+
+                int w = size.width;
+                int h = size.height;
+
+                int x = e.getX() * step + offset;
+                double y = (double)(h - e.getY()) / (double)h * 2.0;
+
+                sentence.addGainPoint(x, y);
+                repaint();
+            } else if (e.getButton() == MouseEvent.BUTTON3) {
+                int x = e.getX() * step + offset;
+                int f = -1;
+                int diff = Integer.MAX_VALUE;
+
+                TreeMap<Integer, Double> gc = sentence.getGainPoints();
+                for (Integer loc : gc.keySet()) {
+                    int d = Math.abs(loc - x);
+                    if (d < diff) {
+                        diff = d;
+                        f = loc;
+                    }
+                }
+                sentence.removeGainPoint(f);
+                repaint();
+            }
+        }
     }
 
     public void mouseMoved(MouseEvent e) {
         int x = e.getX();
-        if ((x >= ((leftMarker - offset)/step) - 10) && (x <= ((leftMarker - offset)/step) + 10)) {
-            setCursor(Cursor.getPredefinedCursor(Cursor.W_RESIZE_CURSOR));
-            return;
-        }
-        if ((x >= ((rightMarker - offset)/step) - 10) && (x <= ((rightMarker - offset)/step) + 10)) {
-            setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
-            return;
-        }
-        if (displayCut || displaySplit) {
-            if ((x >= ((cutEntry - offset)/step) - 10) && (x <= ((cutEntry - offset)/step) + 10)) {
-                setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
-                return;
-            }
-        } 
+        int y = e.getY();
 
-        if (displayCut) {
+        if (displayGainCurve) {
+            
+        } else if (displayCut) {
             if ((x >= ((cutExit - offset)/step) - 10) && (x <= ((cutExit - offset)/step) + 10)) {
                 setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
                 return;
             }
+        } else {
+            if ((x >= ((leftMarker - offset)/step) - 10) && (x <= ((leftMarker - offset)/step) + 10)) {
+                setCursor(Cursor.getPredefinedCursor(Cursor.W_RESIZE_CURSOR));
+                return;
+            }
+            if ((x >= ((rightMarker - offset)/step) - 10) && (x <= ((rightMarker - offset)/step) + 10)) {
+                setCursor(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
+                return;
+            }
+            if (displayCut || displaySplit) {
+                if ((x >= ((cutEntry - offset)/step) - 10) && (x <= ((cutEntry - offset)/step) + 10)) {
+                    setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
+                    return;
+                }
+            } 
         }
-
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 
     }

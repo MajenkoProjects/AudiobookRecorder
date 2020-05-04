@@ -184,6 +184,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     JToggleButtonSpacePlay selectSplitMode;
     JToggleButtonSpacePlay selectCutMode;
     JButtonSpacePlay doCutSplit;
+    JToggleButtonSpacePlay editGainCurve;
 
     JButtonSpacePlay refreshSentence;
 
@@ -407,34 +408,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
         });
 
-        sampleWaveform.addMarkerDragListener(new MarkerDragListener() {
-            public void leftMarkerMoved(MarkerDragEvent e) {
-                Debug.trace();
-                if (selectedSentence != null) {
-                    if (!selectedSentence.isLocked()) {
-                        selectedSentence.setStartOffset(e.getPosition());
-                        selectedSentence.updateCrossings();
-                        sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
-                    } else {
-                        sampleWaveform.setLeftMarker(selectedSentence.getStartOffset());
-                    }
-                }
-            }
-
-            public void rightMarkerMoved(MarkerDragEvent e) {
-                Debug.trace();
-                if (selectedSentence != null) {
-                    if (!selectedSentence.isLocked()) {
-                        selectedSentence.setEndOffset(e.getPosition());
-                        selectedSentence.updateCrossings();
-                        sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
-                    } else {
-                        sampleWaveform.setRightMarker(selectedSentence.getEndOffset());
-                    }
-                }
-            }
-        });
-    
         sampleControl.add(sampleWaveform, BorderLayout.CENTER);
 
         reprocessAudioFFT = new JButtonSpacePlay(Icons.fft, "Autotrim Audio (FFT)", new ActionListener() {
@@ -475,7 +448,14 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 }
             }
         });
-    
+
+        editGainCurve = new JToggleButtonSpacePlay(Icons.normalize, "Edit gain curve", new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Debug.trace();
+                sampleWaveform.setDisplayGainCurve(editGainCurve.isSelected());
+            }
+        });
+   
         selectSplitMode = new JToggleButtonSpacePlay(Icons.split, "Toggle split mode", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
@@ -655,6 +635,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
         });
 
+        controlsBottom.add(editGainCurve);
+        controlsBottom.addSeparator();
         controlsBottom.add(selectSplitMode);
         controlsBottom.add(selectCutMode);
         controlsBottom.add(doCutSplit);
@@ -814,10 +796,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 if (n instanceof Sentence) {
                     Sentence s = (Sentence)n;
                     //selectedSentence = s;
-                    sampleWaveform.setData(s.getDoubleAudioData(effectsEnabled));
-                    sampleWaveform.setMarkers(s.getStartOffset(), s.getEndOffset());
                     s.updateCrossings();
-                    sampleWaveform.setAltMarkers(s.getStartCrossing(), s.getEndCrossing());
+                    sampleWaveform.setSentence(s);
                     postSentenceGap.setValue(s.getPostGap());
                     gainPercent.setValue((int)(s.getGain() * 100d));
                     locked.setSelected(s.isLocked());
@@ -836,7 +816,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     selectSplitMode.setSelected(false);
                 } else {
                     //selectedSentence = null;
-                    sampleWaveform.clearData();
+                    sampleWaveform.setSentence(null);
                     postSentenceGap.setValue(0);
                     gainPercent.setValue(100);
                     locked.setSelected(false);
@@ -2201,7 +2181,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             bookTree.setSelectionPath(new TreePath(s.getPath()));
             bookTree.scrollPathToVisible(new TreePath(s.getPath()));
         }  else {
-            sampleWaveform.clearData();
+            sampleWaveform.setSentence(null);
         }
 //        selectedSentence = s;
         saveBook(getBook());
@@ -3114,25 +3094,13 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         Debug.trace();
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                if (selectedSentence != null) {
-                    if ((!force) && (sampleWaveform.getId() != null) && (sampleWaveform.getId().equals(selectedSentence.getId()))) return;
-            
-                    sampleWaveform.setId(selectedSentence.getId());
-                    if (rawAudio.isSelected()) {
-                        sampleWaveform.setData(selectedSentence.getRawAudioData());
-                    } else {
-                        sampleWaveform.setData(selectedSentence.getDoubleAudioData(effectsEnabled));
-                    }
-                }
+                sampleWaveform.setSentence(selectedSentence);
             }
         });
     }
 
     synchronized public void updateWaveformMarkers() {
-        if (selectedSentence != null) {
-            sampleWaveform.setMarkers(selectedSentence.getStartOffset(), selectedSentence.getEndOffset());
-            sampleWaveform.setAltMarkers(selectedSentence.getStartCrossing(), selectedSentence.getEndCrossing());
-        }
+        sampleWaveform.updateMarkers();
     }
 
     public void updateEffectChains(TreeMap<String, EffectGroup> effs) {
