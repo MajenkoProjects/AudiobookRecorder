@@ -1686,14 +1686,16 @@ public class Sentence extends BookTreeNode implements Cacheable {
         sentenceNode.appendChild(Book.makeTextNode(doc, "peak", getPeak()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "detected", beenDetected()));
         Element gp = doc.createElement("gainpoints");
-        for (Integer loc : gainPoints.keySet()) {
-            Double g = gainPoints.get(loc);
-            Element p = doc.createElement("gainpoint");
-            p.setAttribute("location", String.format("%d", loc));
-            p.setAttribute("gain", String.format("%.3g", g));
-            gp.appendChild(p);
+        if (gainPoints != null) {
+            for (Integer loc : gainPoints.keySet()) {
+                Double g = gainPoints.get(loc);
+                Element p = doc.createElement("gainpoint");
+                p.setAttribute("location", String.format("%d", loc));
+                p.setAttribute("gain", String.format("%.3g", g));
+                gp.appendChild(p);
+            }
+            sentenceNode.appendChild(gp);
         }
-        sentenceNode.appendChild(gp);
         return sentenceNode;
     }
 
@@ -1835,16 +1837,35 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public TreeMap<Integer, Double> getGainPoints() {
+        Debug.trace();
+        if (gainPoints == null) {
+            gainPoints = new TreeMap<Integer, Double>();
+        }
         return gainPoints;
     }
 
     public void addGainPoint(Integer loc, Double g) {
+        if (gainPoints == null) {
+            gainPoints = new TreeMap<Integer, Double>();
+        }
         gainPoints.put(loc, g);
         CacheManager.removeFromCache(this);
     }
 
     public void removeGainPoint(Integer loc) {
         gainPoints.remove(loc);
+        CacheManager.removeFromCache(this);
+    }
+
+    public void adjustGainPoint(Integer loc, Double adj) {
+        if (gainPoints == null) {
+            gainPoints = new TreeMap<Integer, Double>();
+            return;
+        }
+        Double gp = gainPoints.get(loc);
+        if (gp == null) return;
+        gp += adj;
+        gainPoints.put(loc, gp);
         CacheManager.removeFromCache(this);
     }
 

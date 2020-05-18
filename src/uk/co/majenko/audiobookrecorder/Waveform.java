@@ -2,16 +2,18 @@ package uk.co.majenko.audiobookrecorder;
 
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelListener;
 import javax.swing.JPanel;
 import java.util.TreeMap;
 import java.util.ArrayList;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.awt.Dimension;
 import java.awt.Color;
 import java.awt.Cursor;
 
-public class Waveform extends JPanel implements MouseListener, MouseMotionListener {
+public class Waveform extends JPanel implements MouseListener, MouseMotionListener, MouseWheelListener {
 
     Sentence sentence = null;
 
@@ -46,6 +48,7 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
         super();
         addMouseListener(this);
         addMouseMotionListener(this);
+        addMouseWheelListener(this);
     }
 
     public void setSentence(Sentence s) {
@@ -267,6 +270,37 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
         dragging = 0;
     }
 
+    public void mouseWheelMoved(MouseWheelEvent e) {
+        if (sentence == null) return;
+        if (sentence.isLocked()) return;
+
+        if (displayGainCurve) {
+            int x = e.getX() * step + offset;
+            int f = -1;
+            int diff = Integer.MAX_VALUE;
+
+            TreeMap<Integer, Double> gc = sentence.getGainPoints();
+            for (Integer loc : gc.keySet()) {
+                int d = Math.abs(loc - x);
+                if (d < diff) {
+                    diff = d;
+                    f = loc;
+                }
+            }
+
+            if (diff / step < 5) {
+                sentence.adjustGainPoint(f, (0 - e.getWheelRotation()) / 100d);
+                repaint();
+                return;
+            }
+        }
+
+        int val = ((int)AudiobookRecorder.window.gainPercent.getValue()) - e.getWheelRotation();
+        if (val < 1) val = 1;
+        AudiobookRecorder.window.gainPercent.setValue(val);
+    }
+
+
     public void mouseClicked(MouseEvent e) {
         if (displayGainCurve) {
             if (e.getButton() == MouseEvent.BUTTON1) {
@@ -277,6 +311,17 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
 
                 int x = e.getX() * step + offset;
                 double y = (double)(h - e.getY()) / (double)h * 2.0;
+
+                sentence.addGainPoint(x, y);
+                repaint();
+            } else if (e.getButton() == MouseEvent.BUTTON2) {
+                Dimension size = getSize();
+
+                int w = size.width;
+                int h = size.height;
+
+                int x = e.getX() * step + offset;
+                double y = 1.0d;
 
                 sentence.addGainPoint(x, y);
                 repaint();

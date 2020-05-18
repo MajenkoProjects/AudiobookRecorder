@@ -398,15 +398,15 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
         });
 
-        sampleWaveform.addMouseWheelListener(new MouseWheelListener() {
-            public void mouseWheelMoved(MouseWheelEvent e) {
-                if (selectedSentence == null) return;
-                if (selectedSentence.isLocked()) return;
-                int val = ((int)gainPercent.getValue()) - e.getWheelRotation();
-                if (val < 1) val = 1;
-                gainPercent.setValue(val);
-            }
-        });
+//        sampleWaveform.addMouseWheelListener(new MouseWheelListener() {
+//            public void mouseWheelMoved(MouseWheelEvent e) {
+//                if (selectedSentence == null) return;
+//                if (selectedSentence.isLocked()) return;
+//                int val = ((int)gainPercent.getValue()) - e.getWheelRotation();
+//                if (val < 1) val = 1;
+//                gainPercent.setValue(val);
+//            }
+//        });
 
         sampleControl.add(sampleWaveform, BorderLayout.CENTER);
 
@@ -3473,6 +3473,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         try {
             b.save();
         } catch (Exception e) {
+            e.printStackTrace();
             JOptionPane.showMessageDialog(AudiobookRecorder.this, "There was an error saving the book: " + e.getMessage(), "Save Error", JOptionPane.ERROR_MESSAGE);
         }
     }
