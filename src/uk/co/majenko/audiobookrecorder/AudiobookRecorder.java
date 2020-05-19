@@ -788,6 +788,10 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 DefaultMutableTreeNode n = (DefaultMutableTreeNode)bookTree.getLastSelectedPathComponent();
 
+                if (n == null) {
+                    setSelectedSentence(null);
+                }
+
                 if (n instanceof BookTreeNode) {
                     BookTreeNode btn = (BookTreeNode)n;
                     btn.onSelect(btn);
@@ -3554,6 +3558,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         KVPair<String, String> de = defEff.getItemAt(i);
         book.setDefaultEffect(de.getKey());
 
+        book.setTitle(tit);
         book.setAuthor(aut);
         book.setGenre(gen);
         book.setComment(com);

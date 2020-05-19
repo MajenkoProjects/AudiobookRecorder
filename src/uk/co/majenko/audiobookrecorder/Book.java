@@ -178,11 +178,13 @@ public class Book extends BookTreeNode {
         return node.getTextContent();
     }
 
+    public void setTitle(String n) { Debug.trace(); name = n; }
     public void setAuthor(String a) { Debug.trace(); author = a; }
     public void setGenre(String g) { Debug.trace(); genre = g; }
     public void setComment(String c) { Debug.trace(); comment = c; }
     public void setACX(String c) { Debug.trace(); ACX = c; }
 
+    public String getTitle() { Debug.trace(); return name; }
     public String getAuthor() { Debug.trace(); return author; }
     public String getGenre() { Debug.trace(); return genre; }
     public String getComment() { Debug.trace(); return comment; }
