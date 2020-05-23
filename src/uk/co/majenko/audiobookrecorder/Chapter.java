@@ -420,4 +420,20 @@ public class Chapter extends BookTreeNode {
             }
         }
     }
+
+    public double getRMS() {
+        double rms = 0;
+        int c = 0;
+        for (Enumeration o = children(); o.hasMoreElements();) {
+            Object ob = (Object)o.nextElement();
+            if (ob instanceof Sentence) {
+                Sentence s = (Sentence)ob;
+                rms += s.getRMS();
+                c++;
+            }
+        }
+
+        return rms / c;
+    }
+
 }

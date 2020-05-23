@@ -95,6 +95,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
     Book parentBook = null;
 
     double runtime = -1d;
+    double rms = -100d;
+    int clipping = 0;
 
     double[][] audioData = null;
 
@@ -226,6 +228,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
         sampleSize = Utils.s2i(Book.getTextNode(root, "samples"));
         processed = Utils.s2b(Book.getTextNode(root, "processed"));
         runtime = Utils.s2d(Book.getTextNode(root, "time", "-1.000"));
+        rms = Utils.s2d(Book.getTextNode(root, "rms", "-100.000"));
+        clipping = Utils.s2i(Book.getTextNode(root, "clipping", "0"));
         peak = Utils.s2d(Book.getTextNode(root, "peak", "-1.000"));
         isDetected = Utils.s2b(Book.getTextNode(root, "detected"));
 
@@ -944,7 +948,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         int gainint = (int)(gain * 100d);
         gain = g;
         if (gint != gainint) {
-            CacheManager.removeFromCache(this);
+            refreshAllData();
             peak = -1;
             reloadTree();
         }
@@ -960,7 +964,6 @@ public class Sentence extends BookTreeNode implements Cacheable {
         if (locked) return gain;
         double max = getPeakValue(false);
         double d = 0.708 / max;
-        if (d > 1d) d = 1d;
         if (d < low) d = low;
         if (d > high) d = high;
         setGain(d);
@@ -975,7 +978,6 @@ public class Sentence extends BookTreeNode implements Cacheable {
         if (locked) return gain;
         double max = getPeakValue(false);
         double d = 0.708 / max;
-        if (d > 1d) d = 1d;
         setGain(d);
         peak = -1;
         getPeak();
@@ -1117,6 +1119,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
             CacheManager.removeFromCache(Sentence.this);
             runtime = -1;
+            rms = -100d;
+            clipping = 0;
             sampleSize = -1;
             loadFile();
             Debug.d("Ending size:", sampleSize);
@@ -1685,6 +1689,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
         sentenceNode.appendChild(Book.makeTextNode(doc, "time", getLength()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "peak", getPeak()));
         sentenceNode.appendChild(Book.makeTextNode(doc, "detected", beenDetected()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "rms", getRMS()));
+        sentenceNode.appendChild(Book.makeTextNode(doc, "clipping", isClipping() ? 2 : 1));
         Element gp = doc.createElement("gainpoints");
         if (gainPoints != null) {
             for (Integer loc : gainPoints.keySet()) {
@@ -1821,6 +1827,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public void refreshAllData() {
         runtime = -1d;
+        rms = -100d;
+        clipping = 0;
         peak = -1d;
         sampleSize = -1;
         audioData = null;
@@ -1833,6 +1841,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
         crossEndOffset = -1;
         updateCrossings();
         getPeakDB();
+        getRMS();
+        isClipping();
         reloadTree();
     }
 
@@ -1849,12 +1859,12 @@ public class Sentence extends BookTreeNode implements Cacheable {
             gainPoints = new TreeMap<Integer, Double>();
         }
         gainPoints.put(loc, g);
-        CacheManager.removeFromCache(this);
+        refreshAllData();
     }
 
     public void removeGainPoint(Integer loc) {
         gainPoints.remove(loc);
-        CacheManager.removeFromCache(this);
+        refreshAllData();
     }
 
     public void adjustGainPoint(Integer loc, Double adj) {
@@ -1866,7 +1876,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         if (gp == null) return;
         gp += adj;
         gainPoints.put(loc, gp);
-        CacheManager.removeFromCache(this);
+        refreshAllData();
     }
 
     public double[] calculateGains() {
@@ -1899,5 +1909,56 @@ public class Sentence extends BookTreeNode implements Cacheable {
             gains[x] = y;
         }
         return gains;
+    }
+
+    public double getRMS() {
+        if (rms > -90d) return rms;
+        double[][] samples = getProcessedAudioData();
+        if (samples == null) {
+            return -100d;
+        }
+
+        double leftsq = 0d;
+        double rightsq = 0d;
+
+        int c = 0;
+
+        for (int i = crossStartOffset; i < crossEndOffset; i++) {
+            leftsq += (double)(samples[LEFT][i] * samples[LEFT][i]);
+            rightsq += (double)(samples[RIGHT][i] * samples[RIGHT][i]);
+            c++;
+        }
+        double left = Math.sqrt(leftsq / c);
+        double right = Math.sqrt(rightsq / c);
+
+        double l10 = Math.log10((left + right) / 2d);
+        rms = 20d * l10;
+
+        return rms;
+    }
+
+    public boolean isClipping() {
+        if (clipping > 0) {
+            if (clipping == 1) return false;
+            return true;
+        }
+
+        double[][] samples = getProcessedAudioData();
+        if (samples == null) {
+            return false;
+        }
+
+        clipping = 1;
+        for (int i = 0; i < samples[LEFT].length; i++) {
+            if (samples[LEFT][i] > 0.708) {
+                clipping = 2;
+                return true;
+            }
+            if (samples[RIGHT][i] > 0.708) {
+                clipping = 2;
+                return true;
+            }
+        }
+        return false;
     }
 }

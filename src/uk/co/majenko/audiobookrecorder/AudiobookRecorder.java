@@ -799,6 +799,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 if (n instanceof Sentence) {
                     Sentence s = (Sentence)n;
+                    s.refreshAllData();
+
                     //selectedSentence = s;
                     s.updateCrossings();
                     sampleWaveform.setSentence(s);

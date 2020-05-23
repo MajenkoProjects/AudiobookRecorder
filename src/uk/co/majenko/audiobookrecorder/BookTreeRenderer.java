@@ -42,6 +42,10 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
                 icn.add(Overlays.attention, OverlayIcon.TOP_LEFT);
             } 
 
+            if (s.isClipping()) {
+                ret.setForeground(new Color(0xe0, 0x00, 0x00));
+            }
+
             if (s.isLocked()) {
                 ret.setForeground(new Color(0x30, 0xb0, 0xFF));
                 icn.add(Overlays.locked, OverlayIcon.BOTTOM_LEFT);
@@ -125,10 +129,10 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
             ctx.weightx = 0.0d;
             ctx.gridx = 3;
             ctx.anchor = GridBagConstraints.LINE_END;
-            int peak = s.getPeakDB();
+            int peak = (int)s.getRMS();
             JLabel peakLabel = new JLabelFixedWidth(50, peak + "dB ");
             peakLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-            if (peak > 0) {
+            if ((peak < -23) || (peak > -18)) {
                 peakLabel.setForeground(new Color(0xCC, 0x00, 0x00));
             }
             p.add(peakLabel, ctx);
@@ -159,8 +163,21 @@ public class BookTreeRenderer extends DefaultTreeCellRenderer {
             ctx.anchor = GridBagConstraints.LINE_START;
             ctx.weightx = 1.0d;
             p.add(ret, ctx);
+
+
             ctx.weightx = 0.0d;
             ctx.gridx = 1;
+            ctx.anchor = GridBagConstraints.LINE_END;
+            int peak = (int)c.getRMS();
+            JLabel peakLabel = new JLabelFixedWidth(50, peak + "dB ");
+            peakLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+            if ((peak < -23) || (peak > -18)) {
+                peakLabel.setForeground(new Color(0xCC, 0x00, 0x00));
+            }
+            p.add(peakLabel, ctx);
+
+            ctx.weightx = 0.0d;
+            ctx.gridx = 2;
             ctx.anchor = GridBagConstraints.LINE_END;
             p.add(time, ctx);
             p.setOpaque(false);
