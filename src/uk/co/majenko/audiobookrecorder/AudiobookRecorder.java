@@ -185,6 +185,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     JToggleButtonSpacePlay selectCutMode;
     JButtonSpacePlay doCutSplit;
     JToggleButtonSpacePlay editGainCurve;
+    JButtonSpacePlay autoCreatePoints;
 
     JButtonSpacePlay refreshSentence;
 
@@ -449,9 +450,20 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
         });
 
+        autoCreatePoints = new JButtonSpacePlay(Icons.normalize, "Create peak points", new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Debug.trace();
+                if (selectedSentence != null) {
+                    selectedSentence.autoAddPeakGainPoints();
+                    updateWaveform(true);
+                }
+            }
+        });
+
         editGainCurve = new JToggleButtonSpacePlay(Icons.normalize, "Edit gain curve", new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
+                autoCreatePoints.setEnabled(editGainCurve.isSelected());
                 sampleWaveform.setDisplayGainCurve(editGainCurve.isSelected());
             }
         });
@@ -635,6 +647,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
         });
 
+        controlsBottom.add(autoCreatePoints);
+        autoCreatePoints.setEnabled(false);
         controlsBottom.add(editGainCurve);
         controlsBottom.addSeparator();
         controlsBottom.add(selectSplitMode);
@@ -2458,6 +2472,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 } else {
                     lastGain = snt.normalize(lastGain - variance, lastGain + variance);
                 }
+                snt.autoAddPeakGainPoints();
             }
 
             dialog.closeDialog();

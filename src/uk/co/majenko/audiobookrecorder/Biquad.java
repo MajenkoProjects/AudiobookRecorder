@@ -78,6 +78,21 @@ public class Biquad implements Effect {
         setPeakGain(peakGainDB);
     }
 
+    // Special single channel version for wave profile processing
+    public void process(double[] samples) {
+        Debug.trace();
+        lz1 = 0d;
+        lz2 = 0d;
+        for (int i = 0; i < samples.length; i++) {
+            double lout = samples[i] * a0 + lz1;
+
+            lz1 = samples[i] * a1 + lz2 - b1 * lout;
+            lz2 = samples[i] * a2 - b2 * lout;
+
+            samples[i] = lout;
+        }
+    }
+
     public void process(double[][] samples) {
         Debug.trace();
         lz1 = 0d;

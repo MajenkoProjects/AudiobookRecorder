@@ -99,6 +99,7 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
 
         if (sentence != null) {
             double[][] samples = sentence.getDoubleAudioData(true);
+            double[] waveProfile = sentence.getWaveProfile();
 
             int num = samples[Sentence.LEFT].length;
             step = num / zoomFactor / w;
@@ -117,9 +118,13 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
                 double lave = 0;
                 double lmax = 0;
 
+                double prof = 0;
+
                 for (int o = 0; o < step; o++) {
                     if (offset + (n * step) + o >= samples[Sentence.LEFT].length) break;
                     double sample = (samples[Sentence.LEFT][offset + (n * step) + o] + samples[Sentence.RIGHT][offset + (n * step) + o]) / 2d;
+                    double asamp = waveProfile[offset + (n * step) + o];
+                    if (asamp > prof) prof = asamp;
                     if (sample >= 0) {
                         have += sample;
                         hcnt++;
@@ -158,6 +163,12 @@ public class Waveform extends JPanel implements MouseListener, MouseMotionListen
                 g.drawLine(n, (int)(h/2 + lmax), n, (int)(h/2 - hmax));
                 g.setColor(new Color(0, 100, 255));
                 g.drawLine(n, (int)(h/2 + lave), n, (int)(h/2 - have));
+                if (prof < 0.05d) {
+                    g.setColor(new Color(0, 255, 0));
+                } else {
+                    g.setColor(new Color(0, 100, 0));
+                }
+                g.drawLine(n, (int)(h/2 - prof * scale), n, (int)(h/2 - prof * scale));
             }
 
             g.setColor(new Color(255, 0, 0, 64));

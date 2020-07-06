@@ -472,6 +472,7 @@ public class Book extends BookTreeNode {
     public void onSelect(BookTreeNode target) {
         Debug.trace();
         AudiobookRecorder.setSelectedBook(this);
+        AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name); 
         if (target == this) {
             AudiobookRecorder.setSelectedChapter(null);
             AudiobookRecorder.setSelectedSentence(null);

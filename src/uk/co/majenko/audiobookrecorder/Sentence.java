@@ -103,6 +103,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
     double[][] processedAudio = null;
 
     double[] fftProfile = null;
+
+    double[] waveProfile = null;
  
     TreeMap<Integer, Double> gainPoints = null;
 
@@ -332,6 +334,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
                 public void run() {
                     sentence.autoTrimSamplePeak();
                     AudiobookRecorder.window.updateWaveformMarkers();
+                    if (Options.getBoolean("process.normalize")) sentence.normalize();
                 }
             });
         } else if (tm.equals("fft")) {
@@ -339,6 +342,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
                 public void run() {
                     sentence.autoTrimSampleFFT();
                     AudiobookRecorder.window.updateWaveformMarkers();
+                    if (Options.getBoolean("process.normalize")) sentence.normalize();
                 }
             });
         } else {
@@ -449,6 +453,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         updateCrossings();
         intens = null;
         samples = null;
+        waveProfile = null;
         processed = true;
         reloadTree();
     }
@@ -791,6 +796,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     public void clearCache() {
         Debug.trace();
         audioData = null;
+        waveProfile = null;
         processedAudio = null;
         storedFormat = null;
     }
@@ -940,6 +946,10 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void setGain(double g) {
+        setGain(g, false);
+    }
+
+    public void setGain(double g, boolean batch) {
         Debug.trace();
         if (g <= 0.0001d) g = 1.0d;
         if (g == gain) return;
@@ -950,7 +960,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         if (gint != gainint) {
             refreshAllData();
             peak = -1;
-            reloadTree();
+            if (!batch) reloadTree();
         }
     }
 
@@ -962,27 +972,28 @@ public class Sentence extends BookTreeNode implements Cacheable {
     public double normalize(double low, double high) {
         Debug.trace();
         if (locked) return gain;
-        double max = getPeakValue(false);
-        double d = 0.708 / max;
-        if (d < low) d = low;
-        if (d > high) d = high;
-        setGain(d);
+
+        int targetLow = Options.getInteger("audio.recording.rms.low");
+        int targetHigh = Options.getInteger("audio.recording.rms.high");
+
+        while ((int)getRMS() < targetLow) {
+            setGain(gain + 0.1);
+            if (gain >= 10.0d) break;
+        }
+
+        while ((int)getRMS() > targetHigh) {
+            setGain(gain - 0.1);
+        }
+
+        refreshAllData();
         peak = -1;
         getPeak();
         reloadTree();
-        return d;
+        return gain;
     }
 
     public double normalize() {
-        Debug.trace();
-        if (locked) return gain;
-        double max = getPeakValue(false);
-        double d = 0.708 / max;
-        setGain(d);
-        peak = -1;
-        getPeak();
-        reloadTree();
-        return d;
+        return normalize(0, 0);
     }
 
     class ExternalEditor implements Runnable {
@@ -1832,6 +1843,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         peak = -1d;
         sampleSize = -1;
         audioData = null;
+        waveProfile = null;
         processedAudio = null;
         fftProfile = null;
         CacheManager.removeFromCache(this);
@@ -1937,6 +1949,24 @@ public class Sentence extends BookTreeNode implements Cacheable {
         return rms;
     }
 
+    public boolean isClipping(int start, int end) {
+
+        double[][] samples = getProcessedAudioData();
+        if (samples == null) {
+            return false;
+        }
+
+        for (int i = start; i <= end; i++) {
+            if (Math.abs(samples[LEFT][i]) > 0.708) {
+                return true;
+            }
+            if (Math.abs(samples[RIGHT][i]) > 0.708) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean isClipping() {
         if (clipping > 0) {
             if (clipping == 1) return false;
@@ -1950,15 +1980,119 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
         clipping = 1;
         for (int i = 0; i < samples[LEFT].length; i++) {
-            if (samples[LEFT][i] > 0.708) {
+            if (Math.abs(samples[LEFT][i]) > 0.708) {
                 clipping = 2;
                 return true;
             }
-            if (samples[RIGHT][i] > 0.708) {
+            if (Math.abs(samples[RIGHT][i]) > 0.708) {
                 clipping = 2;
                 return true;
             }
         }
         return false;
+    }
+
+    public double mix(double a, double b) {
+        return (a + b) / 2d;
+    }
+
+    final int window = 500;
+
+    public double[] getWaveProfile() {
+        if (waveProfile != null) return waveProfile;
+        double[][] samples = getProcessedAudioData();
+        waveProfile = new double[samples[LEFT].length];
+    
+        double rt = 0;
+
+        int nsamp = samples[LEFT].length;
+        int nbuckets = nsamp / window;
+
+        double[] buckets = new double[nbuckets + 1];
+
+        for (int i = 0; i < nsamp; i++) {
+            double sval = Math.abs(mix(samples[LEFT][i], samples[RIGHT][i]));
+            int bnum = i / window;
+            if (sval > buckets[bnum]) buckets[bnum] = sval;
+        }
+
+        for (int i = 0; i < nsamp; i++) {
+            waveProfile[i] = buckets[i / window];
+        }
+
+        return waveProfile;
+    }
+
+    int findBiggestPeak() {
+        double[][] samples = getProcessedAudioData();
+
+        int pos = 0;
+
+        double peak = 0;
+    
+        for (int i = 0; i < samples[LEFT].length; i++) {
+            if (Math.abs(samples[LEFT][i]) > peak) {
+                peak = Math.abs(samples[LEFT][i]);
+                pos = i;
+            }
+            if (Math.abs(samples[RIGHT][i]) > peak) {
+                peak = Math.abs(samples[RIGHT][i]);
+                pos = i;
+            }
+        }
+        return pos;
+    }
+
+    int findPreviousZero(int offset) {
+        double[] profile = getWaveProfile();
+
+        int pos = offset;
+        while (pos > 0) {
+            if (profile[pos] < 0.05) return pos - (window/2);
+            pos--;
+        }
+        return -1;
+    }
+
+    int findNextZero(int offset) {
+        double[] profile = getWaveProfile();
+
+        int pos = offset;
+        while (pos < profile.length) {
+            if (profile[pos] < 0.05) return pos + (window / 2);
+            pos++;
+        }
+        return -1;
+    }
+
+    public void autoAddPeakGainPoints() {
+        while (true) {
+            double[][] samples = getProcessedAudioData();
+            int pos = findBiggestPeak();
+            System.err.println("Biggest peak: " + pos);
+            if ((Math.abs(samples[LEFT][pos]) < 0.708) && (Math.abs(samples[RIGHT][pos]) < 0.708)) {
+                System.err.println("Not a peak!");
+                return;
+            }
+
+            int start = findPreviousZero(pos);
+            int end = findNextZero(pos);
+            if (start == -1) {
+                System.err.println("Unable to find previous zero");
+                return;
+            }
+            if (end == -1) {
+                System.err.println("Unable to find next zero");
+                return;
+            }
+
+            addGainPoint(start, 1d);
+            addGainPoint(pos, 1d);
+            addGainPoint(end, 1d);
+
+            while (isClipping(start, end)) {
+                adjustGainPoint(pos, -0.05);
+            }
+        }
     }
 }
