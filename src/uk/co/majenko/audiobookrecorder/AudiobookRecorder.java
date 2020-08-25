@@ -1689,12 +1689,17 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Chapter chap = (Chapter)o.getObject();
 
-                        ProgressDialog ed = new ProgressDialog("Normalizing " + chap.getName());
-
-                        NormalizeThread t = new NormalizeThread(chap, ed);
-                        Thread nt = new Thread(t);
-                        nt.start();
-                        ed.setVisible(true);
+                        for (Enumeration s = c.children(); s.hasMoreElements();) {
+                            Sentence snt = (Sentence)s.nextElement();
+                            if (!snt.isLocked()) {
+                                queueJob(new SentenceJob(snt) {
+                                    public void run() {
+                                        sentence.normalize();
+                                        sentence.autoAddPeakGainPoints();
+                                    }
+                                });
+                            }
+                        }
                     }
                 });
 
@@ -2442,41 +2447,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         playingThread.setDaemon(true);
         playingThread.start();
-    }
-
-    class NormalizeThread implements Runnable {
-        ProgressDialog dialog;
-        Chapter chapter;
-    
-        public NormalizeThread(Chapter c, ProgressDialog e) {
-            super();
-            Debug.trace();
-            dialog = e;
-            chapter = c;
-        }
-
-        @SuppressWarnings("unchecked")
-        public void run() {
-            Debug.trace();
-
-            int numKids = chapter.getChildCount();
-            int kidCount = 0;
-            double lastGain = -1;
-            double variance = Options.getInteger("audio.recording.variance") / 100d;
-            for (Enumeration s = chapter.children(); s.hasMoreElements();) {
-                kidCount++;
-                dialog.setProgress(kidCount * 2000 / numKids);
-                Sentence snt = (Sentence)s.nextElement();
-                if (lastGain == -1) {
-                    lastGain = snt.normalize();
-                } else {
-                    lastGain = snt.normalize(lastGain - variance, lastGain + variance);
-                }
-                snt.autoAddPeakGainPoints();
-            }
-
-            dialog.closeDialog();
-        }
     }
 
     class ExportThread implements Runnable {

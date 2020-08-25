@@ -803,7 +803,9 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public boolean lockedInCache() {
         Debug.trace();
-        return id.equals("room-noise"); 
+        if (id.equals("room-noise")) return true;
+        if (isProcessing()) return true;
+        return false;
     }
 
     public int findNearestZeroCrossing(int pos, int range) {
@@ -1497,7 +1499,12 @@ public class Sentence extends BookTreeNode implements Cacheable {
                         eff = book.effects.get(effectChain);
                         if (eff != null) {
                             eff.init(getAudioFormat().getFrameRate());
-                            eff.process(processedAudio);
+                            // There is a chance another thread could cripple the audio data cache
+                            // so we'll just ignore any errors here.
+                            try {
+                                eff.process(processedAudio);
+                            } catch (Exception ex) {
+                            }
                         }
                     }
                 }
@@ -2029,6 +2036,11 @@ public class Sentence extends BookTreeNode implements Cacheable {
         int pos = 0;
 
         double peak = 0;
+
+        if (samples == null) {
+            System.err.println("Um.... no samples...?");
+            return -1;
+        }
     
         for (int i = 0; i < samples[LEFT].length; i++) {
             if (Math.abs(samples[LEFT][i]) > peak) {
@@ -2069,6 +2081,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         while (true) {
             double[][] samples = getProcessedAudioData();
             int pos = findBiggestPeak();
+            if (pos == -1) return;
             System.err.println("Biggest peak: " + pos);
             if ((Math.abs(samples[LEFT][pos]) < 0.708) && (Math.abs(samples[RIGHT][pos]) < 0.708)) {
                 System.err.println("Not a peak!");
@@ -2090,8 +2103,15 @@ public class Sentence extends BookTreeNode implements Cacheable {
             addGainPoint(pos, 1d);
             addGainPoint(end, 1d);
 
+            double val = 1d;
+
             while (isClipping(start, end)) {
                 adjustGainPoint(pos, -0.05);
+                val -= 0.05d;
+                if (val < 0.04d) {
+                    System.err.println("Aborting: gain too low");
+                    break;
+                }
             }
         }
     }
