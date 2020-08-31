@@ -1468,11 +1468,11 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     synchronized public double[][] getProcessedAudioData(boolean effectsEnabled, boolean applyGain) {
         Debug.trace();
-        Book book = getBook();
-        loadFile();
         if (processedAudio != null) {
             return processedAudio;
         }
+        Book book = getBook();
+        loadFile();
 
         if (audioData == null) return null;
         processedAudio = new double[2][audioData[LEFT].length];
@@ -2077,14 +2077,44 @@ public class Sentence extends BookTreeNode implements Cacheable {
         return -1;
     }
 
+    int findNearestGainPoint(int pos) {
+        int closest = Integer.MAX_VALUE;
+        int cpos = -1;
+
+        if (gainPoints == null) return -1;
+
+        for (Integer loc : gainPoints.keySet()) {
+            int diff = pos - loc;
+            if (diff < 0) diff = 0 - diff;
+            if (diff < closest) {
+                closest = diff;
+                cpos = loc;
+            }
+        }
+        return cpos;
+    }
+
     public void autoAddPeakGainPoints() {
         while (true) {
             double[][] samples = getProcessedAudioData();
             int pos = findBiggestPeak();
             if (pos == -1) return;
+
             System.err.println("Biggest peak: " + pos);
+
+            int closest = findNearestGainPoint(pos);
+            if (closest >= 0) {
+                int diff = closest - pos;
+                if (diff < 0) diff = 0 - diff;
+                if (diff < 10) {
+                    System.err.println("Readjusting location: " + closest + " - diff = " + diff);
+                    pos = closest;
+                }
+            }
+
             if ((Math.abs(samples[LEFT][pos]) < 0.708) && (Math.abs(samples[RIGHT][pos]) < 0.708)) {
-                System.err.println("Not a peak!");
+                System.err.println("No more peaks");
+                refreshAllData();
                 return;
             }
 
@@ -2105,13 +2135,18 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
             double val = 1d;
 
-            while (isClipping(start, end)) {
+            while (isClipping(pos - 10, pos + 10)) {
                 adjustGainPoint(pos, -0.05);
                 val -= 0.05d;
-                if (val < 0.04d) {
+                if (val < 0.1d) {
                     System.err.println("Aborting: gain too low");
                     break;
                 }
+            }
+            System.err.println("Result: " + gainPoints.get(pos));
+            try {
+                Thread.sleep(1);
+            } catch (Exception ex) {
             }
         }
     }
