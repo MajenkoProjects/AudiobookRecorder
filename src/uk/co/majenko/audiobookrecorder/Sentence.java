@@ -978,12 +978,22 @@ public class Sentence extends BookTreeNode implements Cacheable {
         int targetLow = Options.getInteger("audio.recording.rms.low");
         int targetHigh = Options.getInteger("audio.recording.rms.high");
 
+        long ts = System.currentTimeMillis();
         while ((int)getRMS() < targetLow) {
+            if (System.currentTimeMillis() - ts > 10000) {
+                System.err.println("Aborted gain boost: took too long");
+                return gain;
+            }
             setGain(gain + 0.1);
             if (gain >= 10.0d) break;
         }
 
+        ts = System.currentTimeMillis();
         while ((int)getRMS() > targetHigh) {
+            if (System.currentTimeMillis() - ts > 10000) {
+                System.err.println("Aborted gain cut: took too long");
+                return gain;
+            }
             setGain(gain - 0.1);
         }
 
@@ -1887,6 +1897,10 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void adjustGainPoint(Integer loc, Double adj) {
+        adjustGainPoint(loc, adj, true);
+    }
+
+    public void adjustGainPoint(Integer loc, Double adj, boolean reload) {
         if (gainPoints == null) {
             gainPoints = new TreeMap<Integer, Double>();
             return;
@@ -1895,7 +1909,9 @@ public class Sentence extends BookTreeNode implements Cacheable {
         if (gp == null) return;
         gp += adj;
         gainPoints.put(loc, gp);
-        refreshAllData();
+        if (reload) {
+            refreshAllData();
+        }
     }
 
     public double[] calculateGains() {
@@ -1920,7 +1936,10 @@ public class Sentence extends BookTreeNode implements Cacheable {
             double ystep = diff / (double)range;
             for (int x = 0; x < range; x++) {
                 y += ystep;
-                gains[x1 + x] = y;
+                try {
+                    gains[x1 + x] = y;
+                } catch (Exception ex) {
+                }
             }
             x1 = x2;
         }
@@ -2095,7 +2114,15 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void autoAddPeakGainPoints() {
+        long ts = System.currentTimeMillis();
         while (true) {
+
+            if (System.currentTimeMillis() - ts > 10000) {
+                System.err.println("Terminated: running too long!");
+                return;
+            }
+
+            processedAudio = null;
             double[][] samples = getProcessedAudioData();
             int pos = findBiggestPeak();
             if (pos == -1) return;
@@ -2136,12 +2163,13 @@ public class Sentence extends BookTreeNode implements Cacheable {
             double val = 1d;
 
             while (isClipping(pos - 10, pos + 10)) {
-                adjustGainPoint(pos, -0.05);
+                adjustGainPoint(pos, -0.05, false);
                 val -= 0.05d;
                 if (val < 0.1d) {
                     System.err.println("Aborting: gain too low");
                     break;
                 }
+                processedAudio = null; // Force a refresh
             }
             System.err.println("Result: " + gainPoints.get(pos));
             try {
