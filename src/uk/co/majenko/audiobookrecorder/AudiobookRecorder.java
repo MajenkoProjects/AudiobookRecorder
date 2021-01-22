@@ -2351,7 +2351,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             book.save();
 
             // Add the book to the tree
-            loadXMLBookStructure(new File(book.getLocation(), "audiobook.abx"));
+            loadXMLBookStructure(book.getLocation("audiobook.abx"));
             updateOpenBookList();
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -3240,8 +3240,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             }
 
             newSentence.writeAudioData(startSamples);
-            newSentence.setPostGapType("continuation");
-            newSentence.setPostGap(Options.getInteger("catenation.short-sentence"));
+            newSentence.setPostGapType("sentence");
+            newSentence.setPostGap(Options.getInteger("catenation.post-sentence"));
 
             selectedSentence.writeAudioData(endSamples);
             selectedSentence.autoTrimSample();

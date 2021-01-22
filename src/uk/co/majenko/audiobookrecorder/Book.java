@@ -502,6 +502,11 @@ public class Book extends BookTreeNode {
         return location;
     }
 
+    public File getLocation(String dir) {
+        Debug.trace();
+        return new File(location, dir);
+    }
+
     public void setLocation(File l) {
         Debug.trace();
         location = l;

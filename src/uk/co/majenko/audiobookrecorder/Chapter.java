@@ -172,12 +172,7 @@ public class Chapter extends BookTreeNode {
 
         Book book = getBook();
 
-        File bookRoot = new File(Options.get("path.storage"), book.getName());
-        if (!bookRoot.exists()) {
-            bookRoot.mkdirs();
-        }
-
-        File export = new File(bookRoot, "export");
+        File export = book.getLocation("export");
         if (!export.exists()) {
             export.mkdirs();
         }

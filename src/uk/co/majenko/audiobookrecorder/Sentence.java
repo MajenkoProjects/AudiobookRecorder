@@ -235,6 +235,11 @@ public class Sentence extends BookTreeNode implements Cacheable {
         peak = Utils.s2d(Book.getTextNode(root, "peak", "-1.000"));
         isDetected = Utils.s2b(Book.getTextNode(root, "detected"));
 
+        if (sampleSize == 0) {
+            loadFile();
+            autoTrimSample();
+        }
+
         gainPoints = new TreeMap<Integer, Double>();
         Element gp = Book.getNode(root, "gainpoints");
         if (gp != null) {
@@ -580,7 +585,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         Debug.d("Get file for", id);
         Book book = getBook();
         if (book == null) return null;
-        File b = new File(book.getLocation(), "files");
+        File b = book.getLocation("files");
         if (!b.exists()) {
             b.mkdirs();
         }
@@ -589,7 +594,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public File getTempFile() {
         Debug.trace();
-        File b = new File(getBook().getLocation(), "files");
+        File b = getBook().getLocation("files");
         if (!b.exists()) {
             b.mkdirs();
         }
@@ -2027,6 +2032,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
     public double[] getWaveProfile() {
         if (waveProfile != null) return waveProfile;
         double[][] samples = getProcessedAudioData();
+        if (samples[LEFT].length == 0) return null;
         waveProfile = new double[samples[LEFT].length];
     
         double rt = 0;
