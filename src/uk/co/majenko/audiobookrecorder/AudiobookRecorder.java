@@ -2812,6 +2812,11 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         public void run() {
             Debug.trace();
             try {
+                pd.setMessage("Purging backups...");
+                book.purgeBackups();
+
+                pd.setMessage("Archiving book...");
+
                 String name = book.getName();
                 File storageDir = new File(Options.get("path.storage"));
                 File bookDir = book.getLocation();
@@ -2898,6 +2903,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 zos.flush();
                 zos.close();
 
+                pd.setMessage("Cleaning up...");
+
                 while (fileList.size() > 0) {
                     File f = fileList.remove(fileList.size() - 1);
                     f.delete();
@@ -2911,7 +2918,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     public void archiveBook(Book book) {
         Debug.trace();
-        int r = JOptionPane.showConfirmDialog(this, "This will stash the current book away\nin the archives folder in a compressed\nform. The existing book files will be deleted\nand the book closed.\n\nAre you sure you want to do this?", "Archive Book", JOptionPane.OK_CANCEL_OPTION);
+        int r = JOptionPane.showConfirmDialog(this, "This will stash the current book away\nin the archives folder in a compressed\nform. All backups will be purged, the existing book files will be deleted\nand the book closed.\n\nAre you sure you want to do this?", "Archive Book", JOptionPane.OK_CANCEL_OPTION);
 
         if (r == JOptionPane.OK_OPTION) {
 
@@ -2922,17 +2929,23 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             Thread t = new Thread(runnable);
             t.start();
             pd.setVisible(true);
-            closeBook(book);
+            closeBook(book, false);
         }
     }
 
     public void closeBook(Book b) {
+        closeBook(b, true);
+    }
+
+    public void closeBook(Book b, boolean save) {
         if (selectedBook == b) {
             setSelectedBook(null);
             setSelectedSentence(null);
             setSelectedChapter(null);
         }
-        saveBook(b);
+        if (save) {
+            saveBook(b);
+        }
         bookTreeModel.removeNodeFromParent(b);
         updateOpenBookList();
     }
