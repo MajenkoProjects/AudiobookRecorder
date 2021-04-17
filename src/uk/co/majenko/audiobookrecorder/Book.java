@@ -479,7 +479,7 @@ public class Book extends BookTreeNode {
         }
         AudiobookRecorder.window.setBookNotes(notes);
         AudiobookRecorder.window.noiseFloorLabel.setNoiseFloor(getNoiseFloorDB());
-//        AudiobookRecorder.window.updateEffectChains(effects);
+        AudiobookRecorder.window.updateEffectChains(effects);
         TreeNode p = getParent();
         if (p instanceof BookTreeNode) {
             BookTreeNode btn = (BookTreeNode)p;
@@ -594,9 +594,7 @@ public class Book extends BookTreeNode {
         Debug.trace();
         effects = new TreeMap<String,EffectGroup>();
         loadEffectsFromFolder(new File(Options.get("path.storage"), "System"));
-        if (location != null) {
-            loadEffectsFromFolder(location);
-        }
+        loadEffectsFromFolder(getLocation());
     }
 
     public void loadEffectsFromFolder(File dir) {

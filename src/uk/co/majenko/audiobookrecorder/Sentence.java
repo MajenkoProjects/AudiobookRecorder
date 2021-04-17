@@ -1763,6 +1763,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
         Debug.trace();
         AudiobookRecorder.setSelectedSentence(this);
         AudiobookRecorder.window.setSentenceNotes(notes);
+        AudiobookRecorder.window.showSelectedEffectChain(getEffectChain());
         TreeNode p = getParent();
         if (p instanceof BookTreeNode) {
             BookTreeNode btn = (BookTreeNode)p;

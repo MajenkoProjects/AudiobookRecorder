@@ -204,6 +204,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     public Queue<Runnable>processQueue = null;
     public QueueMonitor queueMonitor = null;
 
+    boolean effectsUpdating = false; // crude lock
+
     void buildToolbar(Container ob) {
         Debug.trace();
         toolBar = new MainToolBar(this);
@@ -637,10 +639,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
                 Debug.d(e);
+                if (effectsUpdating) return;
                 if (selectedSentence != null) {
                     int i = effectChain.getSelectedIndex();
                     KVPair<String, String> p = effectChain.getItemAt(i);
                     if (p == null) return;
+                    System.err.println("I want to select effect " + p.getKey());
                     selectedSentence.setEffectChain(p.getKey());
                     updateWaveform(true);
                 }
@@ -822,8 +826,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     gainPercent.setValue((int)(s.getGain() * 100d));
                     locked.setSelected(s.isLocked());
                     attention.setSelected(s.getAttentionFlag());
-
-                    setEffectChain(s.getEffectChain());
 
                     postSentenceGap.setEnabled(!s.isLocked());
                     gainPercent.setEnabled(!s.isLocked());
@@ -3109,8 +3111,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     public void updateEffectChains(TreeMap<String, EffectGroup> effs) {
         Debug.trace();
-        int sel = effectChain.getSelectedIndex();
-        KVPair<String, String> ent = effectChain.getItemAt(sel);
+        effectsUpdating = true;
+        System.err.println("Updating effect chains");
         while (effectChain.getItemCount() > 0) {
             effectChain.removeItemAt(0);
         }
@@ -3122,15 +3124,40 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             KVPair<String, String> p = new KVPair<String, String>(k, e.toString());
             effectChain.addItem(p);
         }
-        if (ent != null) {
-            setEffectChain(ent.getKey());
-//        } else {
-//            setEffectChain(getBook().getDefaultEffect());
+        if (selectedSentence != null) {
+            String key = selectedSentence.getEffectChain();
+            for (int i = 0; i < effectChain.getItemCount(); i++) {
+                KVPair<String, String> p = effectChain.getItemAt(i);
+                if (p.getKey().equals(key)) {
+                    effectChain.setSelectedIndex(i);
+                    effectsUpdating = false;
+                    return;
+                }
+            }
         }
+        effectsUpdating = false;
+    }
+
+    public void showSelectedEffectChain(String key) {
+        Debug.trace();
+        effectsUpdating = true;
+        System.err.println("Looking for effect " + key + "...");
+        for (int i = 0; i < effectChain.getItemCount(); i++) {
+            KVPair<String, String> p = effectChain.getItemAt(i);
+            System.err.println("    Testing " + p.getKey() + "...");
+            if (p.getKey().equals(key)) {
+                System.err.println("    Found it.");
+                effectChain.setSelectedIndex(i);
+                effectsUpdating = false;
+                return;
+            }
+        }
+        effectsUpdating = false;
     }
 
     public void setEffectChain(String key) {
         Debug.trace();
+        System.err.println("Setting effect " + key);
         for (int i = 0; i < effectChain.getItemCount(); i++) {
             KVPair<String, String> p = effectChain.getItemAt(i);
             if (p.getKey().equals(key)) {
