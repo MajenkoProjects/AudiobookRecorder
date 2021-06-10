@@ -16,8 +16,9 @@ public class BookInfoPanel extends JPanel {
     JTextField genre;
     JTextField comment;
     JTextField acx;
+    JTextField isbn;
 
-    public BookInfoPanel(String t, String a, String g, String c, String x) {
+    public BookInfoPanel(String t, String a, String g, String c, String x, String i) {
         super();
         Debug.trace();
         setLayout(new GridBagLayout());
@@ -62,11 +63,20 @@ public class BookInfoPanel extends JPanel {
         con.gridx = 0;
         con.gridy++;
 
-        add(new JLabel("AXC Code:"), con);
+        add(new JLabel("ACX Code:"), con);
         con.gridx = 1;
         acx = new JTextField(x);
         acx.setPreferredSize(new Dimension(200, 20));
         add(acx, con);
+
+        con.gridx = 0;
+        con.gridy++;
+
+        add(new JLabel("ISBN:"), con);
+        con.gridx = 1;
+        isbn = new JTextField(i);
+        isbn.setPreferredSize(new Dimension(200, 20));
+        add(isbn, con);
 
         con.gridx = 0;
         con.gridy++;
@@ -77,7 +87,7 @@ public class BookInfoPanel extends JPanel {
     public String getAuthor() { Debug.trace(); return author.getText(); }
     public String getGenre() { Debug.trace(); return genre.getText(); }
     public String getComment() { Debug.trace(); return comment.getText(); }
-
+    public String getISBN() { Debug.trace(); return isbn.getText(); }
     public String getACX() { 
         Debug.trace();
         Pattern p = Pattern.compile("\\/titleview\\/([A-Z0-9]{14})");
@@ -93,5 +103,6 @@ public class BookInfoPanel extends JPanel {
     public void setGenre(String g) { Debug.trace(); genre.setText(g); }
     public void setComment(String c) { Debug.trace(); comment.setText(c); }
     public void setACX(String a) { Debug.trace(); acx.setText(a); }
+    public void setISBN(String i) { Debug.trace(); isbn.setText(i); }
 
 }

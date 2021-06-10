@@ -456,6 +456,9 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             public void actionPerformed(ActionEvent e) {
                 Debug.trace();
                 if (selectedSentence != null) {
+                    if ((e.getModifiers() & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK) {
+                        selectedSentence.clearPeakGainPoints();
+                    }
                     selectedSentence.autoAddPeakGainPoints();
                     updateWaveform(true);
                 }
@@ -1076,7 +1079,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     public void createNewBook() {
         Debug.trace();
-        BookInfoPanel info = new BookInfoPanel("", "", "", "", "");
+        BookInfoPanel info = new BookInfoPanel("", "", "", "", "", "");
         int r = JOptionPane.showConfirmDialog(this, info, "New Book", JOptionPane.OK_CANCEL_OPTION);
         if (r != JOptionPane.OK_OPTION) return;
 
@@ -1631,7 +1634,10 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     }
                 });
 
-                JMenuObject exportChapter = new JMenuObject("Export chapter", c, new ActionListener() {
+                JMenu exportChapter = new JMenu("Export chapter...");
+                
+
+                JMenuObject exportChapterACX = new JMenuObject("For ACX", c, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         Debug.trace();
                         JMenuObject o = (JMenuObject)e.getSource();
@@ -1639,7 +1645,22 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                         ProgressDialog ed = new ProgressDialog("Exporting " + chap.getName());
 
-                        ExportThread t = new ExportThread(chap, ed);
+                        ExportThread t = new ExportThread(chap, ed, "%t - %02n");
+                        Thread nt = new Thread(t);
+                        nt.start();
+                        ed.setVisible(true);
+                    }
+                });
+
+                JMenuObject exportChapterABU = new JMenuObject("For Audiobooks Unleashed", c, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter chap = (Chapter)o.getObject();
+
+                        ProgressDialog ed = new ProgressDialog("Exporting " + chap.getName());
+
+                        ExportThread t = new ExportThread(chap, ed, "%I_%03i");
                         Thread nt = new Thread(t);
                         nt.start();
                         ed.setVisible(true);
@@ -1696,6 +1717,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                             if (!snt.isLocked()) {
                                 queueJob(new SentenceJob(snt) {
                                     public void run() {
+                                        sentence.clearPeakGainPoints();
                                         sentence.normalize();
                                         sentence.autoAddPeakGainPoints();
                                     }
@@ -1748,6 +1770,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 menu.addSeparator();
                 menu.add(importWav);
                 menu.add(exportChapter);
+                exportChapter.add(exportChapterACX);
+                exportChapter.add(exportChapterABU);
                 menu.addSeparator();
                 menu.add(deleteChapter);
                 menu.addSeparator();
@@ -1801,12 +1825,24 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                 menu.addSeparator();
 
-                menu.add(new JMenuObject("Export All Audio", book, new ActionListener() {
+                JMenu exportAll = new JMenu("Export All Audio...");
+                menu.add(exportAll);
+
+                exportAll.add(new JMenuObject("For ACX", book, new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         Debug.trace();
                         JMenuObject src = (JMenuObject)(e.getSource());
                         Book thisBook = (Book)(src.getObject());
-                        exportAudio(thisBook);
+                        exportAudio(thisBook, "%t - %n");
+                    }
+                }));
+
+                exportAll.add(new JMenuObject("For Audiobooks Unleashed", book, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject src = (JMenuObject)(e.getSource());
+                        Book thisBook = (Book)(src.getObject());
+                        exportAudio(thisBook, "%I_%03i");
                     }
                 }));
 
@@ -2454,12 +2490,14 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     class ExportThread implements Runnable {
         ProgressDialog exportDialog;
         Chapter chapter;
+        String format;
 
-        public ExportThread(Chapter c, ProgressDialog e) {
+        public ExportThread(Chapter c, ProgressDialog e, String f) {
             super();
             Debug.trace();
             exportDialog = e;
             chapter = c;
+            format = f;
         }
 
         @SuppressWarnings("unchecked")
@@ -2467,7 +2505,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             Debug.trace();
 
             try {
-                chapter.exportChapter(exportDialog);
+                chapter.exportChapter(exportDialog, format);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -2477,7 +2515,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     @SuppressWarnings("unchecked")
-    public void exportAudio(Book book) {
+    public void exportAudio(Book book, String format) {
         Debug.trace();
         
         for (Enumeration o = book.children(); o.hasMoreElements();) {
@@ -2485,7 +2523,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             if (c.getChildCount() == 0) continue;
             ProgressDialog ed = new ProgressDialog("Exporting " + c.getName());
 
-            ExportThread t = new ExportThread(c, ed);
+            ExportThread t = new ExportThread(c, ed, format);
             Thread nt = new Thread(t);
             nt.start();
             ed.setVisible(true);
@@ -3539,7 +3577,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             book.getAuthor(),
             book.getGenre(),
             book.getComment(),
-            book.getACX()
+            book.getACX(),
+            book.getISBN()
         );
         tabs.add("Data", info);
 
@@ -3580,6 +3619,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         String gen = info.getGenre();
         String com = info.getComment();
         String acx = info.getACX();
+        String isbn = info.getISBN();
 
         i = defEff.getSelectedIndex();
         KVPair<String, String> de = defEff.getItemAt(i);
@@ -3590,6 +3630,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
         book.setGenre(gen);
         book.setComment(com);
         book.setACX(acx);
+        book.setISBN(isbn);
 //        if (!(book().getName().equals(tit))) {
 //            book().renameBook(tit);
 //        }

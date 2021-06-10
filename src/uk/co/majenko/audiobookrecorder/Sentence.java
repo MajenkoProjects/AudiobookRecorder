@@ -1815,33 +1815,40 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public boolean beenDetected() {
+        Debug.trace();
         return isDetected;
     }
 
     public boolean isProcessing() {
+        Debug.trace();
         return state == PROCESSING;
     }
 
     public boolean isQueued() {
+        Debug.trace();
         return state == QUEUED;
     }
 
     public void setProcessing() {
+        Debug.trace();
         state = PROCESSING;
         reloadTree();
     }
 
     public void setQueued() {
+        Debug.trace();
         state = QUEUED;
         reloadTree();
     }
 
     public void setDequeued() {
+        Debug.trace();
         state = IDLE;
         reloadTree();
     }
 
     public Book getBook() {
+        Debug.trace();
         if (parentBook != null) {
             Debug.d("Returning parent book");
             return parentBook; // Override for room noise which isn't attached to a book tree
@@ -2120,11 +2127,24 @@ public class Sentence extends BookTreeNode implements Cacheable {
         return cpos;
     }
 
+    int findGainPointBetween(int start, int end) {
+        for (Integer loc : gainPoints.keySet()) {
+            if (loc >= start && loc <= end) {
+                return loc;
+            }
+        }
+        return -1;
+    }
+
+    public void clearPeakGainPoints() {
+        gainPoints.clear();
+    }
+
     public void autoAddPeakGainPoints() {
         long ts = System.currentTimeMillis();
         while (true) {
 
-            if (System.currentTimeMillis() - ts > 10000) {
+            if (System.currentTimeMillis() - ts > 30000) {
                 System.err.println("Terminated: running too long!");
                 return;
             }
@@ -2136,6 +2156,12 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
             System.err.println("Biggest peak: " + pos);
 
+            if ((Math.abs(samples[LEFT][pos]) < 0.708) && (Math.abs(samples[RIGHT][pos]) < 0.708)) {
+                System.err.println("No more peaks");
+                refreshAllData();
+                return;
+            }
+
             int closest = findNearestGainPoint(pos);
             if (closest >= 0) {
                 int diff = closest - pos;
@@ -2144,12 +2170,6 @@ public class Sentence extends BookTreeNode implements Cacheable {
                     System.err.println("Readjusting location: " + closest + " - diff = " + diff);
                     pos = closest;
                 }
-            }
-
-            if ((Math.abs(samples[LEFT][pos]) < 0.708) && (Math.abs(samples[RIGHT][pos]) < 0.708)) {
-                System.err.println("No more peaks");
-                refreshAllData();
-                return;
             }
 
             int start = findPreviousZero(pos);
@@ -2163,9 +2183,12 @@ public class Sentence extends BookTreeNode implements Cacheable {
                 return;
             }
 
-            addGainPoint(start, 1d);
+            int betweenStart = findGainPointBetween(start, pos - 1);
+            int betweenEnd = findGainPointBetween(pos + 1, end);
+
+            if (betweenStart == -1) addGainPoint(start, 1d);
             addGainPoint(pos, 1d);
-            addGainPoint(end, 1d);
+            if (betweenEnd == -1) addGainPoint(end, 1d);
 
             double val = 1d;
 

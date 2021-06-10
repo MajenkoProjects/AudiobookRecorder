@@ -102,6 +102,22 @@ public class Chapter extends BookTreeNode {
         }
     }
 
+    public int getSequenceNumber() {
+        Book book = getBook();
+        int i = 1;
+        while (true) {
+            Chapter c = book.getChapter(i);
+            if (c == null) {
+                return -1;
+            }
+            System.err.println(c.getName());
+            if (c.getName().equals(name)) {
+                return i;
+            }
+            i++;
+        }
+    }
+
     public String getId() {
         Debug.trace();
         return id;
@@ -162,8 +178,93 @@ public class Chapter extends BookTreeNode {
         return postGap;
     }
 
+    public String createFilename(String format) {
+        String out = "";
+
+        char[] chars = format.toCharArray();
+
+        int mode = 0; // nothing
+        int len = 0;
+        boolean zeros = false;
+        boolean first = true;
+
+        Book book = getBook();
+
+        for (char c : chars) {
+            switch (mode) {
+                case 0:
+                    switch (c) {
+                        case '%': {
+                            mode = 1; 
+                            len = 0;
+                            zeros = false;
+                            first = true;
+                        }
+                        break;
+                        default: out += c; break;
+                    }
+                    break;
+
+                case 1:
+                    switch (c) {
+                        case '0': len = len * 10; first = false; break;
+                        case '1': len = len * 10 + 1; first = false; break;
+                        case '2': len = len * 10 + 2; first = false; break;
+                        case '3': len = len * 10 + 3; first = false; break;
+                        case '4': len = len * 10 + 4; first = false; break;
+                        case '5': len = len * 10 + 5; first = false; break;
+                        case '6': len = len * 10 + 6; first = false; break;
+                        case '7': len = len * 10 + 7; first = false; break;
+                        case '8': len = len * 10 + 8; first = false; break;
+                        case '9': len = len * 10 + 9; first = false; break;
+                        case 't': 
+                            if (len > 0) 
+                                out += String.format("%" + len + "s", book.getTitle());
+                            else
+                                out += book.getTitle();
+                            mode = 0;
+                            break;
+                        case 'n': 
+                            if (len > 0)
+                                out += String.format("%" + len + "s", name);
+                            else
+                                out += name;
+                            mode = 0;
+                            break;
+
+                        case '%':
+                            out += '%';
+                            mode = 0;
+                            break;
+                        case 'I':
+                            if (len > 0)
+                                out += String.format("%" + len + "s", book.getISBN());
+                            else
+                                out += book.getISBN();
+                            mode = 0;
+                            break;
+                        case 'A':
+                            if (len > 0)
+                                out += String.format("%" + len + "s", book.getACX());
+                            else
+                                out += book.getACX();
+                            mode = 0;
+                            break;
+                        case 'i':
+                            if (len > 0)
+                                out += String.format("%0" + len + "d", getSequenceNumber());
+                            else
+                                out += getId();
+                            mode = 0;
+                            break;
+                    }
+            }
+        }
+        return out;
+    }
+
     @SuppressWarnings("unchecked")
-    public void exportChapter(ProgressDialog exportDialog) throws 
+    public void exportChapter(ProgressDialog exportDialog, String fnformat) throws 
                     FileNotFoundException, IOException, InputFormatException, NotSupportedException,
                     EncoderException, UnsupportedTagException, InvalidDataException {
         Debug.trace();
@@ -214,7 +315,9 @@ public class Chapter extends BookTreeNode {
         File exportFile = new File(export, name + ".wax");
         File wavFile = new File(export, name + ".wav");
         File mp3File = new File(export, name + "-untagged.mp3");
-        File taggedFile = new File(export, book.getName() + " - " + name + ".mp3");
+
+
+        File taggedFile = new File(export, createFilename(fnformat) + ".mp3");
 
         FileOutputStream fos = new FileOutputStream(exportFile);
         data = getBook().getRoomNoise(Utils.s2i(Options.get("catenation.pre-chapter")));

@@ -9,15 +9,20 @@ public class CacheManager {
 
     public static void addToCache(Cacheable c) {
         Debug.trace();
+        int iterations = 0;
         while (cache.size() >= cacheSize) {
+            iterations++;
+            if (iterations > cacheSize * 2) {
+                System.err.println("Cache locked. Flushing.");
+                cache.clear();
+                cache.add(c);
+                return;
+            }
             Cacheable ob = cache.remove(0);
             if (ob != null) {
                 if (ob.lockedInCache()) {
                     cache.add(ob);
                 } else {
-                    if (ob instanceof Sentence) {
-                        Sentence s = (Sentence)ob;
-                    }
                     ob.clearCache();
                 }
             }
@@ -32,9 +37,6 @@ public class CacheManager {
 
     public static void removeFromCache(Cacheable c) {
         Debug.trace();
-        if (c instanceof Sentence) {
-            Sentence s = (Sentence)c;
-        }
         cache.remove(c);
         c.clearCache();
     }

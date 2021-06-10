@@ -43,6 +43,7 @@ public class Book extends BookTreeNode {
     String genre;
     String comment;
     String ACX;
+    String ISBN;
     String manuscript;
     String defaultEffect = "none";
     Sentence roomNoise = null;
@@ -81,6 +82,7 @@ public class Book extends BookTreeNode {
             genre = getTextNode(root, "genre");
             comment = getTextNode(root, "comment");
             ACX = getTextNode(root, "acx");
+            ISBN = getTextNode(root, "isbn");
             manuscript = getTextNode(root, "manuscript");
             notes = getTextNode(root, "notes");
 
@@ -133,6 +135,7 @@ public class Book extends BookTreeNode {
         genre = getTextNode(root, "genre");
         comment = getTextNode(root, "comment");
         ACX = getTextNode(root, "acx");
+        ISBN = getTextNode(root, "isbn");
         manuscript = getTextNode(root, "manuscript");
         notes = getTextNode(root, "notes");
 
@@ -183,12 +186,14 @@ public class Book extends BookTreeNode {
     public void setGenre(String g) { Debug.trace(); genre = g; }
     public void setComment(String c) { Debug.trace(); comment = c; }
     public void setACX(String c) { Debug.trace(); ACX = c; }
+    public void setISBN(String c) { Debug.trace(); ISBN = c; }
 
     public String getTitle() { Debug.trace(); return name; }
     public String getAuthor() { Debug.trace(); return author; }
     public String getGenre() { Debug.trace(); return genre; }
     public String getComment() { Debug.trace(); return comment; }
     public String getACX() { Debug.trace(); if (ACX == null) return ""; return ACX; }
+    public String getISBN() { Debug.trace(); if (ISBN == null) return ""; return ISBN; }
 
     @SuppressWarnings("unchecked")
     public Chapter getChapterById(String id) {
@@ -378,6 +383,7 @@ public class Book extends BookTreeNode {
         root.appendChild(makeTextNode(doc, "comment", comment));
         root.appendChild(makeTextNode(doc, "genre", genre));
         root.appendChild(makeTextNode(doc, "acx", ACX));
+        root.appendChild(makeTextNode(doc, "isbn", ISBN));
         root.appendChild(makeTextNode(doc, "manuscript", manuscript));
         root.appendChild(makeTextNode(doc, "notes", notes));
 
