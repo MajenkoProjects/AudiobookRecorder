@@ -5,6 +5,7 @@ java=java
 if test -n "$JAVA_HOME"; then
     java="$JAVA_HOME/bin/java"
 fi
-java_args=-Xmx8g
+MEM=`grep MemTotal: /proc/meminfo | awk '{printf "%.0f", ($2 / 1024 / 1024 /2)}'`
+java_args=-Xmx${MEM}g
 exec "$java" $java_args -jar $MYSELF "$@"
 exit 1 
