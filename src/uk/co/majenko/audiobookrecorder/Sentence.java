@@ -2147,7 +2147,9 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void clearPeakGainPoints() {
-        gainPoints.clear();
+		if (gainPoints != null) {
+	        gainPoints.clear();
+		}
     }
 
     public void autoAddPeakGainPoints() {
