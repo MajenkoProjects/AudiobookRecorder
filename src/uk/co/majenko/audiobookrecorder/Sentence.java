@@ -757,7 +757,17 @@ public class Sentence extends BookTreeNode implements Cacheable {
             String command = Options.get("process.command");
             Debug.d("Recognizing with command", command);
 
-            ProcessBuilder builder = new ProcessBuilder(command, getFile().getCanonicalPath());
+			ArrayList<String> args = new ArrayList<String>();
+			String[] a = command.split(" ");
+			for (String arg : a) {
+				if (arg.equals("%f")) {
+					args.add(getFile().getCanonicalPath());
+				} else {
+					args.add(arg);
+				}
+			}
+
+            ProcessBuilder builder = new ProcessBuilder(args);
             Process process = builder.start();
             InputStream is = process.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(is));
