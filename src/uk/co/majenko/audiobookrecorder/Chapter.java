@@ -6,6 +6,8 @@ import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Enumeration;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -190,77 +192,25 @@ public class Chapter extends BookTreeNode {
 
         Book book = getBook();
 
-        for (char c : chars) {
-            switch (mode) {
-                case 0:
-                    switch (c) {
-                        case '%': {
-                            mode = 1; 
-                            len = 0;
-                            zeros = false;
-                            first = true;
-                        }
-                        break;
-                        default: out += c; break;
-                    }
-                    break;
+		HashMap<String, String> tokens = new HashMap<String, String>();
 
-                case 1:
-                    switch (c) {
-                        case '0': len = len * 10; first = false; break;
-                        case '1': len = len * 10 + 1; first = false; break;
-                        case '2': len = len * 10 + 2; first = false; break;
-                        case '3': len = len * 10 + 3; first = false; break;
-                        case '4': len = len * 10 + 4; first = false; break;
-                        case '5': len = len * 10 + 5; first = false; break;
-                        case '6': len = len * 10 + 6; first = false; break;
-                        case '7': len = len * 10 + 7; first = false; break;
-                        case '8': len = len * 10 + 8; first = false; break;
-                        case '9': len = len * 10 + 9; first = false; break;
-                        case 't': 
-                            if (len > 0) 
-                                out += String.format("%" + len + "s", book.getTitle());
-                            else
-                                out += book.getTitle();
-                            mode = 0;
-                            break;
-                        case 'n': 
-                            if (len > 0)
-                                out += String.format("%" + len + "s", name);
-                            else
-                                out += name;
-                            mode = 0;
-                            break;
+		tokens.put("chapter.name", name);
+		tokens.put("chapter.number", Integer.toString(getSequenceNumber()));
+		tokens.put("chapter.id", getId());
+		tokens.put("book.title", book.getTitle());
+		tokens.put("book.author", book.getAuthor());
+		tokens.put("book.isbn", book.getISBN());
+		tokens.put("book.acx", book.getACX());
+		tokens.put("narrator.name", Options.get("narrator.name"));
+		tokens.put("narrator.initials", Options.get("narrator.initials"));
+		tokens.put("file.bitrate", Integer.toString(Options.getInteger("audio.export.bitrate")));
+		tokens.put("file.bitrate.kb", Integer.toString(Options.getInteger("audio.export.bitrate") / 1000));
 
-                        case '%':
-                            out += '%';
-                            mode = 0;
-                            break;
-                        case 'I':
-                            if (len > 0)
-                                out += String.format("%" + len + "s", book.getISBN());
-                            else
-                                out += book.getISBN();
-                            mode = 0;
-                            break;
-                        case 'A':
-                            if (len > 0)
-                                out += String.format("%" + len + "s", book.getACX());
-                            else
-                                out += book.getACX();
-                            mode = 0;
-                            break;
-                        case 'i':
-                            if (len > 0)
-                                out += String.format("%0" + len + "d", getSequenceNumber());
-                            else
-                                out += getId();
-                            mode = 0;
-                            break;
-                    }
-            }
-        }
-        return out;
+		for(Map.Entry<String, String> entry : tokens.entrySet()) {
+			format = format.replace("{" + entry.getKey() + ":lower}", entry.getValue().toLowerCase());
+			format = format.replace("{" + entry.getKey() + "}", entry.getValue());
+		}
+		return format;
     }
 
     @SuppressWarnings("unchecked")

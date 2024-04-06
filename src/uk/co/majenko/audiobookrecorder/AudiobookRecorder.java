@@ -1645,7 +1645,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                         ProgressDialog ed = new ProgressDialog("Exporting " + chap.getName());
 
-                        ExportThread t = new ExportThread(chap, ed, "%t - %02n");
+                        ExportThread t = new ExportThread(chap, ed, "{book.title} - {chapter.number}");
                         Thread nt = new Thread(t);
                         nt.start();
                         ed.setVisible(true);
@@ -1660,7 +1660,22 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
                         ProgressDialog ed = new ProgressDialog("Exporting " + chap.getName());
 
-                        ExportThread t = new ExportThread(chap, ed, "%I_%03i");
+                        ExportThread t = new ExportThread(chap, ed, "{book.isbn}_{chapter.number}");
+                        Thread nt = new Thread(t);
+                        nt.start();
+                        ed.setVisible(true);
+                    }
+                });
+
+                JMenuObject exportChapterLibri = new JMenuObject("For LibriVox.org", c, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject o = (JMenuObject)e.getSource();
+                        Chapter chap = (Chapter)o.getObject();
+
+                        ProgressDialog ed = new ProgressDialog("Exporting " + chap.getName());
+
+                        ExportThread t = new ExportThread(chap, ed, "{chapter.name:lower}_{book.author:lower}_{narrator.initials:lower}_{file.bitrate.kb}kb");
                         Thread nt = new Thread(t);
                         nt.start();
                         ed.setVisible(true);
@@ -1772,6 +1787,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 menu.add(exportChapter);
                 exportChapter.add(exportChapterACX);
                 exportChapter.add(exportChapterABU);
+                exportChapter.add(exportChapterLibri);
                 menu.addSeparator();
                 menu.add(deleteChapter);
                 menu.addSeparator();
@@ -1833,7 +1849,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         Debug.trace();
                         JMenuObject src = (JMenuObject)(e.getSource());
                         Book thisBook = (Book)(src.getObject());
-                        exportAudio(thisBook, "%t - %n");
+                        exportAudio(thisBook, "{book.title} - {chapter.number}");
                     }
                 }));
 
@@ -1842,7 +1858,16 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         Debug.trace();
                         JMenuObject src = (JMenuObject)(e.getSource());
                         Book thisBook = (Book)(src.getObject());
-                        exportAudio(thisBook, "%I_%03i");
+                        exportAudio(thisBook, "{book.isbn}_{chapter.number}");
+                    }
+                }));
+
+                exportAll.add(new JMenuObject("For LibriVox.org", book, new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Debug.trace();
+                        JMenuObject src = (JMenuObject)(e.getSource());
+                        Book thisBook = (Book)(src.getObject());
+                        exportAudio(thisBook, "{chapter.name:lower}_{book.author:lower}_{narrator.initials:lower}_{file.bitrate.kb}kb");
                     }
                 }));
 
@@ -2462,13 +2487,15 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         sampleWaveform.setPlayMarker(pos / format.getFrameSize());
                         int l = data.length - pos;
                         if (l > blockSize) l = blockSize;
-                        play.write(data, pos, l);
+                        System.out.println(play.write(data, pos, l));
                     }
 
+					System.out.println("Closing...");
                     play.drain();
                     play.stop();
                     play.close();
                     play = null;
+					System.out.println("Closed");
                     playing = null;
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -2718,8 +2745,10 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     public void stopPlaying() {
         Debug.trace();
         if (play != null) {
+			System.out.println("Forcing close");
             play.close();
             play = null;
+			System.out.println("Closed!!!");
         }
         playing = null;
     }
@@ -3623,8 +3652,9 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
         i = defEff.getSelectedIndex();
         KVPair<String, String> de = defEff.getItemAt(i);
-        book.setDefaultEffect(de.getKey());
-
+		if (de != null) {
+  	      	book.setDefaultEffect(de.getKey());
+		}
         book.setTitle(tit);
         book.setAuthor(aut);
         book.setGenre(gen);

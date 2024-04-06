@@ -592,7 +592,7 @@ public class Book extends BookTreeNode {
                     Debug.trace();
                     roomNoise.stopRecording();
                 }
-            }, 5000); // 5 seconds of recording
+            }, 10000); // 10 seconds of recording
         }
     }
 

@@ -85,6 +85,9 @@ public class Options extends JDialog {
 
     ArrayList<JTextField[]> processorList;
 
+	JTextField narratorName;
+	JTextField narratorInitials;
+
     static HashMap<String, String> defaultPrefs;
     static Preferences prefs = null;
 
@@ -387,6 +390,11 @@ public class Options extends JDialog {
         bitRate = addDropdown(optionsPanel, "Export bitrate:", getBitrates(), get("audio.export.bitrate"), "The MP3 bitrate to produce");
         channels = addDropdown(optionsPanel, "Export channels:", getChannelCountList(), get("audio.export.channels"), "Mono or stereo MP3 production");
         exportRate = addDropdown(optionsPanel, "Export sample rate:", getSampleRateList(), get("audio.export.samplerate"), "Sample frequency of the produced MP3");
+	
+		addSeparator(optionsPanel);
+
+		narratorName = addTextField(optionsPanel, "Narrator Name:", get("narrator.name"), "The name of the narrator for use in the exported file tags");
+		narratorInitials = addTextField(optionsPanel, "Narrator Initials:", get("narrator.initials"), "The initials of the narrator");
         
 
         addSeparator(optionsPanel);
@@ -736,6 +744,8 @@ public class Options extends JDialog {
         if (bitRate.getSelectedItem() != null) set("audio.export.bitrate", ((KVPair)bitRate.getSelectedItem()).key);
         if (channels.getSelectedItem() != null) set("audio.export.channels", ((KVPair)channels.getSelectedItem()).key);
         if (exportRate.getSelectedItem() != null) set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
+		set("narrator.name", narratorName.getText());
+		set("narrator.initials", narratorInitials.getText());
         set("process.sphinx", enableParsing.isSelected());
         set("process.command", speechCommand.getText());
         set("process.threads", workerThreads.getValue());
