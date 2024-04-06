@@ -377,19 +377,7 @@ public class Options extends JDialog {
 
         addSeparator(optionsPanel);
 
-        preChapterGap = addSpinner(optionsPanel, "Default pre-chapter gap:", 0, 5000, 100, getInteger("catenation.pre-chapter"), "ms", "How much room noise to add at the beginning of a chapter.");
-        postChapterGap = addSpinner(optionsPanel, "Default post-chapter gap:", 0, 5000, 100, getInteger("catenation.post-chapter"), "ms", "How much room noise to add to the end of a chapter.");
-        postSentenceGap = addSpinner(optionsPanel, "Default post-sentence gap:", 0, 5000, 100, getInteger("catenation.post-sentence"), "ms", "How much room noise to add between normal sentences.");
-        shortSentenceGap = addSpinner(optionsPanel, "Short post-sentence gap:", 0, 5000, 100, getInteger("catenation.short-sentence"), "ms", "How much room noise to add between 'continuations'.");
-        postParagraphGap = addSpinner(optionsPanel, "Default post-paragraph gap:", 0, 5000, 100, getInteger("catenation.post-paragraph"), "ms", "How much room noise to add between paragraphs.");
-        postSectionGap = addSpinner(optionsPanel, "Default post-section gap:", 0, 5000, 100, getInteger("catenation.post-section"), "ms", "How much room noise to add between sections.");
-
-        addSeparator(optionsPanel);
-
         ffmpegLocation = addFilePath(optionsPanel, "FFMPEG location:", get("path.ffmpeg"), false, "Path to your ffmpeg executable.");
-        bitRate = addDropdown(optionsPanel, "Export bitrate:", getBitrates(), get("audio.export.bitrate"), "The MP3 bitrate to produce");
-        channels = addDropdown(optionsPanel, "Export channels:", getChannelCountList(), get("audio.export.channels"), "Mono or stereo MP3 production");
-        exportRate = addDropdown(optionsPanel, "Export sample rate:", getSampleRateList(), get("audio.export.samplerate"), "Sample frequency of the produced MP3");
 	
 		addSeparator(optionsPanel);
 

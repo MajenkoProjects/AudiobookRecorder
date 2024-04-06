@@ -8,17 +8,21 @@ import java.awt.GridBagConstraints;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 import javax.swing.JPanel;
+import javax.swing.JComboBox;
 
 public class BookInfoPanel extends JPanel {
 
     JTextField title;
+	JTextField shortTitle;
     JTextField author;
+	JTextField shortAuthor;
     JTextField genre;
     JTextField comment;
     JTextField acx;
     JTextField isbn;
+	JComboBox<ExportProfile> exportProfile;
 
-    public BookInfoPanel(String t, String a, String g, String c, String x, String i) {
+    public BookInfoPanel(String t, String st, String a, String sa, String g, String c, String x, String i, String epc) {
         super();
         Debug.trace();
         setLayout(new GridBagLayout());
@@ -36,11 +40,29 @@ public class BookInfoPanel extends JPanel {
         con.gridx = 0;
         con.gridy++;
 
+        add(new JLabel("Short Title:"), con);
+        con.gridx = 1;
+        shortTitle = new JTextField(st);
+        shortTitle.setPreferredSize(new Dimension(200, 20));
+        add(shortTitle, con);
+
+        con.gridx = 0;
+        con.gridy++;
+
         add(new JLabel("Author:"), con);
         con.gridx = 1;
         author = new JTextField(a);
         author.setPreferredSize(new Dimension(200, 20));
         add(author, con);
+
+        con.gridx = 0;
+        con.gridy++;
+
+        add(new JLabel("Short Author:"), con);
+        con.gridx = 1;
+        shortAuthor = new JTextField(sa);
+        shortAuthor.setPreferredSize(new Dimension(200, 20));
+        add(shortAuthor, con);
 
         con.gridx = 0;
         con.gridy++;
@@ -81,6 +103,20 @@ public class BookInfoPanel extends JPanel {
         con.gridx = 0;
         con.gridy++;
 
+        add(new JLabel("Export Profile:"), con);
+        con.gridx = 1;
+		exportProfile = new JComboBox<ExportProfile>();
+		for (ExportProfile profile : AudiobookRecorder.exportProfiles.values()) {
+			exportProfile.addItem(profile);
+			if (profile.getCode() == epc) {
+				exportProfile.setSelectedItem(profile);
+			}
+		}
+        add(exportProfile, con);
+
+        con.gridx = 0;
+        con.gridy++;
+
     }
 
     public String getTitle() { Debug.trace(); return title.getText(); }
@@ -97,6 +133,9 @@ public class BookInfoPanel extends JPanel {
         }
         return acx.getText();
     }
+	public String getShortTitle() { Debug.trace(); return shortTitle.getText(); }
+	public String getShortAuthor() { Debug.trace(); return shortAuthor.getText(); }
+	public ExportProfile getExportProfile() { Debug.trace(); return (ExportProfile)exportProfile.getSelectedItem(); }
 
     public void setTitle(String t) { Debug.trace(); title.setText(t); }
     public void setAuthor(String a) { Debug.trace(); author.setText(a); }
@@ -104,5 +143,7 @@ public class BookInfoPanel extends JPanel {
     public void setComment(String c) { Debug.trace(); comment.setText(c); }
     public void setACX(String a) { Debug.trace(); acx.setText(a); }
     public void setISBN(String i) { Debug.trace(); isbn.setText(i); }
-
+	public void setShortTitle(String t) { Debug.trace(); shortTitle.setText(t); }
+	public void setShortAuthor(String a) { Debug.trace(); shortAuthor.setText(a); }
+	public void setExportProfile(ExportProfile p) { Debug.trace(); exportProfile.setSelectedItem(p); }
 }

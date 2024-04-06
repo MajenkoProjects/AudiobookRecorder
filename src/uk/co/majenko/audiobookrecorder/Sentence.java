@@ -198,7 +198,6 @@ public class Sentence extends BookTreeNode implements Cacheable {
         id = UUID.randomUUID().toString();
         text = id;
         setUserObject(text);
-        postGap = Options.getInteger("catenation.post-sentence");
     }
 
     public Sentence(String i, String t) {
@@ -207,7 +206,6 @@ public class Sentence extends BookTreeNode implements Cacheable {
         id = i;
         text = t;
         setUserObject(text);
-        postGap = Options.getInteger("catenation.post-sentence");
     }
 
     public Sentence(Element root) {
@@ -990,8 +988,8 @@ public class Sentence extends BookTreeNode implements Cacheable {
         Debug.trace();
         if (locked) return gain;
 
-        int targetLow = Options.getInteger("audio.recording.rms.low");
-        int targetHigh = Options.getInteger("audio.recording.rms.high");
+        int targetLow = getBook().getExportProfile().getAudioRMS();
+        int targetHigh = getBook().getExportProfile().getAudioRMS();
 
         long ts = System.currentTimeMillis();
         while ((int)getRMS() < targetLow) {
@@ -1639,13 +1637,13 @@ public class Sentence extends BookTreeNode implements Cacheable {
     public void setPostGapType(String t) {
         Debug.trace();
         if (t == null || t.equals("none")) {
-            if (getPostGap() == Options.getInteger("catenation.short-sentence")) {
+            if (getPostGap() == getBook().getExportProfile().getGapFollowon()) {
                 t = "continuation";
-            } else if (getPostGap() == Options.getInteger("catenation.post-paragraph")) {
+            } else if (getPostGap() == getBook().getExportProfile().getGapPostParagraph()) {
                 t = "paragraph";
-            } else if (getPostGap() == Options.getInteger("catenation.post-section")) {
+            } else if (getPostGap() == getBook().getExportProfile().getGapPostSection()) {
                 t = "section";
-            } else if (getPostGap() == Options.getInteger("catenation.post-sentence")) {
+            } else if (getPostGap() == getBook().getExportProfile().getGapPostSentence()) {
                 t = "sentence";
             } else {
                 t = "sentence";
@@ -1661,13 +1659,13 @@ public class Sentence extends BookTreeNode implements Cacheable {
             postGapType = "sentence";
         }
         if (postGapType.equals("continuation")) {
-            setPostGap(Options.getInteger("catenation.short-sentence"));
+            setPostGap(getBook().getExportProfile().getGapFollowon());
         } else if (postGapType.equals("paragraph")) {
-            setPostGap(Options.getInteger("catenation.post-paragraph"));
+            setPostGap(getBook().getExportProfile().getGapPostParagraph());
         } else if (postGapType.equals("section")) {
-            setPostGap(Options.getInteger("catenation.post-section"));
+            setPostGap(getBook().getExportProfile().getGapPostSection());
         } else {
-            setPostGap(Options.getInteger("catenation.post-sentence"));
+            setPostGap(getBook().getExportProfile().getGapPostSentence());
         } 
 
     }

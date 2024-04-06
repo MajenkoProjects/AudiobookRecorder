@@ -39,7 +39,9 @@ import org.xml.sax.SAXException;
 public class Book extends BookTreeNode {
     
     String name;
+	String shortName;
     String author;
+	String shortAuthor;
     String genre;
     String comment;
     String ACX;
@@ -53,6 +55,7 @@ public class Book extends BookTreeNode {
     Random rng = new Random();
     TreeMap<String, EffectGroup> effects;
     AudioFormat cachedFormat = null;
+	ExportProfile exportProfile;
 
     public Book(String bookname) {
         super(bookname);
@@ -78,13 +81,16 @@ public class Book extends BookTreeNode {
             Element root = doc.getDocumentElement();
 
             name = getTextNode(root, "title");
+			shortName = getTextNode(root, "shorttitle");
             author = getTextNode(root, "author");
+			shortAuthor = getTextNode(root, "shortauthor");
             genre = getTextNode(root, "genre");
             comment = getTextNode(root, "comment");
             ACX = getTextNode(root, "acx");
             ISBN = getTextNode(root, "isbn");
             manuscript = getTextNode(root, "manuscript");
             notes = getTextNode(root, "notes");
+			exportProfile = AudiobookRecorder.exportProfiles.get(getTextNode(root, "exportprofile"));
 
             Element settings = getNode(root, "settings");
             Element audioSettings = getNode(settings, "audio");
@@ -131,13 +137,16 @@ public class Book extends BookTreeNode {
     public void loadBookXML(Element root, DefaultTreeModel model) {
         Debug.trace();
         name = getTextNode(root, "title");
+		shortName = getTextNode(root, "shorttitle");
         author = getTextNode(root, "author");
+		shortAuthor = getTextNode(root, "shortauthor");
         genre = getTextNode(root, "genre");
         comment = getTextNode(root, "comment");
         ACX = getTextNode(root, "acx");
         ISBN = getTextNode(root, "isbn");
         manuscript = getTextNode(root, "manuscript");
         notes = getTextNode(root, "notes");
+		exportProfile = AudiobookRecorder.exportProfiles.get(getTextNode(root, "exportprofile"));
 
         Element settings = getNode(root, "settings");
         Element audioSettings = getNode(settings, "audio");
@@ -182,14 +191,18 @@ public class Book extends BookTreeNode {
     }
 
     public void setTitle(String n) { Debug.trace(); name = n; }
+    public void setShortTitle(String n) { Debug.trace(); shortName = n; }
     public void setAuthor(String a) { Debug.trace(); author = a; }
+    public void setShortAuthor(String a) { Debug.trace(); shortAuthor = a; }
     public void setGenre(String g) { Debug.trace(); genre = g; }
     public void setComment(String c) { Debug.trace(); comment = c; }
     public void setACX(String c) { Debug.trace(); ACX = c; }
     public void setISBN(String c) { Debug.trace(); ISBN = c; }
 
     public String getTitle() { Debug.trace(); return name; }
+    public String getShortTitle() { Debug.trace(); return shortName; }
     public String getAuthor() { Debug.trace(); return author; }
+    public String getShortAuthor() { Debug.trace(); return shortAuthor; }
     public String getGenre() { Debug.trace(); return genre; }
     public String getComment() { Debug.trace(); return comment; }
     public String getACX() { Debug.trace(); if (ACX == null) return ""; return ACX; }
@@ -379,6 +392,8 @@ public class Book extends BookTreeNode {
         doc.appendChild(root);
 
         root.appendChild(makeTextNode(doc, "title", name));
+        root.appendChild(makeTextNode(doc, "shortauthor", shortAuthor));
+        root.appendChild(makeTextNode(doc, "shorttitle", shortName));
         root.appendChild(makeTextNode(doc, "author", author));
         root.appendChild(makeTextNode(doc, "comment", comment));
         root.appendChild(makeTextNode(doc, "genre", genre));
@@ -386,6 +401,9 @@ public class Book extends BookTreeNode {
         root.appendChild(makeTextNode(doc, "isbn", ISBN));
         root.appendChild(makeTextNode(doc, "manuscript", manuscript));
         root.appendChild(makeTextNode(doc, "notes", notes));
+		if (exportProfile != null) {
+			root.appendChild(makeTextNode(doc, "exportprofile", exportProfile.getCode()));
+		}
 
         Element settingsNode = doc.createElement("settings");
         root.appendChild(settingsNode);
@@ -698,4 +716,15 @@ public class Book extends BookTreeNode {
         return len;
     }
 
+
+	public ExportProfile getExportProfile() {
+		if (exportProfile == null) {
+			return AudiobookRecorder.exportProfiles.get("librivox");
+		}
+		return exportProfile;
+	}
+
+	public void setExportProfile(ExportProfile p) {
+		exportProfile = p;
+	}
 }

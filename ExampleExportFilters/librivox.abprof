@@ -1,0 +1,21 @@
+<profile>
+	<code>librivox</code>
+	<name>LibriVox.org</name>
+	<export>
+		<bitrate>128000</bitrate>
+		<channels>1</channels>
+		<samples>44100</samples>
+		<format>{chapter.name:lower}_{book.author.short:lower}_{narrator.initials:lower}_{file.bitrate.kb}kb</format>
+	</export>
+	<gaps>
+		<pre-chapter>500</pre-chapter>
+		<post-chapter>5000</post-chapter>
+		<post-sentence>400</post-sentence>
+		<followon>100</followon>
+		<post-paragraph>1000</post-paragraph>
+		<post-section>1200</post-section>
+	</gaps>
+	<audio>
+		<rms>-19</rms>
+	</audio>
+</profile>

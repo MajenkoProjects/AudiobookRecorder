@@ -51,9 +51,6 @@ public class Chapter extends BookTreeNode {
     String name;
     String id;
 
-    int preGap;
-    int postGap;
-
     String notes;
     Book parentBook = null;
 
@@ -62,16 +59,12 @@ public class Chapter extends BookTreeNode {
         Debug.trace();
         id = i;
         name = chaptername;
-        preGap = Options.getInteger("catenation.pre-chapter");
-        postGap = Options.getInteger("catenation.post-chapter");
     }
 
     public Chapter(Element root, DefaultTreeModel model) {
         Debug.trace();
         name = Book.getTextNode(root, "name");
         id = root.getAttribute("id");
-        preGap = Utils.s2i(Book.getTextNode(root, "pre-gap"));
-        postGap = Utils.s2i(Book.getTextNode(root, "post-gap"));
 
         notes = Book.getTextNode(root, "notes");
     
@@ -89,8 +82,6 @@ public class Chapter extends BookTreeNode {
         Debug.trace();
         name = Book.getTextNode(root, "name");
         id = root.getAttribute("id");
-        preGap = Utils.s2i(Book.getTextNode(root, "pre-gap"));
-        postGap = Utils.s2i(Book.getTextNode(root, "post-gap"));
 
         notes = Book.getTextNode(root, "notes");
 
@@ -160,26 +151,6 @@ public class Chapter extends BookTreeNode {
         name = n;
     }
 
-    public void setPreGap(int g) {
-        Debug.trace();
-        preGap = g;
-    }
-
-    public int getPreGap() {
-        Debug.trace();
-        return preGap;
-    }
-
-    public void setPostGap(int g) {
-        Debug.trace();
-        postGap = g;
-    }
-
-    public int getPostGap() {
-        Debug.trace();
-        return postGap;
-    }
-
     public String createFilename(String format) {
         String out = "";
 
@@ -198,13 +169,15 @@ public class Chapter extends BookTreeNode {
 		tokens.put("chapter.number", Integer.toString(getSequenceNumber()));
 		tokens.put("chapter.id", getId());
 		tokens.put("book.title", book.getTitle());
+		tokens.put("book.title.short", book.getShortTitle());
 		tokens.put("book.author", book.getAuthor());
+		tokens.put("book.author.short", book.getShortAuthor());
 		tokens.put("book.isbn", book.getISBN());
 		tokens.put("book.acx", book.getACX());
 		tokens.put("narrator.name", Options.get("narrator.name"));
 		tokens.put("narrator.initials", Options.get("narrator.initials"));
-		tokens.put("file.bitrate", Integer.toString(Options.getInteger("audio.export.bitrate")));
-		tokens.put("file.bitrate.kb", Integer.toString(Options.getInteger("audio.export.bitrate") / 1000));
+		tokens.put("file.bitrate", Integer.toString(book.getExportProfile().getExportBitrate()));
+		tokens.put("file.bitrate.kb", Integer.toString(book.getExportProfile().getExportBitrate() / 1000));
 
 		for(Map.Entry<String, String> entry : tokens.entrySet()) {
 			format = format.replace("{" + entry.getKey() + ":lower}", entry.getValue().toLowerCase());
@@ -214,7 +187,7 @@ public class Chapter extends BookTreeNode {
     }
 
     @SuppressWarnings("unchecked")
-    public void exportChapter(ProgressDialog exportDialog, String fnformat) throws 
+    public void exportChapter(ProgressDialog exportDialog) throws 
                     FileNotFoundException, IOException, InputFormatException, NotSupportedException,
                     EncoderException, UnsupportedTagException, InvalidDataException {
         Debug.trace();
@@ -222,6 +195,10 @@ public class Chapter extends BookTreeNode {
         if (getChildCount() == 0) return;
 
         Book book = getBook();
+
+		ExportProfile profile = book.getExportProfile();
+
+		String fnformat = profile.getExportFormat();
 
         File export = book.getLocation("export");
         if (!export.exists()) {
@@ -243,9 +220,9 @@ public class Chapter extends BookTreeNode {
 
         AudioAttributes audioAttributes = new AudioAttributes();
         audioAttributes.setCodec("libmp3lame");
-        audioAttributes.setBitRate(Options.getInteger("audio.export.bitrate"));
-        audioAttributes.setSamplingRate(Options.getInteger("audio.export.samplerate"));
-        audioAttributes.setChannels(Options.getInteger("audio.export.channels")); //new Integer(2));
+        audioAttributes.setBitRate(profile.getExportBitrate());
+        audioAttributes.setSamplingRate(profile.getExportSamples());
+        audioAttributes.setChannels(profile.getExportChannels());
         attributes.setFormat("mp3");
         attributes.setAudioAttributes(audioAttributes);
 
@@ -270,7 +247,7 @@ public class Chapter extends BookTreeNode {
         File taggedFile = new File(export, createFilename(fnformat) + ".mp3");
 
         FileOutputStream fos = new FileOutputStream(exportFile);
-        data = getBook().getRoomNoise(Utils.s2i(Options.get("catenation.pre-chapter")));
+        data = getBook().getRoomNoise(profile.getGapPreChapter());
         fullLength += data.length;
         fos.write(data);
 
@@ -289,7 +266,7 @@ public class Chapter extends BookTreeNode {
             if (s.hasMoreElements()) {
                 data = getBook().getRoomNoise(snt.getPostGap());
             } else {
-                data = getBook().getRoomNoise(Utils.s2i(Options.get("catenation.post-chapter")));
+                data = getBook().getRoomNoise(profile.getGapPostChapter());
             }
             fullLength += data.length;
             fos.write(data);
@@ -334,14 +311,16 @@ public class Chapter extends BookTreeNode {
 
     public double getChapterLength() {
         Debug.trace();
-        double totalTime = Options.getInteger("audio.recording.pre-chapter") / 1000d;
+		Book book = getBook();
+		ExportProfile exportProfile = book.getExportProfile();
+        double totalTime = exportProfile.getGapPreChapter() / 1000d;
         for (Enumeration s = children(); s.hasMoreElements();) {
             Sentence sentence = (Sentence)s.nextElement();
             totalTime += sentence.getLength();
             if (s.hasMoreElements()) {
                 totalTime += (sentence.getPostGap() / 1000d);
             } else {
-                totalTime += Options.getInteger("audio.recording.post-chapter") / 1000d;
+                totalTime += exportProfile.getGapPostChapter() / 1000d;
             }
         }
         return totalTime;
@@ -389,8 +368,6 @@ public class Chapter extends BookTreeNode {
         Element chapterNode = doc.createElement("chapter");
         chapterNode.setAttribute("id", id);
         chapterNode.appendChild(Book.makeTextNode(doc, "name", name));
-        chapterNode.appendChild(Book.makeTextNode(doc, "pre-gap", preGap));
-        chapterNode.appendChild(Book.makeTextNode(doc, "post-gap", postGap));
         chapterNode.appendChild(Book.makeTextNode(doc, "notes", notes));
 
         Element sentencesNode = doc.createElement("sentences");
@@ -433,6 +410,9 @@ public class Chapter extends BookTreeNode {
 
     @Override
     public double getLength() {
+		Book book = getBook();
+		ExportProfile exportProfile = book.getExportProfile();
+
         Debug.trace();
         double len = 0;
         for (Enumeration o = children(); o.hasMoreElements();) {
@@ -445,8 +425,8 @@ public class Chapter extends BookTreeNode {
         }
 
         if (len > 0) {
-            len += (getPreGap() / 1000d);
-            len += (getPostGap() / 1000d);
+            len += (exportProfile.getGapPreChapter() / 1000d);
+            len += (exportProfile.getGapPostChapter() / 1000d);
         }
         return len;
     }
