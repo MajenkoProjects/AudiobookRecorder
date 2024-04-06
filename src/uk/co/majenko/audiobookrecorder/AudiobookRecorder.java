@@ -3672,7 +3672,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 		exportProfiles.clear();
 		ExportProfile dp = new ExportProfile();
 		exportProfiles.put(dp.getCode(), dp);
-		File system = new File(Options.get("path.storage"), "system");
+		File system = new File(Options.get("path.storage"), "System");
 		if (system.exists() && system.isDirectory()) {
 			File profiles = new File(system, "profiles");
 			for (File f : profiles.listFiles()) {
