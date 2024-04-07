@@ -652,7 +652,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                     int i = effectChain.getSelectedIndex();
                     KVPair<String, String> p = effectChain.getItemAt(i);
                     if (p == null) return;
-                    System.err.println("I want to select effect " + p.getKey());
                     selectedSentence.setEffectChain(p.getKey());
                     updateWaveform(true);
                 }
@@ -3144,12 +3143,9 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     public void showSelectedEffectChain(String key) {
         Debug.trace();
         effectsUpdating = true;
-        System.err.println("Looking for effect " + key + "...");
         for (int i = 0; i < effectChain.getItemCount(); i++) {
             KVPair<String, String> p = effectChain.getItemAt(i);
-            System.err.println("    Testing " + p.getKey() + "...");
             if (p.getKey().equals(key)) {
-                System.err.println("    Found it.");
                 effectChain.setSelectedIndex(i);
                 effectsUpdating = false;
                 return;
@@ -3160,7 +3156,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
 
     public void setEffectChain(String key) {
         Debug.trace();
-        System.err.println("Setting effect " + key);
         for (int i = 0; i < effectChain.getItemCount(); i++) {
             KVPair<String, String> p = effectChain.getItemAt(i);
             if (p.getKey().equals(key)) {
