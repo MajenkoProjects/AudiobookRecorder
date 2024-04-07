@@ -252,8 +252,11 @@ public class Book extends BookTreeNode {
 
     public Chapter getChapter(int n) {
         Debug.trace();
-        if (n == 0) return null;
-        return (Chapter)getChildAt(n);
+		Object o = getChildAt(n);
+		if (o instanceof Chapter) {
+			return (Chapter)o;
+		}
+		return null;
     }
 
     public Chapter addChapter() {

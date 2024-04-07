@@ -106,7 +106,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     double[] waveProfile = null;
  
-    TreeMap<Integer, Double> gainPoints = null;
+    TreeMap<Integer, Double> gainPoints = new TreeMap<Integer, Double>();
 
     RecordingThread recordingThread;
 
@@ -241,7 +241,6 @@ public class Sentence extends BookTreeNode implements Cacheable {
             autoTrimSample();
         }
 
-        gainPoints = new TreeMap<Integer, Double>();
         Element gp = Book.getNode(root, "gainpoints");
         if (gp != null) {
             NodeList points = gp.getElementsByTagName("gainpoint");
@@ -1901,16 +1900,10 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public TreeMap<Integer, Double> getGainPoints() {
         Debug.trace();
-        if (gainPoints == null) {
-            gainPoints = new TreeMap<Integer, Double>();
-        }
         return gainPoints;
     }
 
     public void addGainPoint(Integer loc, Double g) {
-        if (gainPoints == null) {
-            gainPoints = new TreeMap<Integer, Double>();
-        }
         gainPoints.put(loc, g);
         refreshAllData();
     }
@@ -1925,10 +1918,6 @@ public class Sentence extends BookTreeNode implements Cacheable {
     }
 
     public void adjustGainPoint(Integer loc, Double adj, boolean reload) {
-        if (gainPoints == null) {
-            gainPoints = new TreeMap<Integer, Double>();
-            return;
-        }
         Double gp = gainPoints.get(loc);
         if (gp == null) return;
         gp += adj;
@@ -2048,10 +2037,11 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     final int window = 500;
 
-    public double[] getWaveProfile() {
+    public synchronized double[] getWaveProfile() {
         if (waveProfile != null) return waveProfile;
         double[][] samples = getProcessedAudioData();
         if (samples[LEFT].length == 0) return null;
+		System.out.println(String.format("Sample length: %d", samples[LEFT].length));
         waveProfile = new double[samples[LEFT].length];
     
         double rt = 0;

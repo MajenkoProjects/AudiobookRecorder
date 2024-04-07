@@ -100,7 +100,7 @@ public class Chapter extends BookTreeNode {
 
     public int getSequenceNumber() {
         Book book = getBook();
-        int i = 1;
+        int i = 0;
         while (true) {
             Chapter c = book.getChapter(i);
             if (c == null) {
