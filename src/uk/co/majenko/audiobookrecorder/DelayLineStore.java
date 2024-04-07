@@ -68,11 +68,4 @@ public class DelayLineStore {
             e.init(sf);
         }
     }
-
-    public void dump() {
-        System.out.println("    Samples: " + numSamples + ", gain: " + gain);
-        for (Effect e : effects) {
-            e.dump();
-        }
-    }
 }

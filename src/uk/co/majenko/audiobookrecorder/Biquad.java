@@ -259,8 +259,4 @@ public class Biquad implements Effect {
         return getName();
     }
 
-    public void dump() {
-        Debug.trace();
-        System.out.println(toString());
-    }
 }

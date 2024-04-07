@@ -6,7 +6,6 @@ public interface Effect  {
     public void process(double[][] samples);
     public String getName();
     public ArrayList<Effect> getChildEffects();
-    public void dump();
     public void init(double sr);
     public String toString();
 }

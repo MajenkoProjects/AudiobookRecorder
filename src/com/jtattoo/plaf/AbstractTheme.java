@@ -760,7 +760,7 @@ public abstract class AbstractTheme extends MetalTheme {
                 b = Integer.parseInt(colorProp.substring(p2 + 1));
                 return new ColorUIResource(r, g, b);
             } catch (Exception ex) {
-                System.out.println("Exception while parsing color: " + colorProp);
+                System.err.println("Exception while parsing color: " + colorProp);
             }
         }
         return color;
@@ -771,7 +771,7 @@ public abstract class AbstractTheme extends MetalTheme {
         try {
             val = Integer.parseInt(intProp);
         } catch (Exception ex) {
-            System.out.println("Exception while parsing color: " + intProp);
+            System.err.println("Exception while parsing color: " + intProp);
         }
         return val;
     }

@@ -83,10 +83,6 @@ public class LFO implements Effect {
 
     public ArrayList<Effect> getChildEffects() { return null; }
 
-    public void dump() {
-        System.out.println(getName());
-    }
-
     public void init(double sr) {
         sampleRate = sr;
 

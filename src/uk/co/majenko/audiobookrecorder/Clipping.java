@@ -40,10 +40,6 @@ public class Clipping implements Effect {
         return getName();
     }
 
-    public void dump() {
-        System.out.println(toString());
-    }
-
     public void init(double sf) {
     }
 }

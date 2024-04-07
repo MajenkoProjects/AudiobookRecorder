@@ -54,19 +54,8 @@ public class Options extends JDialog {
     JComboBox<KVPair> playbackBlockSize;
     JTextField storageFolder;
     JTextField archiveFolder;
-    JSpinner preChapterGap;
-    JSpinner postChapterGap;
-    JSpinner postSentenceGap;
-    JSpinner shortSentenceGap;
-    JSpinner postParagraphGap;
-    JSpinner postSectionGap;
-    JSpinner rmsLow;
-    JSpinner rmsHigh;
     JCheckBox autoNormalize;
     JTextField ffmpegLocation;
-    JComboBox<KVPair> bitRate;
-    JComboBox<KVPair> channels;
-    JComboBox<KVPair> exportRate;
     JCheckBox enableParsing;
     JSpinner cacheSize;
 
@@ -363,8 +352,6 @@ public class Options extends JDialog {
         trimMethod = addDropdown(optionsPanel, "Auto-trim method:", getTrimMethods(), get("audio.recording.trim"), "None: don't auto-trim. FFT: Compare the FFT profile of blocks to the room noise profile and trim silent blocks, Peak: Look for the start and end rise and fall points");
         fftThreshold = addSpinner(optionsPanel, "FFT threshold:", 0, 100, 1, getInteger("audio.recording.trim.fft"), "", "This specifies the difference (in hundredths) between the power of FFT buckets in a sample block compared to the overall power of the same FFT bucket in the room noise. Raising this number makes the FFT trimming less sensitive.");
         fftBlockSize = addDropdown(optionsPanel, "FFT Block size:", getFFTBlockSizes(), get("audio.recording.trim.blocksize"), "How large an FFT block should be when processing. Larger values increase sensitivity but at the epxense of resolution.");
-        rmsLow = addSpinner(optionsPanel, "Target RMS (low):", -100, 0, 1, getInteger("audio.recording.rms.low"), "", "When normalizing this is the lowest target average RMS to aim for");
-        rmsHigh = addSpinner(optionsPanel, "Target RMS (high):", -100, 0, 1, getInteger("audio.recording.rms.high"), "", "When normalizing this is the highest target average RMS to aim for");
         autoNormalize = addCheckBox(optionsPanel, "Enable automatic normalization", getBoolean("process.normalize"), "This will automatically normalize each phrase after recording");
 
         addSeparator(optionsPanel);
@@ -591,16 +578,7 @@ public class Options extends JDialog {
         defaultPrefs.put("audio.recording.trim.blocksize", "4096");
         defaultPrefs.put("audio.playback.blocksize", "4096");
 
-        defaultPrefs.put("catenation.pre-chapter", "1000");
-        defaultPrefs.put("catenation.post-chapter", "1500");
-        defaultPrefs.put("catenation.post-sentence", "1000");
-        defaultPrefs.put("catenation.short-sentence", "100");
-        defaultPrefs.put("catenation.post-paragraph", "2000");
-        defaultPrefs.put("catenation.post-section", "3000");
-
         defaultPrefs.put("audio.recording.trim.fft", "10");
-        defaultPrefs.put("audio.recording.rms.low", "-22");
-        defaultPrefs.put("audio.recording.rms.high", "-20");
         defaultPrefs.put("process.normalize", "true");
     
         defaultPrefs.put("path.storage", (new File(System.getProperty("user.home"), "Recordings")).toString());
@@ -723,15 +701,6 @@ public class Options extends JDialog {
         set("path.storage", storageFolder.getText());
         set("path.archive", archiveFolder.getText());
         set("path.ffmpeg", ffmpegLocation.getText());
-        set("catenation.pre-chapter", preChapterGap.getValue());
-        set("catenation.post-chapter", postChapterGap.getValue());
-        set("catenation.post-sentence", postSentenceGap.getValue());
-        set("catenation.short-sentence", shortSentenceGap.getValue());
-        set("catenation.post-paragraph", postParagraphGap.getValue());
-        set("catenation.post-section", postSectionGap.getValue());
-        if (bitRate.getSelectedItem() != null) set("audio.export.bitrate", ((KVPair)bitRate.getSelectedItem()).key);
-        if (channels.getSelectedItem() != null) set("audio.export.channels", ((KVPair)channels.getSelectedItem()).key);
-        if (exportRate.getSelectedItem() != null) set("audio.export.samplerate", ((KVPair)exportRate.getSelectedItem()).key);
 		set("narrator.name", narratorName.getText());
 		set("narrator.initials", narratorInitials.getText());
         set("process.sphinx", enableParsing.isSelected());
@@ -740,8 +709,6 @@ public class Options extends JDialog {
         set("editor.external", externalEditor.getText());
         set("cache.size", cacheSize.getValue());
         set("audio.recording.trim.fft", fftThreshold.getValue());
-        set("audio.recording.rms.low", rmsLow.getValue());
-        set("audio.recording.rms.high", rmsHigh.getValue());
         set("process.normalize", autoNormalize.isSelected());
         if (fftBlockSize.getSelectedItem() != null) set("audio.recording.trim.blocksize", ((KVPair)fftBlockSize.getSelectedItem()).key);
         if (playbackBlockSize.getSelectedItem() != null) set("audio.playback.blocksize", ((KVPair)playbackBlockSize.getSelectedItem()).key);

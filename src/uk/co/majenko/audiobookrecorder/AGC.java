@@ -63,11 +63,6 @@ public class AGC implements Effect {
         gain = 1d;
     }
 
-    public void dump() {
-        Debug.trace();
-        System.out.println(toString());
-    }
-
     public ArrayList<Effect> getChildEffects() {
         Debug.trace();
         return null;

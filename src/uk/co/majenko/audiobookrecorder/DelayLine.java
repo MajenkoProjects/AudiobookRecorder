@@ -72,13 +72,6 @@ public class DelayLine implements Effect {
         return getName();
     }
 
-    public void dump() {
-        System.out.println(toString());
-        for (DelayLineStore s : delayLines) {
-            s.dump();
-        }
-    }
-
     public void init(double sf) {
         for (DelayLineStore s : delayLines) {
             s.init(sf);

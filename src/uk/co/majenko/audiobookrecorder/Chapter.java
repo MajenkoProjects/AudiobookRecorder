@@ -54,15 +54,17 @@ public class Chapter extends BookTreeNode {
     String notes;
     Book parentBook = null;
 
-    public Chapter(String i, String chaptername) {
+    public Chapter(Book p, String i, String chaptername) {
         super(chaptername);
+		parentBook = p;
         Debug.trace();
         id = i;
         name = chaptername;
     }
 
-    public Chapter(Element root, DefaultTreeModel model) {
+    public Chapter(Book p, Element root, DefaultTreeModel model) {
         Debug.trace();
+		parentBook = p;
         name = Book.getTextNode(root, "name");
         id = root.getAttribute("id");
 
@@ -73,13 +75,14 @@ public class Chapter extends BookTreeNode {
 
         for (int i = 0; i < sentences.getLength(); i++) {
             Element sentenceElement = (Element)sentences.item(i);
-            Sentence newSentence = new Sentence(sentenceElement);
+            Sentence newSentence = new Sentence(parentBook, sentenceElement);
             model.insertNodeInto(newSentence, this, getChildCount());
         }
     }
 
-    public Chapter(Element root) {
+    public Chapter(Book p, Element root) {
         Debug.trace();
+		parentBook = p;
         name = Book.getTextNode(root, "name");
         id = root.getAttribute("id");
 
@@ -90,7 +93,7 @@ public class Chapter extends BookTreeNode {
 
         for (int i = 0; i < sentences.getLength(); i++) {
             Element sentenceElement = (Element)sentences.item(i);
-            Sentence newSentence = new Sentence(sentenceElement);
+            Sentence newSentence = new Sentence(parentBook, sentenceElement);
             add(newSentence);
         }
     }

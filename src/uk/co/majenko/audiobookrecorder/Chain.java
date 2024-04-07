@@ -34,10 +34,6 @@ public class Chain implements Effect {
         return "Chain to " + target;
     }
 
-    public void dump() {
-        System.out.println(toString());
-    }
-
     public void init(double sf) {
         if (target != null) {
             Effect t = AudiobookRecorder.window.getBook().effects.get(target);

@@ -58,13 +58,6 @@ public class EffectGroup implements Effect {
         return name;
     }
 
-    public void dump() {
-        System.out.println(toString() + " >> ");
-        for (Effect e : effects) {
-            e.dump();
-        }
-    }
-
     public void init(double sf) {
         for (Effect e : effects) {
             e.init(sf);

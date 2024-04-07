@@ -7,7 +7,7 @@ public class FFT {
         double ld = Math.log(n) / Math.log(2.0);
 
         if (((int) ld) - ld != 0) {
-            System.out.println("The number of elements is not a power of 2.");
+            System.err.println("The number of elements is not a power of 2.");
             return null;
         }
 

@@ -64,7 +64,7 @@ public class Book extends BookTreeNode {
         location = new File(Options.get("path.storage"), sanitize(name));
         AudiobookRecorder.window.setTitle("AudioBook Recorder :: " + name); // This should be in the load routine!!!!
         setIcon(Icons.book);
-        roomNoise = new Sentence("room-noise", "Room Noise");
+        roomNoise = new Sentence(this, "room-noise", "Room Noise");
         roomNoise.setParentBook(this);
         loadEffects();
     }
@@ -118,14 +118,14 @@ public class Book extends BookTreeNode {
                 setIcon(Icons.book);
             }
 
-            roomNoise = new Sentence("room-noise", "Room Noise");
+            roomNoise = new Sentence(this, "room-noise", "Room Noise");
             roomNoise.setParentBook(this);
 
             Element chapters = getNode(root, "chapters");
             NodeList chapterList = chapters.getElementsByTagName("chapter");
             for (int i = 0; i < chapterList.getLength(); i++) {
                 Element chapterElement = (Element)chapterList.item(i);
-                Chapter newChapter = new Chapter(chapterElement);
+                Chapter newChapter = new Chapter(this, chapterElement);
                 newChapter.setParentBook(this);
                 add(newChapter);
             }
@@ -160,12 +160,12 @@ public class Book extends BookTreeNode {
 
         NodeList chapterList = chapters.getElementsByTagName("chapter");
 
-        roomNoise = new Sentence("room-noise", "Room Noise");
+        roomNoise = new Sentence(this, "room-noise", "Room Noise");
         roomNoise.setParentBook(this);
 
         for (int i = 0; i < chapterList.getLength(); i++) {
             Element chapterElement = (Element)chapterList.item(i);
-            Chapter newChapter = new Chapter(chapterElement, model);
+            Chapter newChapter = new Chapter(this, chapterElement, model);
             model.insertNodeInto(newChapter, this, getChildCount());
         }
     }
@@ -259,7 +259,7 @@ public class Book extends BookTreeNode {
     public Chapter addChapter() {
         Debug.trace();
         String uuid = UUID.randomUUID().toString();
-        Chapter c = new Chapter(uuid, uuid);
+        Chapter c = new Chapter(this, uuid, uuid);
         add(c);
         c.setParentBook(this);
         return c;
@@ -268,7 +268,7 @@ public class Book extends BookTreeNode {
     public Chapter addChapter(String name) {
         Debug.trace();
         String uuid = UUID.randomUUID().toString();
-        Chapter c = new Chapter(uuid, name);
+        Chapter c = new Chapter(this, uuid, name);
         add(c);
         c.setParentBook(this);
         return c;
@@ -276,7 +276,7 @@ public class Book extends BookTreeNode {
 
     public Chapter addChapter(String id, String name) {
         Debug.trace();
-        Chapter c = new Chapter(id, name);
+        Chapter c = new Chapter(this, id, name);
         add(c);
         c.setParentBook(this);
         return c;

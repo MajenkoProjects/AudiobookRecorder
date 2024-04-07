@@ -192,25 +192,28 @@ public class Sentence extends BookTreeNode implements Cacheable {
         }
     }
 
-    public Sentence() {
+    public Sentence(Book p) {
         super("");
         Debug.trace();
+		parentBook = p;
         id = UUID.randomUUID().toString();
         text = id;
         setUserObject(text);
     }
 
-    public Sentence(String i, String t) {
+    public Sentence(Book p, String i, String t) {
         super("");
+		parentBook = p;
         Debug.trace();
         id = i;
         text = t;
         setUserObject(text);
     }
 
-    public Sentence(Element root) {
+    public Sentence(Book p, Element root) {
         super("");
         Debug.trace();
+		parentBook = p;
         id = root.getAttribute("id");
         text = Book.getTextNode(root, "text");
         notes = Book.getTextNode(root, "notes");
@@ -896,7 +899,7 @@ public class Sentence extends BookTreeNode implements Cacheable {
 
     public Sentence cloneSentence() throws IOException {
         Debug.trace();
-        Sentence sentence = new Sentence();
+        Sentence sentence = new Sentence(getBook());
         sentence.setParentBook(getBook());
         sentence.setPostGap(getPostGap());
         if (!id.equals(text)) {

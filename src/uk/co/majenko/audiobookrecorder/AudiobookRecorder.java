@@ -1104,10 +1104,10 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             newbook.setComment(info.getComment().trim());
             newbook.setACX(info.getACX().trim());
 
-            Chapter caud = new Chapter("audition", "Audition");
-            Chapter copen = new Chapter("open", "Opening Credits");
-            Chapter cclose = new Chapter("close", "Closing Credits");
-            Chapter cone = new Chapter(UUID.randomUUID().toString(), "Chapter 1");
+            Chapter caud = new Chapter(newbook, "audition", "Audition");
+            Chapter copen = new Chapter(newbook, "open", "Opening Credits");
+            Chapter cclose = new Chapter(newbook, "close", "Closing Credits");
+            Chapter cone = new Chapter(newbook, UUID.randomUUID().toString(), "Chapter 1");
 
             newbook.add(caud);
             newbook.add(copen);
@@ -1345,7 +1345,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence s = (Sentence)o.getObject();
                         Chapter c = (Chapter)s.getParent();
-                        Sentence newSentence = new Sentence();
+						Book b = c.getBook();
+                        Sentence newSentence = new Sentence(b);
                         int where = bookTreeModel.getIndexOfChild(c, s);
                         bookTreeModel.insertNodeInto(newSentence, c, where);
                         bookTreeModel.reload(newSentence);
@@ -1358,7 +1359,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         JMenuObject o = (JMenuObject)e.getSource();
                         Sentence s = (Sentence)o.getObject();
                         Chapter c = (Chapter)s.getParent();
-                        Sentence newSentence = new Sentence();
+                        Sentence newSentence = new Sentence(c.getBook());
                         int where = bookTreeModel.getIndexOfChild(c, s);
                         bookTreeModel.insertNodeInto(newSentence, c, where + 1);
                         bookTreeModel.reload(newSentence);
@@ -2001,8 +2002,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             lastSentence.setPostGapType("continuation");
         }
 
-        Sentence s = new Sentence();
-        s.setParentBook(getBook());
+        Sentence s = new Sentence(getBook());
         bookTreeModel.insertNodeInto(s, c, c.getChildCount());
 
         bookTree.expandPath(new TreePath(c.getPath()));
@@ -2053,8 +2053,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             lastSentence.setPostGapType("paragraph");
         }
 
-        Sentence s = new Sentence();
-        s.setParentBook(getBook());
+        Sentence s = new Sentence(getBook());
         bookTreeModel.insertNodeInto(s, c, c.getChildCount());
 
         bookTree.expandPath(new TreePath(c.getPath()));
@@ -2104,8 +2103,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             lastSentence.setPostGapType("section");
         }
 
-        Sentence s = new Sentence();
-        s.setParentBook(getBook());
+        Sentence s = new Sentence(getBook());
         bookTreeModel.insertNodeInto(s, c, c.getChildCount());
 
         bookTree.expandPath(new TreePath(c.getPath()));
@@ -2155,8 +2153,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             lastSentence.setPostGapType("sentence");
         }
 
-        Sentence s = new Sentence();
-        s.setParentBook(getBook());
+        Sentence s = new Sentence(getBook());
         bookTreeModel.insertNodeInto(s, c, c.getChildCount());
 
         bookTree.expandPath(new TreePath(c.getPath()));
@@ -2284,14 +2281,14 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     }
 
     public Chapter convertChapter(String name, String id, Properties data) {
-        Chapter c = new Chapter(id, data.getProperty("chapter." + name + ".name"));
+        Chapter c = new Chapter(getBook(), id, data.getProperty("chapter." + name + ".name"));
 
         for (int i = 0; i < 100000000; i++) {
             String sid = data.getProperty(String.format("chapter." + name + ".sentence.%08d.id", i));
             String text = data.getProperty(String.format("chapter." + name + ".sentence.%08d.text", i));
             int gap = Utils.s2i(data.getProperty(String.format("chapter." + name + ".sentence.%08d.post-gap", i)));
             if (sid == null) break;
-            Sentence s = new Sentence(sid, text);
+            Sentence s = new Sentence(c.getBook(), sid, text);
             s.setPostGap(gap);
             s.setStartOffset(Utils.s2i(data.getProperty(String.format("chapter." + name + ".sentence.%08d.start-offset", i))));
             s.setEndOffset(Utils.s2i(data.getProperty(String.format("chapter. " + name + ".sentence.%08d.end-offset", i))));
@@ -2435,15 +2432,12 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                         sampleWaveform.setPlayMarker(pos / format.getFrameSize());
                         int l = data.length - pos;
                         if (l > blockSize) l = blockSize;
-                        System.out.println(play.write(data, pos, l));
                     }
 
-					System.out.println("Closing...");
                     play.drain();
                     play.stop();
                     play.close();
                     play = null;
-					System.out.println("Closed");
                     playing = null;
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -2691,10 +2685,8 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     public void stopPlaying() {
         Debug.trace();
         if (play != null) {
-			System.out.println("Forcing close");
             play.close();
             play = null;
-			System.out.println("Closed!!!");
         }
         playing = null;
     }
@@ -2785,8 +2777,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             Chapter fc = (Chapter)from.getFirstChild();
             Chapter tc = findChapter(to, fc.getId(), fc.getName());
             if (tc == null) {
-                tc = new Chapter(fc.getId(), fc.getName());
-                tc.setParentBook(to);
+                tc = new Chapter(to, fc.getId(), fc.getName());
                 to.add(tc);
             }
             moveSentences(fc, tc);
@@ -3434,7 +3425,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     public void findOrphans(Book book) {
         Chapter orphans = book.getChapterById("orphans");
         if (orphans == null) {
-            orphans = new Chapter("orphans", "Orphan Files");
+            orphans = new Chapter(book, "orphans", "Orphan Files");
             orphans.setParentBook(book);
             book.add(orphans);
         }
@@ -3449,7 +3440,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
                 String id = filename.substring(0, filename.length() - 4);
                 Debug.d("Testing orphanicity of", id);
                 if (!sentenceIdExists(book, id)) {
-                    Sentence newSentence = new Sentence(id, id);
+                    Sentence newSentence = new Sentence(book, id, id);
                     newSentence.setParentBook(book);
                     orphans.add(newSentence);
                 }
@@ -3644,7 +3635,7 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             Book book = c.getBook();
             AudioFormat targetFormat = book.getAudioFormat();
 
-            Sentence newSentence = new Sentence();
+            Sentence newSentence = new Sentence(book);
             newSentence.setText(f.getName());
             newSentence.setParentBook(book);
             c.add(newSentence);
