@@ -3116,7 +3116,6 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
     public void updateEffectChains(TreeMap<String, EffectGroup> effs) {
         Debug.trace();
         effectsUpdating = true;
-        System.err.println("Updating effect chains");
         while (effectChain.getItemCount() > 0) {
             effectChain.removeItemAt(0);
         }
