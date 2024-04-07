@@ -103,3 +103,20 @@ sox "$FILE" -r 16000 -c 1 -b 16 "/tmp/ds-${ID}.wav"
 ${BINPATH}/deepspeech --model ${MODELS}/output_graph.pbmm --lm ${MODELS}/lm.binary --trie ${MODELS}/trie --audio "/tmp/ds-${ID}.wav" 2>/dev/null
 rm /tmp/ds-${ID}.wav
 ```
+
+----
+
+* Whisper wrapper script
+
+This small script will use Whisper to do the same job as DeepSpeech but considerably faster and better.
+
+```
+#!/bin/bash
+
+whisper --output_format txt --model small --fp16 False --output_dir /tmp --device cuda --language English "$1" > /dev/null
+BASE=$(basename "$1" .wav)
+TXT=${BASE}.txt
+cat "/tmp/${TXT}" | tr '
+' ' '
+echo ""
+```
