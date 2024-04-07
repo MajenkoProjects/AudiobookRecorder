@@ -23,6 +23,9 @@ pre {
 .attrib {
 	color: #404040;
 }
+.warn {
+    color: red;
+}
 .option {
 	font-family: "Courier New", Courier, monospace;
 	font-weight: bold;
@@ -83,14 +86,14 @@ table td {
 	padding: 0;
 }
 
-
-#leftnav {
+.sidebar {
 	float: left;
 	width: 170px;
 	margin: 0;
 	padding: 0.5em;
 	background-color: #ffffff;
 }
+
 #leftnav ul {
 	margin: 0;
 	padding: 0;
