@@ -2041,7 +2041,6 @@ public class Sentence extends BookTreeNode implements Cacheable {
         if (waveProfile != null) return waveProfile;
         double[][] samples = getProcessedAudioData();
         if (samples[LEFT].length == 0) return null;
-		System.out.println(String.format("Sample length: %d", samples[LEFT].length));
         waveProfile = new double[samples[LEFT].length];
     
         double rt = 0;
