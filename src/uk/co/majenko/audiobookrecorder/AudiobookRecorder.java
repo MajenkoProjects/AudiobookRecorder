@@ -1102,6 +1102,9 @@ public class AudiobookRecorder extends JFrame implements DocumentListener {
             newbook.setGenre(info.getGenre().trim());
             newbook.setComment(info.getComment().trim());
             newbook.setACX(info.getACX().trim());
+			newbook.setShortTitle(info.getShortTitle());
+			newbook.setShortAuthor(info.getShortAuthor());
+        	newbook.setExportProfile(info.getExportProfile());
 
             Chapter caud = new Chapter(newbook, "audition", "Audition");
             Chapter copen = new Chapter(newbook, "open", "Opening Credits");
