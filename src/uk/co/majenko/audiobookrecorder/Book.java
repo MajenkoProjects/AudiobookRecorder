@@ -722,7 +722,7 @@ public class Book extends BookTreeNode {
 
 	public ExportProfile getExportProfile() {
 		if (exportProfile == null) {
-			return AudiobookRecorder.exportProfiles.get("librivox");
+			return AudiobookRecorder.exportProfiles.get("default");
 		}
 		return exportProfile;
 	}
